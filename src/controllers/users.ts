@@ -20,6 +20,8 @@ export const registerUser: RequestHandler<unknown, unknown, RegisterUserBody, un
 	const { email, password, name, role } = req.body;
 	try {
 		if (!email || !password || !name || !role) throw createHttpError(400, 'Missing required fields.');
+		const existingUser = await UserModel.findOne({ email });
+		if (existingUser) throw createHttpError(409, 'Email already registered.');
 		const saltRounds = 10;
 		const hashedPassword = await bcrypt.hash(password, saltRounds);
 		const newUser = await UserModel.create({ email, password: hashedPassword, name, role });
