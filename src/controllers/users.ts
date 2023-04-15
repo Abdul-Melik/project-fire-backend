@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import { UserModel, UserRole } from "../models/user";
 import jwt from "jsonwebtoken";
 import env from "../utils/validate-env";
+import { authenticateToken } from "../middleware/authenticateToken";
 
 interface RegisterUserBody {
   email?: string;
@@ -39,7 +40,13 @@ export const registerUser: RequestHandler<
       name,
       role,
     });
-    return res.status(201).json(newUser);
+
+    const expireLength = "30d";
+    const user = await UserModel.findOne({ email });
+    const token = jwt.sign({ userId: user!._id }, env.JWT_SECRET, {
+      expiresIn: expireLength,
+    });
+    return res.status(201).json({ token });
   } catch (error) {
     next(error);
   }
@@ -53,7 +60,7 @@ export const loginUser: RequestHandler<
 > = async (req, res, next) => {
   const { email, password, rememberMe } = req.body;
   try {
-    if (!email || !password || rememberMe == null)
+    if (!email || !password)
       throw createHttpError(400, "Missing required fields.");
     const user = await UserModel.findOne({ email });
     if (!user) throw createHttpError(401, "Invalid email or password.");
