@@ -6,7 +6,7 @@
 	"scripts": {
 		"start": "nodemon src/server.ts",
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"build": "npx tsc"
+		"build": "tsc --outDir build"
 	},
 	"keywords": [],
 	"author": "",
