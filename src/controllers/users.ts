@@ -31,7 +31,7 @@ export const registerUser: RequestHandler<unknown, unknown, RegisterUserBody, un
 			role,
 		});
 
-		const expireLength = '2m';
+		const expireLength = '1d';
 		const token = jwt.sign({ userId: user._id }, env.JWT_SECRET, {
 			expiresIn: expireLength,
 		});
