@@ -31,7 +31,8 @@ export const registerUser: RequestHandler<unknown, unknown, RegisterUserBody, un
 			role,
 		});
 
-		const expireLength = '1d';
+		// One day in milliseconds
+		const expireLength = 1000 * 60 * 60 * 24;
 		const token = jwt.sign({ userId: user._id }, env.JWT_SECRET, {
 			expiresIn: expireLength,
 		});
@@ -60,7 +61,8 @@ export const loginUser: RequestHandler<unknown, unknown, LoginUserBody, unknown>
 		const isPasswordValid = await bcrypt.compare(password, user.password);
 		if (!isPasswordValid) throw createHttpError(401, 'Invalid email or password.');
 
-		const expireLength = rememberMe ? '30d' : '1d';
+		// Either 30d in milliseconds, or 1d in milliseconds
+		const expireLength = rememberMe ? 1000 * 60 * 60 * 24 * 30 : 1000 * 60 * 60 * 24;
 		const token = jwt.sign({ userId: user._id }, env.JWT_SECRET, {
 			expiresIn: expireLength,
 		});
