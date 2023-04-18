@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import { UserModel, UserRole } from '../models/user';
 import jwt from 'jsonwebtoken';
 import env from '../utils/validate-env';
+import fs from 'fs';
 
 interface RegisterUserBody {
 	email?: string;
@@ -24,11 +25,22 @@ export const registerUser: RequestHandler<unknown, unknown, RegisterUserBody, un
 		const saltRounds = 10;
 		const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+		let imageData: string | undefined = undefined;
+		if (req.file) {
+			const buffer = await fs.promises.readFile(req.file.path);
+			const fileType = req.file.mimetype.split('/')[1];
+			const base64EncodedData = buffer.toString('base64');
+			imageData = `data:image/${fileType};base64,${base64EncodedData}`;
+
+			await fs.promises.unlink(req.file.path);
+		}
+
 		const user = await UserModel.create({
 			email,
 			password: hashedPassword,
 			name,
 			role,
+			image: imageData,
 		});
 
 		// 1d in milliseconds
@@ -37,7 +49,9 @@ export const registerUser: RequestHandler<unknown, unknown, RegisterUserBody, un
 			expiresIn: expireLength,
 		});
 
-		return res.status(201).json({ user: { id: user._id, email, name }, token, expiresIn: expireLength });
+		return res
+			.status(201)
+			.json({ user: { id: user._id, email, name, image: imageData }, token, expiresIn: expireLength });
 	} catch (error) {
 		next(error);
 	}
@@ -67,7 +81,9 @@ export const loginUser: RequestHandler<unknown, unknown, LoginUserBody, unknown>
 			expiresIn: expireLength,
 		});
 
-		return res.status(200).json({ user: { id: user._id, email, name: user.name }, token, expiresIn: expireLength });
+		return res
+			.status(200)
+			.json({ user: { id: user._id, email, name: user.name, image: user.image }, token, expiresIn: expireLength });
 	} catch (error) {
 		next(error);
 	}

@@ -24,6 +24,9 @@ const userSchema = new Schema({
 		enum: Object.values(UserRole),
 		required: true,
 	},
+	image: {
+		type: String,
+	},
 });
 
 type User = InferSchemaType<typeof userSchema>;
