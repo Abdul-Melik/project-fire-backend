@@ -3,7 +3,7 @@ import { ProjectModel, ProjectType, SalesChannel } from '../models/project';
 import createHttpError from 'http-errors';
 import { UserModel, UserRole } from '../models/user';
 
-interface GetProjectsResponse {
+interface GetProjectsRes {
 	name?: string;
 	description?: string;
 	startDate?: Date;
@@ -16,7 +16,7 @@ interface GetProjectsResponse {
 	finished?: boolean;
 }
 
-export const getProjects: RequestHandler<unknown, GetProjectsResponse[], unknown, unknown> = async (req, res, next) => {
+export const getProjects: RequestHandler<unknown, GetProjectsRes[], unknown, unknown> = async (req, res, next) => {
 	try {
 		const projects = await ProjectModel.find();
 		res.status(200).json(projects);
@@ -25,7 +25,7 @@ export const getProjects: RequestHandler<unknown, GetProjectsResponse[], unknown
 	}
 };
 
-interface CreateProjectBody {
+interface CreateProjectReq {
 	userId: string;
 	name?: string;
 	description?: string;
@@ -39,7 +39,7 @@ interface CreateProjectBody {
 	finished?: boolean;
 }
 
-export const createProject: RequestHandler<unknown, unknown, CreateProjectBody, unknown> = async (req, res, next) => {
+export const createProject: RequestHandler<unknown, unknown, CreateProjectReq, unknown> = async (req, res, next) => {
 	try {
 		const userId = req.body.userId;
 		const user = await UserModel.findById(userId);
@@ -92,6 +92,42 @@ export const createProject: RequestHandler<unknown, unknown, CreateProjectBody, 
 		});
 
 		return res.status(201).json(project);
+	} catch (error) {
+		next(error);
+	}
+};
+
+interface DeleteProjectParams {
+	projectId: string;
+}
+
+interface DeleteProjectReq {
+	userId: string;
+}
+
+export const deleteProject: RequestHandler<DeleteProjectParams, unknown, DeleteProjectReq, unknown> = async (
+	req,
+	res,
+	next
+) => {
+	try {
+		const projectId = req.params.projectId;
+		const project = await ProjectModel.findById(projectId);
+
+		if (!project) throw createHttpError(404, 'Project not found.');
+
+		const userId = req.body.userId;
+		const user = await UserModel.findById(userId);
+
+		if (!user) throw createHttpError(404, 'User not found.');
+
+		if (user.role !== UserRole.Admin) {
+			throw createHttpError(403, 'You are not authorized to delete any project.');
+		}
+
+		await project.deleteOne();
+
+		return res.status(200).json({ message: 'Project deleted successfully.' });
 	} catch (error) {
 		next(error);
 	}

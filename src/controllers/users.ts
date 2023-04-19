@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 import env from '../utils/validate-env';
 import fs from 'fs';
 
-interface RegisterUserBody {
+interface RegisterUserReq {
 	email?: string;
 	password?: string;
 	firstName?: string;
@@ -14,7 +14,7 @@ interface RegisterUserBody {
 	role?: UserRole;
 }
 
-export const registerUser: RequestHandler<unknown, unknown, RegisterUserBody, unknown> = async (req, res, next) => {
+export const registerUser: RequestHandler<unknown, unknown, RegisterUserReq, unknown> = async (req, res, next) => {
 	const { email, password, firstName, lastName, role } = req.body;
 
 	try {
@@ -59,13 +59,13 @@ export const registerUser: RequestHandler<unknown, unknown, RegisterUserBody, un
 	}
 };
 
-interface LoginUserBody {
+interface LoginUserReq {
 	email?: string;
 	password?: string;
 	rememberMe?: boolean;
 }
 
-export const loginUser: RequestHandler<unknown, unknown, LoginUserBody, unknown> = async (req, res, next) => {
+export const loginUser: RequestHandler<unknown, unknown, LoginUserReq, unknown> = async (req, res, next) => {
 	const { email, password, rememberMe } = req.body;
 
 	try {
@@ -97,15 +97,11 @@ interface DeleteUserParams {
 	userId: string;
 }
 
-interface DeleteUserBody {
+interface DeleteUserReq {
 	userId: string;
 }
 
-export const deleteUser: RequestHandler<DeleteUserParams, unknown, DeleteUserBody, unknown> = async (
-	req,
-	res,
-	next
-) => {
+export const deleteUser: RequestHandler<DeleteUserParams, unknown, DeleteUserReq, unknown> = async (req, res, next) => {
 	try {
 		const userId = req.params.userId;
 		const user = await UserModel.findById(userId);
