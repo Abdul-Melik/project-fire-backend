@@ -1,6 +1,7 @@
 import { RequestHandler } from 'express';
-import { ProjectModel, ProjectType, SalesChannel } from '../models/project';
 import createHttpError from 'http-errors';
+
+import { ProjectModel } from '../models/project';
 import { UserModel, UserRole } from '../models/user';
 import * as ProjectsInterfaces from '../interfaces/projects';
 

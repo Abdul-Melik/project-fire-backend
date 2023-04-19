@@ -1,11 +1,12 @@
 import { RequestHandler } from 'express';
 import createHttpError from 'http-errors';
-import bcrypt from 'bcrypt';
-import { UserModel, UserRole } from '../models/user';
 import jwt from 'jsonwebtoken';
-import env from '../utils/validate-env';
+import bcrypt from 'bcrypt';
 import fs from 'fs';
+
+import { UserModel, UserRole } from '../models/user';
 import * as UsersInterfaces from '../interfaces/users';
+import env from '../utils/validate-env';
 
 export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], unknown, unknown> = async (
 	req,

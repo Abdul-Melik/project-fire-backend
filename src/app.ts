@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { NextFunction, Request, Response } from 'express';
 import createHttpError, { isHttpError } from 'http-errors';
 import cors from 'cors';
+
 import UsersRoutes from './routes/users';
 import ProjectsRoutes from './routes/projects';
 
