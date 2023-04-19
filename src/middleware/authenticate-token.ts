@@ -20,7 +20,7 @@ const authenticateToken: RequestHandler<unknown, unknown, AuthenticatedRequest, 
 
 	try {
 		const decodedToken = jwt.verify(token, env.JWT_SECRET) as DecodedToken;
-		(req as AuthenticatedRequest).userId = decodedToken.userId;
+		req.body.userId = decodedToken.userId;
 		next();
 	} catch (err) {
 		return next(createHttpError(401, 'Invalid or expired token. Please log in again.'));
