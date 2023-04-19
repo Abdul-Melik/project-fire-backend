@@ -25,6 +25,32 @@ export const getProjects: RequestHandler<unknown, GetProjectsRes[], unknown, unk
 	}
 };
 
+interface GetProjectRes {
+	name?: string;
+	description?: string;
+	startDate?: Date;
+	endDate?: Date;
+	actualEndDate?: Date;
+	projectType?: ProjectType;
+	hourlyRate?: number;
+	projectValueBAM?: number;
+	salesChannel?: SalesChannel;
+	finished?: boolean;
+}
+
+export const getProjectById: RequestHandler = async (req, res, next) => {
+	try {
+		const projectId = req.params.projectId;
+		const project = await ProjectModel.findById(projectId);
+
+		if (!project) throw createHttpError(404, 'Project not found.');
+
+		return res.status(200).json(project);
+	} catch (error) {
+		next(error);
+	}
+};
+
 interface CreateProjectReq {
 	userId: string;
 	name?: string;
