@@ -97,7 +97,15 @@ interface DeleteUserParams {
 	userId: string;
 }
 
-export const deleteUser: RequestHandler<DeleteUserParams, unknown, unknown, unknown> = async (req, res, next) => {
+interface DeleteUserBody {
+	userId: string;
+}
+
+export const deleteUser: RequestHandler<DeleteUserParams, unknown, DeleteUserBody, unknown> = async (
+	req,
+	res,
+	next
+) => {
 	try {
 		const userId = req.params.userId;
 		const user = await UserModel.findById(userId);
@@ -107,6 +115,8 @@ export const deleteUser: RequestHandler<DeleteUserParams, unknown, unknown, unkn
 		if (user.role === UserRole.Admin) {
 			throw createHttpError(403, 'Cannot delete an admin user.');
 		}
+
+		if (req.body.userId === userId) throw createHttpError(403, 'You are not authorized to delete yourself.');
 
 		await user.deleteOne();
 
