@@ -3,6 +3,28 @@ import { ProjectModel, ProjectType, SalesChannel } from '../models/project';
 import createHttpError from 'http-errors';
 import { UserModel, UserRole } from '../models/user';
 
+interface GetProjectsResponse {
+	name?: string;
+	description?: string;
+	startDate?: Date;
+	endDate?: Date;
+	actualEndDate?: Date;
+	projectType?: ProjectType;
+	hourlyRate?: number;
+	projectValueBAM?: number;
+	salesChannel?: SalesChannel;
+	finished?: boolean;
+}
+
+export const getProjects: RequestHandler<unknown, GetProjectsResponse[], unknown, unknown> = async (req, res, next) => {
+	try {
+		const projects = await ProjectModel.find();
+		res.status(200).json(projects);
+	} catch (error) {
+		next(error);
+	}
+};
+
 interface CreateProjectBody {
 	userId: string;
 	name?: string;

@@ -4,6 +4,7 @@ import authenticateToken from '../middleware/authenticate-token';
 
 const router = express.Router();
 
+router.get('/', authenticateToken, ProjectsController.getProjects);
 router.post('/', authenticateToken, ProjectsController.createProject);
 
 export default router;
