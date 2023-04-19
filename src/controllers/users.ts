@@ -5,6 +5,31 @@ import { UserModel, UserRole } from '../models/user';
 import jwt from 'jsonwebtoken';
 import env from '../utils/validate-env';
 import fs from 'fs';
+import { Types } from 'mongoose';
+
+interface GetUsersRes {
+	id: Types.ObjectId;
+	email: string;
+	firstName: string;
+	lastName: string;
+	image?: string;
+}
+
+export const getUsers: RequestHandler<unknown, GetUsersRes[], unknown, unknown> = async (req, res, next) => {
+	try {
+		const users = await UserModel.find().select('-password -role');
+		const usersResponse = users.map(user => ({
+			id: user._id,
+			email: user.email,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			image: user.image,
+		}));
+		res.status(200).json(usersResponse);
+	} catch (error) {
+		next(error);
+	}
+};
 
 interface RegisterUserReq {
 	email?: string;
