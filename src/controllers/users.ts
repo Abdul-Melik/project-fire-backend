@@ -5,17 +5,13 @@ import { UserModel, UserRole } from '../models/user';
 import jwt from 'jsonwebtoken';
 import env from '../utils/validate-env';
 import fs from 'fs';
-import { Types } from 'mongoose';
+import * as UsersInterfaces from '../interfaces/users';
 
-interface GetUsersRes {
-	id: Types.ObjectId;
-	email: string;
-	firstName: string;
-	lastName: string;
-	image?: string;
-}
-
-export const getUsers: RequestHandler<unknown, GetUsersRes[], unknown, unknown> = async (req, res, next) => {
+export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], unknown, unknown> = async (
+	req,
+	res,
+	next
+) => {
 	try {
 		const users = await UserModel.find().select('-password -role');
 		const usersResponse = users.map(user => ({
@@ -31,23 +27,12 @@ export const getUsers: RequestHandler<unknown, GetUsersRes[], unknown, unknown> 
 	}
 };
 
-interface GetUserByIdParams {
-	userId: string;
-}
-
-interface GetUserByIdRes {
-	id: Types.ObjectId;
-	email: string;
-	firstName: string;
-	lastName: string;
-	image?: string;
-}
-
-export const getUserById: RequestHandler<GetUserByIdParams, GetUserByIdRes, unknown, unknown> = async (
-	req,
-	res,
-	next
-) => {
+export const getUserById: RequestHandler<
+	UsersInterfaces.GetUserByIdParams,
+	UsersInterfaces.GetUserByIdRes,
+	unknown,
+	unknown
+> = async (req, res, next) => {
 	try {
 		const userId = req.params.userId;
 		const user = await UserModel.findById(userId).select('-password -role');
@@ -68,15 +53,11 @@ export const getUserById: RequestHandler<GetUserByIdParams, GetUserByIdRes, unkn
 	}
 };
 
-interface RegisterUserReq {
-	email?: string;
-	password?: string;
-	firstName?: string;
-	lastName?: string;
-	role?: UserRole;
-}
-
-export const registerUser: RequestHandler<unknown, unknown, RegisterUserReq, unknown> = async (req, res, next) => {
+export const registerUser: RequestHandler<unknown, unknown, UsersInterfaces.RegisterUserReq, unknown> = async (
+	req,
+	res,
+	next
+) => {
 	const { email, password, firstName, lastName, role } = req.body;
 
 	try {
@@ -121,13 +102,11 @@ export const registerUser: RequestHandler<unknown, unknown, RegisterUserReq, unk
 	}
 };
 
-interface LoginUserReq {
-	email?: string;
-	password?: string;
-	rememberMe?: boolean;
-}
-
-export const loginUser: RequestHandler<unknown, unknown, LoginUserReq, unknown> = async (req, res, next) => {
+export const loginUser: RequestHandler<unknown, unknown, UsersInterfaces.LoginUserReq, unknown> = async (
+	req,
+	res,
+	next
+) => {
 	const { email, password, rememberMe } = req.body;
 
 	try {
@@ -155,15 +134,12 @@ export const loginUser: RequestHandler<unknown, unknown, LoginUserReq, unknown> 
 	}
 };
 
-interface DeleteUserParams {
-	userId: string;
-}
-
-interface DeleteUserReq {
-	userId: string;
-}
-
-export const deleteUser: RequestHandler<DeleteUserParams, unknown, DeleteUserReq, unknown> = async (req, res, next) => {
+export const deleteUser: RequestHandler<
+	UsersInterfaces.DeleteUserParams,
+	unknown,
+	UsersInterfaces.DeleteUserReq,
+	unknown
+> = async (req, res, next) => {
 	try {
 		const userId = req.params.userId;
 		const user = await UserModel.findById(userId);

@@ -2,21 +2,13 @@ import { RequestHandler } from 'express';
 import { ProjectModel, ProjectType, SalesChannel } from '../models/project';
 import createHttpError from 'http-errors';
 import { UserModel, UserRole } from '../models/user';
+import * as ProjectsInterfaces from '../interfaces/projects';
 
-interface GetProjectsRes {
-	name?: string;
-	description?: string;
-	startDate?: Date;
-	endDate?: Date;
-	actualEndDate?: Date;
-	projectType?: ProjectType;
-	hourlyRate?: number;
-	projectValueBAM?: number;
-	salesChannel?: SalesChannel;
-	finished?: boolean;
-}
-
-export const getProjects: RequestHandler<unknown, GetProjectsRes[], unknown, unknown> = async (req, res, next) => {
+export const getProjects: RequestHandler<unknown, ProjectsInterfaces.GetProjectsRes[], unknown, unknown> = async (
+	req,
+	res,
+	next
+) => {
 	try {
 		const projects = await ProjectModel.find();
 		res.status(200).json(projects);
@@ -25,20 +17,12 @@ export const getProjects: RequestHandler<unknown, GetProjectsRes[], unknown, unk
 	}
 };
 
-interface GetProjectRes {
-	name?: string;
-	description?: string;
-	startDate?: Date;
-	endDate?: Date;
-	actualEndDate?: Date;
-	projectType?: ProjectType;
-	hourlyRate?: number;
-	projectValueBAM?: number;
-	salesChannel?: SalesChannel;
-	finished?: boolean;
-}
-
-export const getProjectById: RequestHandler = async (req, res, next) => {
+export const getProjectById: RequestHandler<
+	ProjectsInterfaces.GetProjectByIdParams,
+	ProjectsInterfaces.GetProjectByIdRes,
+	unknown,
+	unknown
+> = async (req, res, next) => {
 	try {
 		const projectId = req.params.projectId;
 		const project = await ProjectModel.findById(projectId);
@@ -51,21 +35,11 @@ export const getProjectById: RequestHandler = async (req, res, next) => {
 	}
 };
 
-interface CreateProjectReq {
-	userId: string;
-	name?: string;
-	description?: string;
-	startDate?: Date;
-	endDate?: Date;
-	actualEndDate?: Date;
-	projectType?: ProjectType;
-	hourlyRate?: number;
-	projectValueBAM?: number;
-	salesChannel?: SalesChannel;
-	finished?: boolean;
-}
-
-export const createProject: RequestHandler<unknown, unknown, CreateProjectReq, unknown> = async (req, res, next) => {
+export const createProject: RequestHandler<unknown, unknown, ProjectsInterfaces.CreateProjectReq, unknown> = async (
+	req,
+	res,
+	next
+) => {
 	try {
 		const userId = req.body.userId;
 		const user = await UserModel.findById(userId);
@@ -123,19 +97,12 @@ export const createProject: RequestHandler<unknown, unknown, CreateProjectReq, u
 	}
 };
 
-interface DeleteProjectParams {
-	projectId: string;
-}
-
-interface DeleteProjectReq {
-	userId: string;
-}
-
-export const deleteProject: RequestHandler<DeleteProjectParams, unknown, DeleteProjectReq, unknown> = async (
-	req,
-	res,
-	next
-) => {
+export const deleteProject: RequestHandler<
+	ProjectsInterfaces.DeleteProjectParams,
+	unknown,
+	ProjectsInterfaces.DeleteProjectReq,
+	unknown
+> = async (req, res, next) => {
 	try {
 		const projectId = req.params.projectId;
 		const project = await ProjectModel.findById(projectId);
