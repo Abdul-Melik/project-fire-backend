@@ -9,15 +9,16 @@ import fs from 'fs';
 interface RegisterUserBody {
 	email?: string;
 	password?: string;
-	name?: string;
+	firstName?: string;
+	lastName?: string;
 	role?: UserRole;
 }
 
 export const registerUser: RequestHandler<unknown, unknown, RegisterUserBody, unknown> = async (req, res, next) => {
-	const { email, password, name, role } = req.body;
+	const { email, password, firstName, lastName, role } = req.body;
 
 	try {
-		if (!email || !password || !name || !role) throw createHttpError(400, 'Missing required fields.');
+		if (!email || !password || !firstName || !lastName || !role) throw createHttpError(400, 'Missing required fields.');
 
 		const existingUser = await UserModel.findOne({ email });
 		if (existingUser) throw createHttpError(409, 'Email already registered.');
@@ -38,7 +39,8 @@ export const registerUser: RequestHandler<unknown, unknown, RegisterUserBody, un
 		const user = await UserModel.create({
 			email,
 			password: hashedPassword,
-			name,
+			firstName,
+			lastName,
 			role,
 			image: imageData,
 		});
@@ -51,7 +53,7 @@ export const registerUser: RequestHandler<unknown, unknown, RegisterUserBody, un
 
 		return res
 			.status(201)
-			.json({ user: { id: user._id, email, name, image: imageData }, token, expiresIn: expireLength });
+			.json({ user: { id: user._id, email, firstName, lastName, image: imageData }, token, expiresIn: expireLength });
 	} catch (error) {
 		next(error);
 	}
@@ -81,9 +83,11 @@ export const loginUser: RequestHandler<unknown, unknown, LoginUserBody, unknown>
 			expiresIn: expireLength,
 		});
 
-		return res
-			.status(200)
-			.json({ user: { id: user._id, email, name: user.name, image: user.image }, token, expiresIn: expireLength });
+		return res.status(200).json({
+			user: { id: user._id, email, firstName: user.firstName, lastName: user.lastName, image: user.image },
+			token,
+			expiresIn: expireLength,
+		});
 	} catch (error) {
 		next(error);
 	}
