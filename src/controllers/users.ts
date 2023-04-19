@@ -31,6 +31,43 @@ export const getUsers: RequestHandler<unknown, GetUsersRes[], unknown, unknown> 
 	}
 };
 
+interface GetUserByIdParams {
+	userId: string;
+}
+
+interface GetUserByIdRes {
+	id: Types.ObjectId;
+	email: string;
+	firstName: string;
+	lastName: string;
+	image?: string;
+}
+
+export const getUserById: RequestHandler<GetUserByIdParams, GetUserByIdRes, unknown, unknown> = async (
+	req,
+	res,
+	next
+) => {
+	try {
+		const userId = req.params.userId;
+		const user = await UserModel.findById(userId).select('-password -role');
+
+		if (!user) throw createHttpError(404, 'User not found.');
+
+		const userResponse = {
+			id: user._id,
+			email: user.email,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			image: user.image,
+		};
+
+		return res.status(200).json(userResponse);
+	} catch (error) {
+		next(error);
+	}
+};
+
 interface RegisterUserReq {
 	email?: string;
 	password?: string;
