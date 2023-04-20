@@ -6,6 +6,7 @@ interface GetUsersRes {
 	email: string;
 	firstName: string;
 	lastName: string;
+	role: UserRole;
 	image?: string;
 }
 
@@ -18,6 +19,7 @@ interface GetUserByIdRes {
 	email: string;
 	firstName: string;
 	lastName: string;
+	role: UserRole;
 	image?: string;
 }
 

@@ -14,12 +14,13 @@ export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], un
 	next
 ) => {
 	try {
-		const users = await UserModel.find().select('-password -role');
+		const users = await UserModel.find().select('-password');
 		const usersResponse = users.map(user => ({
 			id: user._id,
 			email: user.email,
 			firstName: user.firstName,
 			lastName: user.lastName,
+			role: user.role,
 			image: user.image,
 		}));
 		res.status(200).json(usersResponse);
@@ -36,7 +37,7 @@ export const getUserById: RequestHandler<
 > = async (req, res, next) => {
 	try {
 		const userId = req.params.userId;
-		const user = await UserModel.findById(userId).select('-password -role');
+		const user = await UserModel.findById(userId).select('-password');
 
 		if (!user) throw createHttpError(404, 'User not found.');
 
@@ -45,6 +46,7 @@ export const getUserById: RequestHandler<
 			email: user.email,
 			firstName: user.firstName,
 			lastName: user.lastName,
+			role: user.role,
 			image: user.image,
 		};
 
@@ -95,9 +97,11 @@ export const registerUser: RequestHandler<unknown, unknown, UsersInterfaces.Regi
 			expiresIn: expireLength,
 		});
 
-		return res
-			.status(201)
-			.json({ user: { id: user._id, email, firstName, lastName, image: imageData }, token, expiresIn: expireLength });
+		return res.status(201).json({
+			user: { id: user._id, email, firstName, lastName, role, image: imageData },
+			token,
+			expiresIn: expireLength,
+		});
 	} catch (error) {
 		next(error);
 	}
@@ -126,7 +130,14 @@ export const loginUser: RequestHandler<unknown, unknown, UsersInterfaces.LoginUs
 		});
 
 		return res.status(200).json({
-			user: { id: user._id, email, firstName: user.firstName, lastName: user.lastName, image: user.image },
+			user: {
+				id: user._id,
+				email,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				role: user.role,
+				image: user.image,
+			},
 			token,
 			expiresIn: expireLength,
 		});
