@@ -36,6 +36,60 @@ export const getProjectById: RequestHandler<
 	}
 };
 
+export const getProjectsInfo: RequestHandler = async (req, res, next) => {
+	try {
+		const totalProjects = await ProjectModel.countDocuments();
+		const totalValue = await ProjectModel.aggregate([{ $group: { _id: null, total: { $sum: '$projectValueBAM' } } }]);
+		const averageValue = await ProjectModel.aggregate([
+			{ $group: { _id: null, average: { $avg: '$projectValueBAM' } } },
+		]);
+		const averageRate = await ProjectModel.aggregate([{ $group: { _id: null, average: { $avg: '$hourlyRate' } } }]);
+		const salesChannelPercentage = await ProjectModel.aggregate([
+			{
+				$group: {
+					_id: '$salesChannel',
+					count: { $sum: 1 },
+				},
+			},
+			{
+				$project: {
+					_id: 0,
+					salesChannel: '$_id',
+					percentage: {
+						$multiply: [{ $divide: ['$count', totalProjects] }, 100],
+					},
+				},
+			},
+		]);
+		const projectTypeCount = await ProjectModel.aggregate([
+			{
+				$group: {
+					_id: '$projectType',
+					count: { $sum: 1 },
+				},
+			},
+			{
+				$project: {
+					_id: 0,
+					projectType: '$_id',
+					count: 1,
+				},
+			},
+		]);
+
+		res.json({
+			totalProjects,
+			totalValue: totalValue[0].total,
+			averageValue: averageValue[0].average,
+			averageHourlyRate: averageRate[0].average,
+			salesChannelPercentage,
+			projectTypeCount,
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+
 export const createProject: RequestHandler<unknown, unknown, ProjectsInterfaces.CreateProjectReq, unknown> = async (
 	req,
 	res,
