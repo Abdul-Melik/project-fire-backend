@@ -1,17 +1,53 @@
 import { RequestHandler } from 'express';
 import createHttpError from 'http-errors';
 
-import { ProjectModel } from '../models/project';
+import { ProjectModel, ProjectType, SalesChannel } from '../models/project';
 import { UserModel, UserRole } from '../models/user';
 import * as ProjectsInterfaces from '../interfaces/projects';
 
-export const getProjects: RequestHandler<unknown, ProjectsInterfaces.GetProjectsRes[], unknown, unknown> = async (
-	req,
-	res,
-	next
-) => {
+type Query = {
+	name?: {
+		$regex: string;
+		$options: string;
+	};
+	startDate?: {
+		$gte: Date;
+	};
+	endDate?: {
+		$lte: Date;
+	};
+	projectType?: ProjectType;
+	salesChannel?: SalesChannel;
+};
+
+export const getProjects: RequestHandler<
+	unknown,
+	ProjectsInterfaces.GetProjectsRes[],
+	unknown,
+	ProjectsInterfaces.GetProjectsQueryParams
+> = async (req, res, next) => {
 	try {
-		const projects = await ProjectModel.find();
+		const { name, startDate, endDate, projectType, salesChannel } = req.query;
+		const query: Query = {};
+
+		if (name) {
+			query['name'] = { $regex: name, $options: 'i' };
+		}
+
+		if (startDate && endDate) {
+			query['startDate'] = { $gte: startDate };
+			query['endDate'] = { $lte: endDate };
+		}
+
+		if (projectType) {
+			query['projectType'] = projectType;
+		}
+
+		if (salesChannel) {
+			query['salesChannel'] = salesChannel;
+		}
+
+		const projects = await ProjectModel.find(query);
 		res.status(200).json(projects);
 	} catch (error) {
 		next(error);

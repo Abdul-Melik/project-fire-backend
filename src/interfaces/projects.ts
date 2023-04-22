@@ -13,6 +13,14 @@ interface GetProjectsRes {
 	finished?: boolean;
 }
 
+interface GetProjectsQueryParams {
+	name?: string;
+	startDate?: Date;
+	endDate?: Date;
+	projectType?: ProjectType;
+	salesChannel?: SalesChannel;
+}
+
 interface GetProjectByIdParams {
 	projectId: string;
 }
@@ -54,6 +62,7 @@ interface DeleteProjectReq {
 
 export {
 	GetProjectsRes,
+	GetProjectsQueryParams,
 	GetProjectByIdParams,
 	GetProjectByIdRes,
 	CreateProjectReq,
