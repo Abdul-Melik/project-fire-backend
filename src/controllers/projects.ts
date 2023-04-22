@@ -38,13 +38,30 @@ export const getProjectById: RequestHandler<
 
 export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 	try {
-		const totalProjects = await ProjectModel.countDocuments();
-		const totalValue = await ProjectModel.aggregate([{ $group: { _id: null, total: { $sum: '$projectValueBAM' } } }]);
+		const { year } = req.query;
+
+		const startDate = new Date(`${year}-01-01`);
+		const endDate = new Date(`${year}-12-31`);
+
+		const filteredProjects = await ProjectModel.find({
+			startDate: { $gte: startDate, $lte: endDate },
+		});
+
+		const totalProjects = filteredProjects.length;
+		const totalValue = await ProjectModel.aggregate([
+			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
+			{ $group: { _id: null, total: { $sum: '$projectValueBAM' } } },
+		]);
 		const averageValue = await ProjectModel.aggregate([
+			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
 			{ $group: { _id: null, average: { $avg: '$projectValueBAM' } } },
 		]);
-		const averageRate = await ProjectModel.aggregate([{ $group: { _id: null, average: { $avg: '$hourlyRate' } } }]);
+		const averageRate = await ProjectModel.aggregate([
+			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
+			{ $group: { _id: null, average: { $avg: '$hourlyRate' } } },
+		]);
 		const salesChannelPercentage = await ProjectModel.aggregate([
+			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
 			{
 				$group: {
 					_id: '$salesChannel',
@@ -62,6 +79,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 			},
 		]);
 		const projectTypeCount = await ProjectModel.aggregate([
+			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
 			{
 				$group: {
 					_id: '$projectType',
@@ -79,9 +97,9 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 
 		res.json({
 			totalProjects,
-			totalValue: totalValue[0].total,
-			averageValue: averageValue[0].average,
-			averageHourlyRate: averageRate[0].average,
+			totalValue: totalValue[0]?.total || 0,
+			averageValue: averageValue[0]?.average || 0,
+			averageHourlyRate: averageRate[0]?.average || 0,
 			salesChannelPercentage,
 			projectTypeCount,
 		});
