@@ -2,7 +2,7 @@ import { InferSchemaType, Schema, model } from 'mongoose';
 
 enum UserRole {
 	Admin = 'admin',
-	User = 'user',
+	Guest = 'guest',
 }
 
 const userSchema = new Schema({
@@ -31,10 +31,15 @@ const userSchema = new Schema({
 	image: {
 		type: String,
 	},
+	employee: {
+		type: Schema.Types.ObjectId,
+		ref: 'Employee',
+		required: true,
+	},
 });
 
 type User = InferSchemaType<typeof userSchema>;
 
 const UserModel = model<User>('User', userSchema);
 
-export { UserModel, UserRole };
+export { UserModel, User, UserRole };

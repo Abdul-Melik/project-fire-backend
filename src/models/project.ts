@@ -61,4 +61,4 @@ type Project = InferSchemaType<typeof projectSchema>;
 
 const ProjectModel = model<Project>('Project', projectSchema);
 
-export { ProjectModel, ProjectType, SalesChannel };
+export { ProjectModel, Project, ProjectType, SalesChannel };

@@ -8,6 +8,7 @@ interface GetUsersRes {
 	lastName: string;
 	role: UserRole;
 	image?: string;
+	employee: Types.ObjectId;
 }
 
 interface GetUserByIdParams {
@@ -21,6 +22,7 @@ interface GetUserByIdRes {
 	lastName: string;
 	role: UserRole;
 	image?: string;
+	employee: Types.ObjectId;
 }
 
 interface RegisterUserReq {
@@ -29,12 +31,50 @@ interface RegisterUserReq {
 	firstName?: string;
 	lastName?: string;
 	role?: UserRole;
+	department?: string;
+	salary?: number;
+	techStack?: string[];
+}
+
+interface RegisterUserRes {
+	user: {
+		id: Types.ObjectId;
+		email: string;
+		firstName: string;
+		lastName: string;
+		role: UserRole;
+		image?: string;
+		employee: {
+			id: Types.ObjectId;
+			firstName: string;
+			lastName: string;
+			department: string;
+			salary: number;
+			techStack: string[];
+		};
+	};
+	token: string;
+	expiresIn: number;
 }
 
 interface LoginUserReq {
 	email?: string;
 	password?: string;
 	rememberMe?: boolean;
+}
+
+interface LoginUserRes {
+	user: {
+		id: Types.ObjectId;
+		email: string;
+		firstName: string;
+		lastName: string;
+		role: UserRole;
+		image?: string;
+		employee: Types.ObjectId;
+	};
+	token: string;
+	expiresIn: number;
 }
 
 interface DeleteUserParams {
@@ -50,7 +90,9 @@ export {
 	GetUserByIdParams,
 	GetUserByIdRes,
 	RegisterUserReq,
+	RegisterUserRes,
 	LoginUserReq,
+	LoginUserRes,
 	DeleteUserParams,
 	DeleteUserReq,
 };

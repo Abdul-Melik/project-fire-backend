@@ -4,9 +4,10 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import fs from 'fs';
 
-import { UserModel, UserRole } from '../models/user';
-import * as UsersInterfaces from '../interfaces/users';
 import env from '../utils/validate-env';
+import * as UsersInterfaces from '../interfaces/users';
+import { User, UserModel, UserRole } from '../models/user';
+import { EmployeeModel } from '../models/employee';
 
 export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], unknown, unknown> = async (
 	req,
@@ -14,7 +15,8 @@ export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], un
 	next
 ) => {
 	try {
-		const users = await UserModel.find().select('-password');
+		const users = await UserModel.find().populate('employee', '-password');
+
 		const usersResponse = users.map(user => ({
 			id: user._id,
 			email: user.email,
@@ -22,8 +24,10 @@ export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], un
 			lastName: user.lastName,
 			role: user.role,
 			image: user.image,
+			employee: user.employee,
 		}));
-		res.status(200).json(usersResponse);
+
+		return res.status(200).json(usersResponse);
 	} catch (error) {
 		next(error);
 	}
@@ -37,8 +41,8 @@ export const getUserById: RequestHandler<
 > = async (req, res, next) => {
 	try {
 		const userId = req.params.userId;
-		const user = await UserModel.findById(userId).select('-password');
 
+		const user = await UserModel.findById(userId).populate('employee', '-password');
 		if (!user) throw createHttpError(404, 'User not found.');
 
 		const userResponse = {
@@ -48,6 +52,7 @@ export const getUserById: RequestHandler<
 			lastName: user.lastName,
 			role: user.role,
 			image: user.image,
+			employee: user.employee,
 		};
 
 		return res.status(200).json(userResponse);
@@ -56,15 +61,20 @@ export const getUserById: RequestHandler<
 	}
 };
 
-export const registerUser: RequestHandler<unknown, unknown, UsersInterfaces.RegisterUserReq, unknown> = async (
-	req,
-	res,
-	next
-) => {
-	const { email, password, firstName, lastName, role } = req.body;
+export const registerUser: RequestHandler<
+	unknown,
+	UsersInterfaces.RegisterUserRes,
+	UsersInterfaces.RegisterUserReq,
+	unknown
+> = async (req, res, next) => {
+	const { email, password, firstName, lastName, role, department, salary, techStack } = req.body;
+
+	let user;
+	let employee;
 
 	try {
-		if (!email || !password || !firstName || !lastName || !role) throw createHttpError(400, 'Missing required fields.');
+		if (!email || !password || !firstName || !lastName || !role || !department || !salary || !techStack)
+			throw createHttpError(400, 'Missing required fields.');
 
 		const existingUser = await UserModel.findOne({ email });
 		if (existingUser) throw createHttpError(409, 'Email already registered.');
@@ -78,17 +88,25 @@ export const registerUser: RequestHandler<unknown, unknown, UsersInterfaces.Regi
 			const fileType = req.file.mimetype.split('/')[1];
 			const base64EncodedData = buffer.toString('base64');
 			imageData = `data:image/${fileType};base64,${base64EncodedData}`;
-
 			await fs.promises.unlink(req.file.path);
 		}
 
-		const user = await UserModel.create({
+		employee = await EmployeeModel.create({
+			firstName,
+			lastName,
+			department,
+			salary,
+			techStack,
+		});
+
+		user = await UserModel.create({
 			email,
 			password: hashedPassword,
 			firstName,
 			lastName,
 			role,
 			image: imageData,
+			employee: employee._id,
 		});
 
 		// 1d in milliseconds
@@ -98,26 +116,45 @@ export const registerUser: RequestHandler<unknown, unknown, UsersInterfaces.Regi
 		});
 
 		return res.status(201).json({
-			user: { id: user._id, email, firstName, lastName, role, image: imageData },
+			user: {
+				id: user._id,
+				email,
+				firstName,
+				lastName,
+				role,
+				image: imageData,
+				employee: {
+					id: employee._id,
+					firstName: employee.firstName,
+					lastName: employee.lastName,
+					department: employee.department,
+					salary: employee.salary,
+					techStack: employee.techStack,
+				},
+			},
 			token,
 			expiresIn: expireLength,
 		});
 	} catch (error) {
+		if (employee && !user) {
+			await employee.deleteOne();
+		}
 		next(error);
 	}
 };
 
-export const loginUser: RequestHandler<unknown, unknown, UsersInterfaces.LoginUserReq, unknown> = async (
-	req,
-	res,
-	next
-) => {
+export const loginUser: RequestHandler<
+	unknown,
+	UsersInterfaces.LoginUserRes,
+	UsersInterfaces.LoginUserReq,
+	unknown
+> = async (req, res, next) => {
 	const { email, password, rememberMe } = req.body;
 
 	try {
 		if (!email || !password) throw createHttpError(400, 'Missing required fields.');
 
-		const user = await UserModel.findOne({ email });
+		const user = await UserModel.findOne({ email }).populate('employee');
 		if (!user) throw createHttpError(401, 'Invalid email or password.');
 
 		const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -137,6 +174,7 @@ export const loginUser: RequestHandler<unknown, unknown, UsersInterfaces.LoginUs
 				lastName: user.lastName,
 				role: user.role,
 				image: user.image,
+				employee: user.employee,
 			},
 			token,
 			expiresIn: expireLength,
@@ -154,8 +192,8 @@ export const deleteUser: RequestHandler<
 > = async (req, res, next) => {
 	try {
 		const userId = req.params.userId;
-		const user = await UserModel.findById(userId);
 
+		const user = await UserModel.findById(userId);
 		if (!user) throw createHttpError(404, 'User not found.');
 
 		if (user.role === UserRole.Admin) {
@@ -164,7 +202,11 @@ export const deleteUser: RequestHandler<
 
 		if (req.body.userId === userId) throw createHttpError(403, 'You are not authorized to delete yourself.');
 
+		const employee = await EmployeeModel.findById(user.employee);
+		if (!employee) throw createHttpError(404, 'Employee not found.');
+
 		await user.deleteOne();
+		await employee.deleteOne();
 
 		return res.status(200).json({ message: 'User deleted successfully.' });
 	} catch (error) {
