@@ -6,7 +6,7 @@ import fs from 'fs';
 
 import env from '../utils/validate-env';
 import * as UsersInterfaces from '../interfaces/users';
-import { User, UserModel, UserRole } from '../models/user';
+import { UserModel, UserRole } from '../models/user';
 import { EmployeeModel } from '../models/employee';
 
 export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], unknown, unknown> = async (
@@ -15,7 +15,7 @@ export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], un
 	next
 ) => {
 	try {
-		const users = await UserModel.find().populate('employee', '-password');
+		const users = await UserModel.find().populate('employee').select('-password');
 
 		const usersResponse = users.map(user => ({
 			id: user._id,
@@ -42,7 +42,7 @@ export const getUserById: RequestHandler<
 	try {
 		const userId = req.params.userId;
 
-		const user = await UserModel.findById(userId).populate('employee', '-password');
+		const user = await UserModel.findById(userId).populate('employee').select('-password');
 		if (!user) throw createHttpError(404, 'User not found.');
 
 		const userResponse = {
@@ -195,10 +195,7 @@ export const deleteUser: RequestHandler<
 
 		const user = await UserModel.findById(userId);
 		if (!user) throw createHttpError(404, 'User not found.');
-
-		if (user.role === UserRole.Admin) {
-			throw createHttpError(403, 'Cannot delete an admin user.');
-		}
+		if (user.role === UserRole.Admin) throw createHttpError(403, 'Cannot delete an admin user.');
 
 		if (req.body.userId === userId) throw createHttpError(403, 'You are not authorized to delete yourself.');
 

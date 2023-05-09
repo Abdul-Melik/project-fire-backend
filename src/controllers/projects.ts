@@ -48,6 +48,7 @@ export const getProjects: RequestHandler<
 		}
 
 		const projects = await ProjectModel.find(query);
+
 		res.status(200).json(projects);
 	} catch (error) {
 		next(error);
@@ -62,8 +63,8 @@ export const getProjectById: RequestHandler<
 > = async (req, res, next) => {
 	try {
 		const projectId = req.params.projectId;
-		const project = await ProjectModel.findById(projectId);
 
+		const project = await ProjectModel.findById(projectId);
 		if (!project) throw createHttpError(404, 'Project not found.');
 
 		return res.status(200).json(project);
@@ -151,10 +152,9 @@ export const createProject: RequestHandler<unknown, unknown, ProjectsInterfaces.
 ) => {
 	try {
 		const userId = req.body.userId;
+
 		const user = await UserModel.findById(userId);
-
 		if (!user) throw createHttpError(404, 'User not found.');
-
 		if (user.role !== UserRole.Admin) {
 			throw createHttpError(403, 'This user is not allowed to create a project.');
 		}
@@ -214,18 +214,15 @@ export const deleteProject: RequestHandler<
 > = async (req, res, next) => {
 	try {
 		const projectId = req.params.projectId;
-		const project = await ProjectModel.findById(projectId);
 
+		const project = await ProjectModel.findById(projectId);
 		if (!project) throw createHttpError(404, 'Project not found.');
 
 		const userId = req.body.userId;
+
 		const user = await UserModel.findById(userId);
-
 		if (!user) throw createHttpError(404, 'User not found.');
-
-		if (user.role !== UserRole.Admin) {
-			throw createHttpError(403, 'You are not authorized to delete any project.');
-		}
+		if (user.role !== UserRole.Admin) throw createHttpError(403, 'You are not authorized to delete any project.');
 
 		await project.deleteOne();
 

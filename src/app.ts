@@ -4,6 +4,7 @@ import createHttpError, { isHttpError } from 'http-errors';
 import cors from 'cors';
 
 import UsersRoutes from './routes/users';
+import EmployeesRoutes from './routes/employees';
 import ProjectsRoutes from './routes/projects';
 
 const app = express();
@@ -12,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/users', UsersRoutes);
+app.use('/api/employees', EmployeesRoutes);
 app.use('/api/projects', ProjectsRoutes);
 
 app.use((req, res, next) => {
