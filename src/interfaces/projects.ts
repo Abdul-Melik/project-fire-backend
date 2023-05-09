@@ -1,4 +1,6 @@
-import { ProjectType, SalesChannel } from '../models/project';
+import { Types } from 'mongoose';
+
+import { ProjectType, SalesChannel, ProjectStatus } from '../models/project';
 
 interface GetProjectsRes {
 	name?: string;
@@ -10,6 +12,7 @@ interface GetProjectsRes {
 	hourlyRate?: number;
 	projectValueBAM?: number;
 	salesChannel?: SalesChannel;
+	projectStatus?: ProjectStatus;
 	finished?: boolean;
 }
 
@@ -19,6 +22,7 @@ interface GetProjectsQueryParams {
 	endDate?: Date;
 	projectType?: ProjectType;
 	salesChannel?: SalesChannel;
+	projectStatus?: ProjectStatus;
 }
 
 interface GetProjectByIdParams {
@@ -35,6 +39,7 @@ interface GetProjectByIdRes {
 	hourlyRate?: number;
 	projectValueBAM?: number;
 	salesChannel?: SalesChannel;
+	projectStatus?: ProjectStatus;
 	finished?: boolean;
 }
 
@@ -49,7 +54,14 @@ interface CreateProjectReq {
 	hourlyRate?: number;
 	projectValueBAM?: number;
 	salesChannel?: SalesChannel;
+	projectStatus?: ProjectStatus;
 	finished?: boolean;
+	employees?: [
+		{
+			employee?: Types.ObjectId;
+			fullTime?: boolean;
+		}
+	];
 }
 
 interface DeleteProjectParams {

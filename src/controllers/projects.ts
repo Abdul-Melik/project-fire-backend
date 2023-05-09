@@ -1,9 +1,10 @@
 import { RequestHandler } from 'express';
 import createHttpError from 'http-errors';
 
-import { ProjectModel, ProjectType, SalesChannel } from '../models/project';
-import { UserModel, UserRole } from '../models/user';
 import * as ProjectsInterfaces from '../interfaces/projects';
+import { ProjectModel, ProjectType, SalesChannel, ProjectStatus } from '../models/project';
+import { UserModel, UserRole } from '../models/user';
+import { EmployeeModel } from '../models/employee';
 
 type Query = {
 	name?: {
@@ -18,6 +19,7 @@ type Query = {
 	};
 	projectType?: ProjectType;
 	salesChannel?: SalesChannel;
+	projectStatus?: ProjectStatus;
 };
 
 export const getProjects: RequestHandler<
@@ -27,7 +29,7 @@ export const getProjects: RequestHandler<
 	ProjectsInterfaces.GetProjectsQueryParams
 > = async (req, res, next) => {
 	try {
-		const { name, startDate, endDate, projectType, salesChannel } = req.query;
+		const { name, startDate, endDate, projectType, salesChannel, projectStatus } = req.query;
 		const query: Query = {};
 
 		if (name) {
@@ -47,7 +49,11 @@ export const getProjects: RequestHandler<
 			query['salesChannel'] = salesChannel;
 		}
 
-		const projects = await ProjectModel.find(query);
+		if (projectStatus) {
+			query['projectStatus'] = projectStatus;
+		}
+
+		const projects = await ProjectModel.find(query).populate('employees.employee');
 
 		res.status(200).json(projects);
 	} catch (error) {
@@ -64,7 +70,7 @@ export const getProjectById: RequestHandler<
 	try {
 		const projectId = req.params.projectId;
 
-		const project = await ProjectModel.findById(projectId);
+		const project = await ProjectModel.findById(projectId).populate('employees.employee');
 		if (!project) throw createHttpError(404, 'Project not found.');
 
 		return res.status(200).json(project);
@@ -80,23 +86,25 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 		const startDate = new Date(`${year}-01-01`);
 		const endDate = new Date(`${year}-12-31`);
 
-		const filteredProjects = await ProjectModel.find({
+		const totalProjects = await ProjectModel.countDocuments({
 			startDate: { $gte: startDate, $lte: endDate },
 		});
 
-		const totalProjects = filteredProjects.length;
 		const totalValue = await ProjectModel.aggregate([
 			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
 			{ $group: { _id: null, total: { $sum: '$projectValueBAM' } } },
 		]);
+
 		const averageValue = await ProjectModel.aggregate([
 			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
 			{ $group: { _id: null, average: { $avg: '$projectValueBAM' } } },
 		]);
+
 		const averageRate = await ProjectModel.aggregate([
 			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
 			{ $group: { _id: null, average: { $avg: '$hourlyRate' } } },
 		]);
+
 		const salesChannelPercentage = await ProjectModel.aggregate([
 			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
 			{
@@ -115,6 +123,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 				},
 			},
 		]);
+
 		const projectTypeCount = await ProjectModel.aggregate([
 			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
 			{
@@ -132,6 +141,67 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 			},
 		]);
 
+		const revenueCostProfitPerProject = await ProjectModel.aggregate([
+			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
+			{
+				$lookup: {
+					from: 'employees',
+					localField: 'employees.employee',
+					foreignField: '_id',
+					as: 'employees',
+				},
+			},
+			{
+				$project: {
+					_id: 1,
+					revenue: '$projectValueBAM',
+					cost: { $sum: '$employees.salary' },
+				},
+			},
+			{
+				$project: {
+					_id: 1,
+					revenue: 1,
+					cost: 1,
+					profit: { $subtract: ['$revenue', '$cost'] },
+				},
+			},
+		]);
+
+		const totalRevenueCostProfit = await ProjectModel.aggregate([
+			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
+			{
+				$lookup: {
+					from: 'employees',
+					localField: 'employees.employee',
+					foreignField: '_id',
+					as: 'employees',
+				},
+			},
+			{
+				$project: {
+					_id: 1,
+					projectValueBAM: 1,
+					cost: { $sum: '$employees.salary' },
+				},
+			},
+			{
+				$group: {
+					_id: null,
+					totalRevenue: { $sum: '$projectValueBAM' },
+					totalCost: { $sum: '$cost' },
+				},
+			},
+			{
+				$project: {
+					_id: 0,
+					totalRevenue: 1,
+					totalCost: 1,
+					totalProfit: { $subtract: ['$totalRevenue', '$totalCost'] },
+				},
+			},
+		]);
+
 		res.json({
 			totalProjects,
 			totalValue: totalValue[0]?.total || 0,
@@ -139,6 +209,8 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 			averageHourlyRate: averageRate[0]?.average || 0,
 			salesChannelPercentage,
 			projectTypeCount,
+			revenueCostProfitPerProject,
+			totalRevenueCostProfit,
 		});
 	} catch (error) {
 		next(error);
@@ -156,7 +228,7 @@ export const createProject: RequestHandler<unknown, unknown, ProjectsInterfaces.
 		const user = await UserModel.findById(userId);
 		if (!user) throw createHttpError(404, 'User not found.');
 		if (user.role !== UserRole.Admin) {
-			throw createHttpError(403, 'This user is not allowed to create a project.');
+			throw createHttpError(403, 'This user is not allowed to create projects.');
 		}
 
 		const {
@@ -169,7 +241,9 @@ export const createProject: RequestHandler<unknown, unknown, ProjectsInterfaces.
 			hourlyRate,
 			projectValueBAM,
 			salesChannel,
+			projectStatus,
 			finished,
+			employees,
 		} = req.body;
 
 		if (
@@ -187,6 +261,17 @@ export const createProject: RequestHandler<unknown, unknown, ProjectsInterfaces.
 		const existingProject = await ProjectModel.findOne({ name });
 		if (existingProject) throw createHttpError(409, 'Project already exists.');
 
+		if (!employees || employees.some(employee => !employee || !employee.employee || employee.fullTime === undefined))
+			throw createHttpError(400, 'Invalid employee data.');
+
+		const employeeIds = employees.map(e => e.employee);
+		if (new Set(employeeIds).size !== employeeIds.length) {
+			throw createHttpError(400, 'Some employees are duplicates.');
+		}
+
+		const existingEmployees = await EmployeeModel.find({ _id: { $in: employeeIds } });
+		if (existingEmployees.length !== employeeIds.length) throw createHttpError(400, 'Some employees do not exist.');
+
 		const project = await ProjectModel.create({
 			name,
 			description,
@@ -197,10 +282,14 @@ export const createProject: RequestHandler<unknown, unknown, ProjectsInterfaces.
 			hourlyRate,
 			projectValueBAM,
 			salesChannel,
+			projectStatus,
 			finished,
+			employees,
 		});
 
-		return res.status(201).json(project);
+		const populatedProject = await ProjectModel.findById(project._id).populate('employees.employee');
+
+		return res.status(201).json(populatedProject);
 	} catch (error) {
 		next(error);
 	}
