@@ -20,42 +20,49 @@ type Query = {
 	projectType?: ProjectType;
 	salesChannel?: SalesChannel;
 	projectStatus?: ProjectStatus;
+	limit?: number;
+	page?: number;
 };
 
 export const getProjects: RequestHandler<
 	unknown,
-	ProjectsInterfaces.GetProjectsRes[],
+	ProjectsInterfaces.GetProjectsRes,
 	unknown,
 	ProjectsInterfaces.GetProjectsQueryParams
 > = async (req, res, next) => {
 	try {
-		const { name, startDate, endDate, projectType, salesChannel, projectStatus } = req.query;
+		const { name, startDate, endDate, projectType, salesChannel, projectStatus, limit = 10, page = 1 } = req.query;
 		const query: Query = {};
 
-		if (name) {
-			query['name'] = { $regex: name, $options: 'i' };
-		}
+		if (name) query['name'] = { $regex: name, $options: 'i' };
 
 		if (startDate && endDate) {
 			query['startDate'] = { $gte: startDate };
 			query['endDate'] = { $lte: endDate };
 		}
 
-		if (projectType) {
-			query['projectType'] = projectType;
-		}
+		if (projectType) query['projectType'] = projectType;
 
-		if (salesChannel) {
-			query['salesChannel'] = salesChannel;
-		}
+		if (salesChannel) query['salesChannel'] = salesChannel;
 
-		if (projectStatus) {
-			query['projectStatus'] = projectStatus;
-		}
+		if (projectStatus) query['projectStatus'] = projectStatus;
 
-		const projects = await ProjectModel.find(query).populate('employees.employee');
+		const count = await ProjectModel.countDocuments(query);
+		const lastPage = Math.ceil(count / limit);
 
-		res.status(200).json(projects);
+		const skip = (page - 1) * limit;
+
+		const projects = await ProjectModel.find(query).populate('employees.employee').skip(skip).limit(limit);
+
+		res.status(200).json({
+			projects,
+			pageInfo: {
+				total: count,
+				currentPage: Number(page),
+				lastPage,
+				perPage: Number(limit),
+			},
+		});
 	} catch (error) {
 		next(error);
 	}

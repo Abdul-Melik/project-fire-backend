@@ -3,17 +3,25 @@ import { Types } from 'mongoose';
 import { ProjectType, SalesChannel, ProjectStatus } from '../models/project';
 
 interface GetProjectsRes {
-	name?: string;
-	description?: string;
-	startDate?: Date;
-	endDate?: Date;
-	actualEndDate?: Date;
-	projectType?: ProjectType;
-	hourlyRate?: number;
-	projectValueBAM?: number;
-	salesChannel?: SalesChannel;
-	projectStatus?: ProjectStatus;
-	finished?: boolean;
+	projects: {
+		name?: string;
+		description?: string;
+		startDate?: Date;
+		endDate?: Date;
+		actualEndDate?: Date;
+		projectType?: ProjectType;
+		hourlyRate?: number;
+		projectValueBAM?: number;
+		salesChannel?: SalesChannel;
+		projectStatus?: ProjectStatus;
+		finished?: boolean;
+	}[];
+	pageInfo: {
+		total: number;
+		currentPage: number;
+		lastPage: number;
+		perPage: number;
+	};
 }
 
 interface GetProjectsQueryParams {
@@ -23,6 +31,8 @@ interface GetProjectsQueryParams {
 	projectType?: ProjectType;
 	salesChannel?: SalesChannel;
 	projectStatus?: ProjectStatus;
+	limit?: number;
+	page?: number;
 }
 
 interface GetProjectByIdParams {
