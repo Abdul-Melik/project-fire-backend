@@ -72,7 +72,16 @@ export const registerUser: RequestHandler<
   UsersInterfaces.RegisterUserReq,
   unknown
 > = async (req, res, next) => {
-  const { email, password, firstName, lastName } = req.body;
+  const {
+    email,
+    password,
+    firstName,
+    lastName,
+    role,
+    department,
+    salary,
+    techStack,
+  } = req.body;
 
   let user;
   let employee;
@@ -99,6 +108,9 @@ export const registerUser: RequestHandler<
     employee = await EmployeeModel.create({
       firstName,
       lastName,
+      department,
+      salary,
+      techStack,
     });
 
     user = await UserModel.create({
@@ -106,6 +118,7 @@ export const registerUser: RequestHandler<
       password: hashedPassword,
       firstName,
       lastName,
+      role,
       image: imageData,
       employee: employee._id,
     });

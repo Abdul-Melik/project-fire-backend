@@ -1,98 +1,98 @@
-import { Types } from 'mongoose';
-import { UserRole } from '../models/user';
+import { Types } from "mongoose";
+import { UserRole } from "../models/user";
 
 interface GetUsersRes {
-	id: Types.ObjectId;
-	email: string;
-	firstName: string;
-	lastName: string;
-	role: UserRole;
-	image?: string;
-	employee: Types.ObjectId;
+  id: Types.ObjectId;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  image?: string;
+  employee: Types.ObjectId;
 }
 
 interface GetUserByIdParams {
-	userId: string;
+  userId: string;
 }
 
 interface GetUserByIdRes {
-	id: Types.ObjectId;
-	email: string;
-	firstName: string;
-	lastName: string;
-	role: UserRole;
-	image?: string;
-	employee: Types.ObjectId;
+  id: Types.ObjectId;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  image?: string;
+  employee: Types.ObjectId;
 }
 
 interface RegisterUserReq {
-	email?: string;
-	password?: string;
-	firstName?: string;
-	lastName?: string;
-	role?: UserRole;
-	department?: string;
-	salary?: number;
-	techStack?: string[];
+  email?: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+  role?: UserRole;
+  department?: string;
+  salary?: number;
+  techStack?: string[];
 }
 
 interface RegisterUserRes {
-	user: {
-		id: Types.ObjectId;
-		email: string;
-		firstName: string;
-		lastName: string;
-		role: UserRole;
-		image?: string;
-		employee: {
-			id: Types.ObjectId;
-			firstName: string;
-			lastName: string;
-			department: string;
-			salary: number;
-			techStack: string[];
-		};
-	};
-	token: string;
-	expiresIn: number;
+  user: {
+    id: Types.ObjectId;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    image?: string;
+    employee: {
+      id: Types.ObjectId;
+      firstName: string;
+      lastName: string;
+      department: string;
+      salary: number;
+      techStack: string[];
+    };
+  };
+  token: string;
+  expiresIn: number;
 }
 
 interface LoginUserReq {
-	email?: string;
-	password?: string;
-	rememberMe?: boolean;
+  email?: string;
+  password?: string;
+  rememberMe?: boolean;
 }
 
 interface LoginUserRes {
-	user: {
-		id: Types.ObjectId;
-		email: string;
-		firstName: string;
-		lastName: string;
-		role: UserRole;
-		image?: string;
-		employee: Types.ObjectId;
-	};
-	token: string;
-	expiresIn: number;
+  user: {
+    id: Types.ObjectId;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    image?: string;
+    employee: Types.ObjectId;
+  };
+  token: string;
+  expiresIn: number;
 }
 
 interface DeleteUserParams {
-	userId: string;
+  userId: string;
 }
 
 interface DeleteUserReq {
-	userId: string;
+  userId: string;
 }
 
 export {
-	GetUsersRes,
-	GetUserByIdParams,
-	GetUserByIdRes,
-	RegisterUserReq,
-	RegisterUserRes,
-	LoginUserReq,
-	LoginUserRes,
-	DeleteUserParams,
-	DeleteUserReq,
+  GetUsersRes,
+  GetUserByIdParams,
+  GetUserByIdRes,
+  RegisterUserReq,
+  RegisterUserRes,
+  LoginUserReq,
+  LoginUserRes,
+  DeleteUserParams,
+  DeleteUserReq,
 };
