@@ -26,6 +26,7 @@ const userSchema = new Schema({
 	role: {
 		type: String,
 		enum: Object.values(UserRole),
+		default: UserRole.Guest,
 		required: true,
 	},
 	image: {
