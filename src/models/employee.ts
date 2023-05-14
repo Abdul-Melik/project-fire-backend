@@ -11,15 +11,15 @@ const employeeSchema = new Schema({
 	},
 	department: {
 		type: String,
-		required: true,
+		default: 'none',
 	},
 	salary: {
 		type: Number,
-		required: true,
+		default: 0,
 	},
 	techStack: {
 		type: [String],
-		required: true,
+		default: [],
 	},
 	user: {
 		type: Schema.Types.ObjectId,

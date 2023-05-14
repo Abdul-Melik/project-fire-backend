@@ -75,8 +75,7 @@ export const registerUser: RequestHandler<
 	let employee;
 
 	try {
-		if (!email || !password || !firstName || !lastName || !role || !department || !salary || !techStack)
-			throw createHttpError(400, 'Missing required fields.');
+		if (!email || !password || !firstName || !lastName) throw createHttpError(400, 'Missing required fields.');
 
 		const existingUser = await UserModel.findOne({ email });
 		if (existingUser) throw createHttpError(409, 'Email already registered.');
@@ -123,7 +122,7 @@ export const registerUser: RequestHandler<
 				email,
 				firstName,
 				lastName,
-				role,
+				role: user.role,
 				image: imageData,
 				employee: {
 					id: employee._id,
