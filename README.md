@@ -14,7 +14,8 @@ dependencies
     "http-errors": "^2.0.0",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.0.3",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.2"
 
 devDependencies:
 
@@ -24,6 +25,7 @@ devDependencies:
     "@types/http-errors": "^2.0.1",
     "@types/jsonwebtoken": "^9.0.1",
     "@types/multer": "^1.4.7",
+    "@types/nodemailer": "^6.4.7",
     "nodemon": "^2.0.22",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"

@@ -77,6 +77,19 @@ interface LoginUserRes {
 	expiresIn: number;
 }
 
+interface sendResetPasswordEmailReq {
+	email?: string;
+}
+
+interface resetPasswordParams {
+	userId?: string;
+	token?: string;
+}
+
+interface resetPasswordReq {
+	password?: string;
+}
+
 interface DeleteUserParams {
 	userId: string;
 }
@@ -93,6 +106,9 @@ export {
 	RegisterUserRes,
 	LoginUserReq,
 	LoginUserRes,
+	sendResetPasswordEmailReq,
+	resetPasswordParams,
+	resetPasswordReq,
 	DeleteUserParams,
 	DeleteUserReq,
 };
