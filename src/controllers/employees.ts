@@ -4,6 +4,7 @@ import createHttpError from 'http-errors';
 import * as EmployeesInterfaces from '../interfaces/employees';
 import { EmployeeModel } from '../models/employee';
 import { UserModel, UserRole } from '../models/user';
+import { ProjectModel } from '../models/project';
 
 export const getEmployees: RequestHandler<unknown, EmployeesInterfaces.GetEmployeesRes[], unknown, unknown> = async (
 	req,
@@ -121,6 +122,12 @@ export const removeEmployee: RequestHandler<
 			throw createHttpError(403, 'You are not authorized to delete yourself.');
 		if (userWhoIsEmployee && userWhoIsEmployee.role === UserRole.Admin)
 			throw createHttpError(403, 'Cannot delete an admin user.');
+
+		const projects = await ProjectModel.find({ 'employees.employee': employeeId });
+		for (const project of projects) {
+			project.employees = project.employees.filter(employeeObj => employeeObj.employee.toString() !== employeeId);
+			await project.save();
+		}
 
 		await employee.deleteOne();
 		await userWhoIsEmployee?.deleteOne();
