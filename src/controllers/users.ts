@@ -10,6 +10,7 @@ import * as UsersInterfaces from '../interfaces/users';
 import { UserModel, UserRole } from '../models/user';
 import { EmployeeModel } from '../models/employee';
 import { TokenModel } from '../models/token';
+import { ProjectModel } from '../models/project';
 
 export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], unknown, unknown> = async (
 	req,
@@ -286,6 +287,14 @@ export const deleteUser: RequestHandler<
 
 		const employee = await EmployeeModel.findById(user.employee);
 		if (!employee) throw createHttpError(404, 'Employee not found.');
+
+		const projects = await ProjectModel.find({ 'employees.employee': employee._id });
+		for (const project of projects) {
+			project.employees = project.employees.filter(
+				employeeObj => employeeObj.employee.toString() !== employee._id.toString()
+			);
+			await project.save();
+		}
 
 		await user.deleteOne();
 		await employee.deleteOne();
