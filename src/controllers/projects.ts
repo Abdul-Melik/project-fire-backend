@@ -52,10 +52,16 @@ export const getProjects: RequestHandler<
 
 		const skip = (page - 1) * limit;
 
-		const projects = await ProjectModel.find(query).populate('employees.employee').skip(skip).limit(limit);
+		const projects = await ProjectModel.find(query).populate('employees.employee');
+
+		const sortOrder = [ProjectStatus.Active, ProjectStatus.OnHold, ProjectStatus.Inactive, ProjectStatus.Completed];
+		const sortedProjects = projects.sort(
+			(a, b) => sortOrder.indexOf(a.projectStatus) - sortOrder.indexOf(b.projectStatus)
+		);
+		const finalProjects = sortedProjects.slice(skip, skip + limit);
 
 		res.status(200).json({
-			projects,
+			projects: finalProjects,
 			pageInfo: {
 				total: count,
 				currentPage: Number(page),
