@@ -107,6 +107,24 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 			{ $group: { _id: null, average: { $avg: '$projectValueBAM' } } },
 		]);
 
+		const averageTeamSize = await ProjectModel.aggregate([
+			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
+			{
+				$group: {
+					_id: null,
+					totalTeamSize: { $sum: { $size: '$employees' } },
+				},
+			},
+			{
+				$project: {
+					_id: 0,
+					average: {
+						$cond: [{ $gt: [totalProjects, 0] }, { $divide: ['$totalTeamSize', totalProjects] }, 0],
+					},
+				},
+			},
+		]);
+
 		const averageRate = await ProjectModel.aggregate([
 			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
 			{ $group: { _id: null, average: { $avg: '$hourlyRate' } } },
@@ -213,6 +231,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 			totalProjects,
 			totalValue: totalValue[0]?.total || 0,
 			averageValue: averageValue[0]?.average || 0,
+			averageTeamSize: averageTeamSize[0]?.average || 0,
 			averageHourlyRate: averageRate[0]?.average || 0,
 			salesChannelPercentage,
 			projectTypeCount,
