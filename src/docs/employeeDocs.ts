@@ -2,7 +2,8 @@
  * @swagger
  *   /api/employees:
  *   get:
- *     description: Use to request current weather
+ *     tags: [employees]
+ *     description:
  *     consumes:
  *       - application/json
  *     parameters:
@@ -24,7 +25,8 @@
  * @swagger
  *   /api/employees:
  *   post:
- *     description: Use to request current weather
+ *     tags: [employees]
+ *     description:
  *     consumes:
  *       - application/json
  *     parameters:

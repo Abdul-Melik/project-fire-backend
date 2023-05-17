@@ -14,7 +14,7 @@ const swaggerOptions = {
 			servers: [`http://localhost:${process.env.PORT}`],
 		},
 	},
-	apis: ['./src/docs/employees/*.ts'],
+	apis: ['./src/docs/*.ts'],
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
