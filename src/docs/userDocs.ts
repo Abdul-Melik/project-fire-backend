@@ -190,7 +190,7 @@
  *   /api/users/{userId}/reset-password/{token}:
  *   post:
  *     tags: [users]
- *     description: Use to create a user in the database
+ *     description: Use to reset a users password
  *     consumes:
  *       - application/json
  *     parameters:
