@@ -8,6 +8,7 @@ const router = express.Router();
 
 router.get('/', authenticateToken, UsersController.getUsers);
 router.get('/:userId', authenticateToken, UsersController.getUserById);
+router.get('/employee/:employeeId', authenticateToken, UsersController.getUserByEmployeeId);
 router.post('/register', imageUpload, UsersController.registerUser);
 router.post('/login', UsersController.loginUser);
 router.post('/reset-password', UsersController.sendResetPasswordEmail);

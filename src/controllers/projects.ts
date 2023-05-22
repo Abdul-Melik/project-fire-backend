@@ -1,5 +1,6 @@
 import { RequestHandler } from 'express';
 import createHttpError from 'http-errors';
+import { Types } from 'mongoose';
 
 import * as ProjectsInterfaces from '../interfaces/projects';
 import { ProjectModel, ProjectType, SalesChannel, ProjectStatus } from '../models/project';
@@ -52,10 +53,29 @@ export const getProjects: RequestHandler<
 
 		const skip = (page - 1) * limit;
 
-		const projects = await ProjectModel.find(query).populate('employees.employee').skip(skip).limit(limit);
+		const projects = await ProjectModel.find(query).skip(skip).limit(limit);
+
+		const projectsResponse = projects.map(project => ({
+			id: project._id,
+			name: project.name,
+			description: project.description,
+			startDate: project.startDate,
+			endDate: project.endDate,
+			actualEndDate: project.actualEndDate,
+			projectType: project.projectType,
+			hourlyRate: project.hourlyRate,
+			projectValueBAM: project.projectValueBAM,
+			salesChannel: project.salesChannel,
+			projectStatus: project.projectStatus,
+			finished: project.finished,
+			employees: project.employees.map(employeeObj => ({
+				employee: employeeObj.employee,
+				fullTime: employeeObj.fullTime,
+			})),
+		}));
 
 		res.status(200).json({
-			projects,
+			projects: projectsResponse,
 			pageInfo: {
 				total: count,
 				currentPage: Number(page),
@@ -77,10 +97,29 @@ export const getProjectById: RequestHandler<
 	try {
 		const projectId = req.params.projectId;
 
-		const project = await ProjectModel.findById(projectId).populate('employees.employee');
+		const project = await ProjectModel.findById(projectId);
 		if (!project) throw createHttpError(404, 'Project not found.');
 
-		return res.status(200).json(project);
+		const projectResponse = {
+			id: project._id,
+			name: project.name,
+			description: project.description,
+			startDate: project.startDate,
+			endDate: project.endDate,
+			actualEndDate: project.actualEndDate,
+			projectType: project.projectType,
+			hourlyRate: project.hourlyRate,
+			projectValueBAM: project.projectValueBAM,
+			salesChannel: project.salesChannel,
+			projectStatus: project.projectStatus,
+			finished: project.finished,
+			employees: project.employees.map(employeeObj => ({
+				employee: employeeObj.employee,
+				fullTime: employeeObj.fullTime,
+			})),
+		};
+
+		return res.status(200).json(projectResponse);
 	} catch (error) {
 		next(error);
 	}
@@ -243,11 +282,167 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 	}
 };
 
-export const createProject: RequestHandler<unknown, unknown, ProjectsInterfaces.CreateProjectReq, unknown> = async (
-	req,
-	res,
-	next
-) => {
+export const getEmployeesByProjectId: RequestHandler<
+	ProjectsInterfaces.GetEmployeesByProjectIdParams,
+	ProjectsInterfaces.GetEmployeesByProjectIdRes[],
+	unknown,
+	unknown
+> = async (req, res, next) => {
+	try {
+		const projectId = req.params.projectId;
+
+		const project = await ProjectModel.findById(projectId).populate<{
+			employees: {
+				employee: {
+					_id: Types.ObjectId;
+					firstName: string;
+					lastName: string;
+					department: string;
+					salary: number;
+					techStack: string[];
+				};
+				fullTime: boolean;
+			}[];
+		}>('employees.employee');
+		if (!project) throw createHttpError(404, 'Project not found');
+
+		const employeesResponse = project.employees.map(employeeObj => ({
+			employee: {
+				id: employeeObj.employee._id,
+				firstName: employeeObj.employee.firstName,
+				lastName: employeeObj.employee.lastName,
+				department: employeeObj.employee.department,
+				salary: employeeObj.employee.salary,
+				techStack: employeeObj.employee.techStack,
+			},
+			fullTime: employeeObj.fullTime,
+		}));
+
+		res.status(200).json(employeesResponse);
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const getEmployeesPerProject: RequestHandler<
+	unknown,
+	ProjectsInterfaces.GetEmployeesPerProjectRes[],
+	unknown,
+	unknown
+> = async (req, res, next) => {
+	try {
+		const projects = await ProjectModel.find().populate<{
+			employees: {
+				employee: {
+					_id: Types.ObjectId;
+					firstName: string;
+					lastName: string;
+					department: string;
+					salary: number;
+					techStack: string[];
+				};
+				fullTime: boolean;
+			}[];
+		}>('employees.employee');
+
+		const projectsResponse = projects.map(project => ({
+			id: project._id,
+			name: project.name,
+			employees: project.employees.map(employeeObj => ({
+				employee: {
+					id: employeeObj.employee._id,
+					firstName: employeeObj.employee.firstName,
+					lastName: employeeObj.employee.lastName,
+					department: employeeObj.employee.department,
+					salary: employeeObj.employee.salary,
+					techStack: employeeObj.employee.techStack,
+				},
+				fullTime: employeeObj.fullTime,
+			})),
+		}));
+
+		res.status(200).json(projectsResponse);
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const getUsersByProjectId: RequestHandler<
+	ProjectsInterfaces.GetUsersByProjectIdParams,
+	ProjectsInterfaces.GetUsersByProjectIdRes[],
+	unknown,
+	unknown
+> = async (req, res, next) => {
+	try {
+		const projectId = req.params.projectId;
+
+		const project = await ProjectModel.findById(projectId);
+		if (!project) throw createHttpError(404, 'Project not found');
+
+		const employeeIds = project.employees.map(employeeObj => employeeObj.employee._id);
+
+		const users = await UserModel.find({ employee: { $in: employeeIds } }).select('-password');
+
+		const usersResponse = users.map(user => ({
+			id: user._id,
+			email: user.email,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			role: user.role,
+			image: user.image,
+			employee: user.employee,
+		}));
+
+		res.status(200).json(usersResponse);
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const getUsersPerProject: RequestHandler<
+	unknown,
+	ProjectsInterfaces.GetUsersPerProjectRes[],
+	unknown,
+	unknown
+> = async (req, res, next) => {
+	try {
+		const projects = await ProjectModel.find();
+
+		const employeeIds = projects.flatMap(project => project.employees.map(employeeObj => employeeObj.employee));
+
+		const users = await UserModel.find({ employee: { $in: employeeIds } }).select('-password');
+
+		const userMap = new Map();
+		users.forEach(user => userMap.set(user.employee.toString(), user));
+
+		const usersPerProject = projects.map(project => {
+			const users = project.employees.map(employeeObj => userMap.get(employeeObj.employee.toString()));
+			return {
+				id: project._id,
+				name: project.name,
+				users: users.map(user => ({
+					id: user._id,
+					firstName: user.firstName,
+					lastName: user.lastName,
+					role: user.role,
+					image: user.image,
+					employee: user.employee,
+				})),
+			};
+		});
+
+		res.status(200).json(usersPerProject);
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const createProject: RequestHandler<
+	unknown,
+	ProjectsInterfaces.CreateProjectRes,
+	ProjectsInterfaces.CreateProjectReq,
+	unknown
+> = async (req, res, next) => {
 	try {
 		const userId = req.body.userId;
 
@@ -313,9 +508,26 @@ export const createProject: RequestHandler<unknown, unknown, ProjectsInterfaces.
 			employees,
 		});
 
-		const populatedProject = await ProjectModel.findById(project._id).populate('employees.employee');
+		const projectResponse = {
+			id: project._id,
+			name: project.name,
+			description: project.description,
+			startDate: project.startDate,
+			endDate: project.endDate,
+			actualEndDate: project.actualEndDate,
+			projectType: project.projectType,
+			hourlyRate: project.hourlyRate,
+			projectValueBAM: project.projectValueBAM,
+			salesChannel: project.salesChannel,
+			projectStatus: project.projectStatus,
+			finished: project.finished,
+			employees: project.employees.map(employeeObj => ({
+				employee: employeeObj.employee,
+				fullTime: employeeObj.fullTime,
+			})),
+		};
 
-		return res.status(201).json(populatedProject);
+		return res.status(201).json(projectResponse);
 	} catch (error) {
 		next(error);
 	}

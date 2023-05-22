@@ -6,13 +6,26 @@ import { EmployeeModel } from '../models/employee';
 import { UserModel, UserRole } from '../models/user';
 import { ProjectModel } from '../models/project';
 
-export const getEmployees: RequestHandler<unknown, EmployeesInterfaces.GetEmployeesRes[], unknown, unknown> = async (
-	req,
-	res,
-	next
-) => {
+type Query = {
+	firstName?: {
+		$regex: string;
+		$options: string;
+	};
+};
+
+export const getEmployees: RequestHandler<
+	unknown,
+	EmployeesInterfaces.GetEmployeesRes[],
+	unknown,
+	EmployeesInterfaces.GetEmployeesQueryParams
+> = async (req, res, next) => {
 	try {
-		const employees = await EmployeeModel.find();
+		const { firstName } = req.query;
+		const query: Query = {};
+
+		if (firstName) query['firstName'] = { $regex: firstName, $options: 'i' };
+
+		const employees = await EmployeeModel.find(query);
 
 		const employeesResponse = employees.map(employee => ({
 			id: employee._id,
