@@ -1,20 +1,26 @@
 import { Types } from 'mongoose';
 
 import { ProjectType, SalesChannel, ProjectStatus } from '../models/project';
+import { UserRole } from '../models/user';
 
 interface GetProjectsRes {
 	projects: {
-		name?: string;
-		description?: string;
-		startDate?: Date;
-		endDate?: Date;
+		id: Types.ObjectId;
+		name: string;
+		description: string;
+		startDate: Date;
+		endDate: Date;
 		actualEndDate?: Date;
-		projectType?: ProjectType;
-		hourlyRate?: number;
-		projectValueBAM?: number;
-		salesChannel?: SalesChannel;
-		projectStatus?: ProjectStatus;
-		finished?: boolean;
+		projectType: ProjectType;
+		hourlyRate: number;
+		projectValueBAM: number;
+		salesChannel: SalesChannel;
+		projectStatus: ProjectStatus;
+		finished: boolean;
+		employees: {
+			employee: Types.ObjectId;
+			fullTime: boolean;
+		}[];
 	}[];
 	pageInfo: {
 		total: number;
@@ -40,17 +46,99 @@ interface GetProjectByIdParams {
 }
 
 interface GetProjectByIdRes {
-	name?: string;
-	description?: string;
-	startDate?: Date;
-	endDate?: Date;
+	id: Types.ObjectId;
+	name: string;
+	description: string;
+	startDate: Date;
+	endDate: Date;
 	actualEndDate?: Date;
-	projectType?: ProjectType;
-	hourlyRate?: number;
-	projectValueBAM?: number;
-	salesChannel?: SalesChannel;
-	projectStatus?: ProjectStatus;
-	finished?: boolean;
+	projectType: ProjectType;
+	hourlyRate: number;
+	projectValueBAM: number;
+	salesChannel: SalesChannel;
+	projectStatus: ProjectStatus;
+	finished: boolean;
+	employees: {
+		employee: Types.ObjectId;
+		fullTime: boolean;
+	}[];
+}
+
+interface GetEmployeesByProjectIdParams {
+	projectId: string;
+}
+
+interface GetEmployeesByProjectIdRes {
+	employee: {
+		id: Types.ObjectId;
+		firstName: string;
+		lastName: string;
+		department: string;
+		salary: number;
+		techStack: string[];
+	};
+	fullTime: boolean;
+}
+
+interface GetEmployeesPerProjectRes {
+	id: Types.ObjectId;
+	name: string;
+	employees: {
+		employee: {
+			id: Types.ObjectId;
+			firstName: string;
+			lastName: string;
+			department: string;
+			salary: number;
+			techStack: string[];
+		};
+		fullTime: boolean;
+	}[];
+}
+
+interface GetUsersByProjectIdParams {
+	projectId: string;
+}
+
+interface GetUsersByProjectIdRes {
+	id: Types.ObjectId;
+	email: string;
+	firstName: string;
+	lastName: string;
+	role: string;
+	image?: string;
+	employee: Types.ObjectId;
+}
+
+interface GetUsersPerProjectRes {
+	id: Types.ObjectId;
+	name: string;
+	users: {
+		id: Types.ObjectId;
+		firstName: string;
+		lastName: string;
+		role: UserRole;
+		image?: string;
+		employee: Types.ObjectId;
+	}[];
+}
+interface CreateProjectRes {
+	id: Types.ObjectId;
+	name: string;
+	description: string;
+	startDate: Date;
+	endDate: Date;
+	actualEndDate?: Date;
+	projectType: ProjectType;
+	hourlyRate: number;
+	projectValueBAM: number;
+	salesChannel: SalesChannel;
+	projectStatus: ProjectStatus;
+	finished: boolean;
+	employees: {
+		employee: Types.ObjectId;
+		fullTime: boolean;
+	}[];
 }
 
 interface CreateProjectReq {
@@ -87,6 +175,13 @@ export {
 	GetProjectsQueryParams,
 	GetProjectByIdParams,
 	GetProjectByIdRes,
+	GetEmployeesByProjectIdParams,
+	GetEmployeesByProjectIdRes,
+	GetEmployeesPerProjectRes,
+	GetUsersByProjectIdParams,
+	GetUsersByProjectIdRes,
+	GetUsersPerProjectRes,
+	CreateProjectRes,
 	CreateProjectReq,
 	DeleteProjectParams,
 	DeleteProjectReq,

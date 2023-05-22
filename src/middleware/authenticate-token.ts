@@ -1,4 +1,4 @@
-import { Request, RequestHandler } from 'express';
+import { RequestHandler } from 'express';
 import createHttpError from 'http-errors';
 import jwt from 'jsonwebtoken';
 

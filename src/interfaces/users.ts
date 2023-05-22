@@ -25,15 +25,18 @@ interface GetUserByIdRes {
 	employee: Types.ObjectId;
 }
 
-interface RegisterUserReq {
-	email?: string;
-	password?: string;
-	firstName?: string;
-	lastName?: string;
-	role?: UserRole;
-	department?: string;
-	salary?: number;
-	techStack?: string[];
+interface GetUserByEmployeeIdParams {
+	employeeId: string;
+}
+
+interface GetUserByEmployeeIdRes {
+	id: Types.ObjectId;
+	email: string;
+	firstName: string;
+	lastName: string;
+	role: UserRole;
+	image?: string;
+	employee: Types.ObjectId;
 }
 
 interface RegisterUserRes {
@@ -44,23 +47,21 @@ interface RegisterUserRes {
 		lastName: string;
 		role: UserRole;
 		image?: string;
-		employee: {
-			id: Types.ObjectId;
-			firstName: string;
-			lastName: string;
-			department: string;
-			salary: number;
-			techStack: string[];
-		};
+		employee: Types.ObjectId;
 	};
 	token: string;
 	expiresIn: number;
 }
 
-interface LoginUserReq {
+interface RegisterUserReq {
 	email?: string;
 	password?: string;
-	rememberMe?: boolean;
+	firstName?: string;
+	lastName?: string;
+	role?: UserRole;
+	department?: string;
+	salary?: number;
+	techStack?: string[];
 }
 
 interface LoginUserRes {
@@ -75,6 +76,12 @@ interface LoginUserRes {
 	};
 	token: string;
 	expiresIn: number;
+}
+
+interface LoginUserReq {
+	email?: string;
+	password?: string;
+	rememberMe?: boolean;
 }
 
 interface sendResetPasswordEmailReq {
@@ -102,10 +109,12 @@ export {
 	GetUsersRes,
 	GetUserByIdParams,
 	GetUserByIdRes,
-	RegisterUserReq,
+	GetUserByEmployeeIdParams,
+	GetUserByEmployeeIdRes,
 	RegisterUserRes,
-	LoginUserReq,
+	RegisterUserReq,
 	LoginUserRes,
+	LoginUserReq,
 	sendResetPasswordEmailReq,
 	resetPasswordParams,
 	resetPasswordReq,

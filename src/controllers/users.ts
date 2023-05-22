@@ -18,7 +18,7 @@ export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], un
 	next
 ) => {
 	try {
-		const users = await UserModel.find().populate('employee').select('-password');
+		const users = await UserModel.find().select('-password');
 
 		const usersResponse = users.map(user => ({
 			id: user._id,
@@ -45,7 +45,7 @@ export const getUserById: RequestHandler<
 	try {
 		const userId = req.params.userId;
 
-		const user = await UserModel.findById(userId).populate('employee').select('-password');
+		const user = await UserModel.findById(userId).select('-password');
 		if (!user) throw createHttpError(404, 'User not found.');
 
 		const userResponse = {
@@ -59,6 +59,41 @@ export const getUserById: RequestHandler<
 		};
 
 		return res.status(200).json(userResponse);
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const getUserByEmployeeId: RequestHandler<
+	UsersInterfaces.GetUserByEmployeeIdParams,
+	UsersInterfaces.GetUserByEmployeeIdRes,
+	unknown,
+	unknown
+> = async (req, res, next) => {
+	try {
+		const employeeId = req.params.employeeId;
+
+		const user = await UserModel.findOne({ employee: employeeId }).select('-password');
+		if (!user) throw createHttpError(404, 'User not found.');
+
+		const userResponse = {
+			id: user._id,
+			email: user.email,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			role: user.role,
+			image: user.image,
+			employee: user.employee,
+		};
+
+		return res.status(200).json(userResponse);
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const getUsersByProjectId: RequestHandler<unknown, unknown, unknown, unknown> = async (req, res, next) => {
+	try {
 	} catch (error) {
 		next(error);
 	}
@@ -125,14 +160,7 @@ export const registerUser: RequestHandler<
 				lastName,
 				role: user.role,
 				image: imageData,
-				employee: {
-					id: employee._id,
-					firstName: employee.firstName,
-					lastName: employee.lastName,
-					department: employee.department,
-					salary: employee.salary,
-					techStack: employee.techStack,
-				},
+				employee: employee._id,
 			},
 			token,
 			expiresIn: expireLength,
@@ -156,7 +184,7 @@ export const loginUser: RequestHandler<
 	try {
 		if (!email || !password) throw createHttpError(400, 'Missing required fields.');
 
-		const user = await UserModel.findOne({ email }).populate('employee');
+		const user = await UserModel.findOne({ email });
 		if (!user) throw createHttpError(401, 'Invalid email or password.');
 
 		const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -264,7 +292,7 @@ export const resetPassword: RequestHandler<
 		await user.save();
 		await tokenObj.deleteOne();
 
-		res.send({ message: 'Your password has been reset successfully.' });
+		res.status(200).json({ message: 'Your password has been reset successfully.' });
 	} catch (error) {
 		next(error);
 	}
