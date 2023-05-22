@@ -6,6 +6,7 @@ import * as ProjectsInterfaces from '../interfaces/projects';
 import { ProjectModel, ProjectType, SalesChannel, ProjectStatus } from '../models/project';
 import { UserModel, UserRole } from '../models/user';
 import { EmployeeModel } from '../models/employee';
+import { stringify } from 'querystring';
 
 type Query = {
 	name?: {
@@ -32,7 +33,18 @@ export const getProjects: RequestHandler<
 	ProjectsInterfaces.GetProjectsQueryParams
 > = async (req, res, next) => {
 	try {
-		const { name, startDate, endDate, projectType, salesChannel, projectStatus, limit = 10, page = 1 } = req.query;
+		const {
+			name,
+			startDate,
+			endDate,
+			projectType,
+			salesChannel,
+			projectStatus,
+			limit = 10,
+			page = 1,
+			order,
+			orderBy,
+		} = req.query;
 		const query: Query = {};
 
 		if (name) query['name'] = { $regex: name, $options: 'i' };
@@ -52,8 +64,9 @@ export const getProjects: RequestHandler<
 		const lastPage = Math.ceil(count / limit);
 
 		const skip = (page - 1) * limit;
-
-		const projects = await ProjectModel.find(query).skip(skip).limit(limit);
+		const sortOptions: { [key: string]: any } = {};
+		sortOptions[orderBy!] = order;
+		const projects = await ProjectModel.find(query).sort(sortOptions).skip(skip).limit(limit);
 
 		const projectsResponse = projects.map(project => ({
 			id: project._id,

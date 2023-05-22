@@ -39,6 +39,8 @@ interface GetProjectsQueryParams {
 	projectStatus?: ProjectStatus;
 	limit?: number;
 	page?: number;
+	order?: string;
+	orderBy?: string;
 }
 
 interface GetProjectByIdParams {
