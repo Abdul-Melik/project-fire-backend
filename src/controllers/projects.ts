@@ -66,24 +66,27 @@ export const getProjects: RequestHandler<
 		const skip = (page - 1) * limit;
 		const sortOptions: { [key: string]: any } = {};
 		let orderVar = order === 'asc' ? 1 : -1; // "asc" === 1, "desc" === "-1
-		let orderByVar = !orderBy ? 'startDate' : orderBy;
-		orderBy === 'employees'
+		let orderByVar = !orderBy ? 'startDate' : orderBy; // default sort by startDate
+
+		orderBy === 'employees' // employees and projectStatus require special handling
 			? (sortOptions['employeeCount'] = orderVar)
 			: orderBy === 'projectStatus'
 			? (sortOptions['sortPriority'] = orderVar)
 			: (sortOptions[orderByVar] = orderVar);
+
 		const projects = await ProjectModel.aggregate([
 			{ $match: query },
-			{ $addFields: { employeeCount: { $size: '$employees' } } },
+			{ $addFields: { employeeCount: { $size: '$employees' } } }, // add employeeCount field to sort by employees
 			{
 				$addFields: {
+					// add sortPriority field to sort by projectStatus
 					sortPriority: {
 						$switch: {
 							branches: [
-								{ case: { $eq: ['$projectStatus', 'completed'] }, then: 1 },
-								{ case: { $eq: ['$projectStatus', 'active'] }, then: 2 },
+								{ case: { $eq: ['$projectStatus', 'active'] }, then: 1 },
+								{ case: { $eq: ['$projectStatus', 'on-hold'] }, then: 2 },
 								{ case: { $eq: ['$projectStatus', 'inactive'] }, then: 3 },
-								{ case: { $eq: ['$projectStatus', 'on-hold'] }, then: 4 },
+								{ case: { $eq: ['$projectStatus', 'completed'] }, then: 4 },
 							],
 							default: 5,
 						},
