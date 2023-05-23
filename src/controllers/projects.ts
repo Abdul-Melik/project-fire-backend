@@ -65,9 +65,16 @@ export const getProjects: RequestHandler<
 
 		const skip = (page - 1) * limit;
 		const sortOptions: { [key: string]: any } = {};
-		sortOptions[orderBy!] = order;
-		const projects = await ProjectModel.find(query).sort(sortOptions).skip(skip).limit(limit);
-
+		let orderVar = order === 'asc' ? 1 : -1; // "asc" === 1, "desc" === "-1
+		let orderByVar = !orderBy ? 'startDate' : orderBy;
+		orderBy === 'employees' ? (sortOptions['employeeCount'] = orderVar) : (sortOptions[orderByVar] = orderVar);
+		const projects = await ProjectModel.aggregate([
+			{ $match: query },
+			{ $addFields: { employeeCount: { $size: '$employees' } } },
+			{ $sort: sortOptions },
+			{ $skip: skip },
+			{ $limit: limit },
+		]);
 		const projectsResponse = projects.map(project => ({
 			id: project._id,
 			name: project.name,
@@ -81,7 +88,7 @@ export const getProjects: RequestHandler<
 			salesChannel: project.salesChannel,
 			projectStatus: project.projectStatus,
 			finished: project.finished,
-			employees: project.employees.map(employeeObj => ({
+			employees: project.employees.map((employeeObj: any) => ({
 				employee: employeeObj.employee,
 				fullTime: employeeObj.fullTime,
 			})),
