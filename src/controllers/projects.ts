@@ -28,10 +28,15 @@ type Query = {
 export const getProjects: RequestHandler<
 	unknown,
 	ProjectsInterfaces.GetProjectsRes,
-	unknown,
+	ProjectsInterfaces.GetProjectsReq,
 	ProjectsInterfaces.GetProjectsQueryParams
 > = async (req, res, next) => {
 	try {
+		const userId = req.body.userId;
+
+		const user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
+
 		const { name, startDate, endDate, projectType, salesChannel, projectStatus, limit = 10, page = 1 } = req.query;
 		const query: Query = {};
 
@@ -91,7 +96,7 @@ export const getProjects: RequestHandler<
 export const getProjectById: RequestHandler<
 	ProjectsInterfaces.GetProjectByIdParams,
 	ProjectsInterfaces.GetProjectByIdRes,
-	unknown,
+	ProjectsInterfaces.GetProjectByIdReq,
 	unknown
 > = async (req, res, next) => {
 	try {
@@ -99,6 +104,11 @@ export const getProjectById: RequestHandler<
 
 		const project = await ProjectModel.findById(projectId);
 		if (!project) throw createHttpError(404, 'Project not found.');
+
+		const userId = req.body.userId;
+
+		const user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
 
 		const projectResponse = {
 			id: project._id,
@@ -125,8 +135,18 @@ export const getProjectById: RequestHandler<
 	}
 };
 
-export const getProjectsInfo: RequestHandler = async (req, res, next) => {
+export const getProjectsInfo: RequestHandler<
+	unknown,
+	ProjectsInterfaces.GetProjectsInfoRes,
+	ProjectsInterfaces.GetProjectsInfoReq,
+	ProjectsInterfaces.GetProjectsInfoQueryParams
+> = async (req, res, next) => {
 	try {
+		const userId = req.body.userId;
+
+		const user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
+
 		const { year } = req.query;
 
 		const startDate = new Date(`${year}-01-01`);
@@ -266,7 +286,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 			},
 		]);
 
-		res.json({
+		const projectsInfoResponse = {
 			totalProjects,
 			totalValue: totalValue[0]?.total || 0,
 			averageValue: averageValue[0]?.average || 0,
@@ -274,9 +294,19 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 			averageHourlyRate: averageRate[0]?.average || 0,
 			salesChannelPercentage,
 			projectTypeCount,
-			revenueCostProfitPerProject,
-			totalRevenueCostProfit,
-		});
+			revenueCostProfitPerProject: revenueCostProfitPerProject.map(obj => ({
+				revenue: obj.revenue,
+				cost: obj.cost,
+				profit: obj.profit,
+			})),
+			totalRevenueCostProfit: totalRevenueCostProfit[0] || {
+				totalRevenue: 0,
+				totalCost: 0,
+				totalProfit: 0,
+			},
+		};
+
+		res.status(200).json(projectsInfoResponse);
 	} catch (error) {
 		next(error);
 	}
@@ -285,7 +315,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 export const getEmployeesByProjectId: RequestHandler<
 	ProjectsInterfaces.GetEmployeesByProjectIdParams,
 	ProjectsInterfaces.GetEmployeesByProjectIdRes[],
-	unknown,
+	ProjectsInterfaces.GetEmployeesByProjectIdReq,
 	unknown
 > = async (req, res, next) => {
 	try {
@@ -305,6 +335,11 @@ export const getEmployeesByProjectId: RequestHandler<
 			}[];
 		}>('employees.employee');
 		if (!project) throw createHttpError(404, 'Project not found');
+
+		const userId = req.body.userId;
+
+		const user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
 
 		const employeesResponse = project.employees.map(employeeObj => ({
 			employee: {
@@ -327,10 +362,15 @@ export const getEmployeesByProjectId: RequestHandler<
 export const getEmployeesPerProject: RequestHandler<
 	unknown,
 	ProjectsInterfaces.GetEmployeesPerProjectRes[],
-	unknown,
+	ProjectsInterfaces.GetEmployeesPerProjectReq,
 	unknown
 > = async (req, res, next) => {
 	try {
+		const userId = req.body.userId;
+
+		const user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
+
 		const projects = await ProjectModel.find().populate<{
 			employees: {
 				employee: {
@@ -370,7 +410,7 @@ export const getEmployeesPerProject: RequestHandler<
 export const getUsersByProjectId: RequestHandler<
 	ProjectsInterfaces.GetUsersByProjectIdParams,
 	ProjectsInterfaces.GetUsersByProjectIdRes[],
-	unknown,
+	ProjectsInterfaces.GetUsersByProjectIdReq,
 	unknown
 > = async (req, res, next) => {
 	try {
@@ -378,6 +418,11 @@ export const getUsersByProjectId: RequestHandler<
 
 		const project = await ProjectModel.findById(projectId);
 		if (!project) throw createHttpError(404, 'Project not found');
+
+		const userId = req.body.userId;
+
+		const user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
 
 		const employeeIds = project.employees.map(employeeObj => employeeObj.employee._id);
 
@@ -402,10 +447,15 @@ export const getUsersByProjectId: RequestHandler<
 export const getUsersPerProject: RequestHandler<
 	unknown,
 	ProjectsInterfaces.GetUsersPerProjectRes[],
-	unknown,
+	ProjectsInterfaces.GetUsersPerProjectReq,
 	unknown
 > = async (req, res, next) => {
 	try {
+		const userId = req.body.userId;
+
+		const user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
+
 		const projects = await ProjectModel.find();
 
 		const employeeIds = projects.flatMap(project => project.employees.map(employeeObj => employeeObj.employee));
@@ -535,7 +585,7 @@ export const createProject: RequestHandler<
 
 export const deleteProject: RequestHandler<
 	ProjectsInterfaces.DeleteProjectParams,
-	unknown,
+	ProjectsInterfaces.DeleteProjectRes,
 	ProjectsInterfaces.DeleteProjectReq,
 	unknown
 > = async (req, res, next) => {

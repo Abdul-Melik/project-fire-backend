@@ -16,10 +16,15 @@ type Query = {
 export const getEmployees: RequestHandler<
 	unknown,
 	EmployeesInterfaces.GetEmployeesRes[],
-	unknown,
+	EmployeesInterfaces.GetEmployeesReq,
 	EmployeesInterfaces.GetEmployeesQueryParams
 > = async (req, res, next) => {
 	try {
+		const userId = req.body.userId;
+
+		const user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
+
 		const { firstName } = req.query;
 		const query: Query = {};
 
@@ -45,7 +50,7 @@ export const getEmployees: RequestHandler<
 export const getEmployeeById: RequestHandler<
 	EmployeesInterfaces.GetEmployeeByIdParams,
 	EmployeesInterfaces.GetEmployeeByIdRes,
-	unknown,
+	EmployeesInterfaces.GetEmployeeByIdReq,
 	unknown
 > = async (req, res, next) => {
 	try {
@@ -53,6 +58,11 @@ export const getEmployeeById: RequestHandler<
 
 		const employee = await EmployeeModel.findById(employeeId);
 		if (!employee) throw createHttpError(404, 'Employee not found.');
+
+		const userId = req.body.userId;
+
+		const user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
 
 		const employeeResponse = {
 			id: employee._id,
@@ -113,7 +123,7 @@ export const addEmployee: RequestHandler<
 
 export const removeEmployee: RequestHandler<
 	EmployeesInterfaces.RemoveEmployeeParams,
-	unknown,
+	EmployeesInterfaces.RemoveEmployeeRes,
 	EmployeesInterfaces.RemoveEmployeeReq,
 	unknown
 > = async (req, res, next) => {
@@ -128,7 +138,7 @@ export const removeEmployee: RequestHandler<
 		const user = await UserModel.findById(userId);
 		if (!user) throw createHttpError(404, 'User not found.');
 
-		if (user.role !== UserRole.Admin) throw createHttpError(403, 'This user is not allowed to remove employees.');
+		if (user.role !== UserRole.Admin) throw createHttpError(403, 'You are not authorized to remove any employee.');
 
 		const userWhoIsEmployee = await UserModel.findOne({ employee: employeeId });
 		if (userWhoIsEmployee && userWhoIsEmployee.id === userId)

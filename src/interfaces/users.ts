@@ -11,6 +11,10 @@ interface GetUsersRes {
 	employee: Types.ObjectId;
 }
 
+interface GetUsersReq {
+	userId: string;
+}
+
 interface GetUserByIdParams {
 	userId: string;
 }
@@ -25,6 +29,10 @@ interface GetUserByIdRes {
 	employee: Types.ObjectId;
 }
 
+interface GetUserByIdReq {
+	userId: string;
+}
+
 interface GetUserByEmployeeIdParams {
 	employeeId: string;
 }
@@ -37,6 +45,10 @@ interface GetUserByEmployeeIdRes {
 	role: UserRole;
 	image?: string;
 	employee: Types.ObjectId;
+}
+
+interface GetUserByEmployeeIdReq {
+	userId: string;
 }
 
 interface RegisterUserRes {
@@ -101,16 +113,23 @@ interface DeleteUserParams {
 	userId: string;
 }
 
+interface DeleteUserRes {
+	message: string;
+}
+
 interface DeleteUserReq {
 	userId: string;
 }
 
 export {
 	GetUsersRes,
+	GetUsersReq,
 	GetUserByIdParams,
 	GetUserByIdRes,
+	GetUserByIdReq,
 	GetUserByEmployeeIdParams,
 	GetUserByEmployeeIdRes,
+	GetUserByEmployeeIdReq,
 	RegisterUserRes,
 	RegisterUserReq,
 	LoginUserRes,
@@ -119,5 +138,6 @@ export {
 	resetPasswordParams,
 	resetPasswordReq,
 	DeleteUserParams,
+	DeleteUserRes,
 	DeleteUserReq,
 };

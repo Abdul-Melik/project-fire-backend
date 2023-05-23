@@ -9,6 +9,10 @@ interface GetEmployeesRes {
 	techStack: string[];
 }
 
+interface GetEmployeesReq {
+	userId: string;
+}
+
 interface GetEmployeesQueryParams {
 	firstName?: string;
 }
@@ -24,6 +28,10 @@ interface GetEmployeeByIdRes {
 	department: string;
 	salary: number;
 	techStack: string[];
+}
+
+interface GetEmployeeByIdReq {
+	userId: string;
 }
 
 interface AddEmployeeRes {
@@ -48,17 +56,24 @@ interface RemoveEmployeeParams {
 	employeeId: string;
 }
 
+interface RemoveEmployeeRes {
+	message: string;
+}
+
 interface RemoveEmployeeReq {
 	userId: string;
 }
 
 export {
 	GetEmployeesRes,
+	GetEmployeesReq,
 	GetEmployeesQueryParams,
 	GetEmployeeByIdParams,
 	GetEmployeeByIdRes,
+	GetEmployeeByIdReq,
 	AddEmployeeRes,
 	AddEmployeeReq,
 	RemoveEmployeeParams,
+	RemoveEmployeeRes,
 	RemoveEmployeeReq,
 };

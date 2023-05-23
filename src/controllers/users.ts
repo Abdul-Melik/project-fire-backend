@@ -12,12 +12,18 @@ import { EmployeeModel } from '../models/employee';
 import { TokenModel } from '../models/token';
 import { ProjectModel } from '../models/project';
 
-export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], unknown, unknown> = async (
-	req,
-	res,
-	next
-) => {
+export const getUsers: RequestHandler<
+	unknown,
+	UsersInterfaces.GetUsersRes[],
+	UsersInterfaces.GetUsersReq,
+	unknown
+> = async (req, res, next) => {
 	try {
+		const userId = req.body.userId;
+
+		const user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
+
 		const users = await UserModel.find().select('-password');
 
 		const usersResponse = users.map(user => ({
@@ -39,13 +45,21 @@ export const getUsers: RequestHandler<unknown, UsersInterfaces.GetUsersRes[], un
 export const getUserById: RequestHandler<
 	UsersInterfaces.GetUserByIdParams,
 	UsersInterfaces.GetUserByIdRes,
-	unknown,
+	UsersInterfaces.GetUserByIdReq,
 	unknown
 > = async (req, res, next) => {
 	try {
-		const userId = req.params.userId;
+		let userId;
+		let user;
 
-		const user = await UserModel.findById(userId).select('-password');
+		userId = req.body.userId;
+
+		user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
+
+		userId = req.params.userId;
+
+		user = await UserModel.findById(userId).select('-password');
 		if (!user) throw createHttpError(404, 'User not found.');
 
 		const userResponse = {
@@ -67,13 +81,20 @@ export const getUserById: RequestHandler<
 export const getUserByEmployeeId: RequestHandler<
 	UsersInterfaces.GetUserByEmployeeIdParams,
 	UsersInterfaces.GetUserByEmployeeIdRes,
-	unknown,
+	UsersInterfaces.GetUserByEmployeeIdReq,
 	unknown
 > = async (req, res, next) => {
 	try {
+		const userId = req.body.userId;
+
+		let user;
+
+		user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
+
 		const employeeId = req.params.employeeId;
 
-		const user = await UserModel.findOne({ employee: employeeId }).select('-password');
+		user = await UserModel.findOne({ employee: employeeId }).select('-password');
 		if (!user) throw createHttpError(404, 'User not found.');
 
 		const userResponse = {
@@ -87,13 +108,6 @@ export const getUserByEmployeeId: RequestHandler<
 		};
 
 		return res.status(200).json(userResponse);
-	} catch (error) {
-		next(error);
-	}
-};
-
-export const getUsersByProjectId: RequestHandler<unknown, unknown, unknown, unknown> = async (req, res, next) => {
-	try {
 	} catch (error) {
 		next(error);
 	}
@@ -300,14 +314,22 @@ export const resetPassword: RequestHandler<
 
 export const deleteUser: RequestHandler<
 	UsersInterfaces.DeleteUserParams,
-	unknown,
+	UsersInterfaces.DeleteUserRes,
 	UsersInterfaces.DeleteUserReq,
 	unknown
 > = async (req, res, next) => {
 	try {
-		const userId = req.params.userId;
+		let userId;
+		let user;
 
-		const user = await UserModel.findById(userId);
+		userId = req.body.userId;
+
+		user = await UserModel.findById(userId);
+		if (!user) throw createHttpError(404, 'User not found.');
+
+		userId = req.params.userId;
+
+		user = await UserModel.findById(userId);
 		if (!user) throw createHttpError(404, 'User not found.');
 		if (user.role === UserRole.Admin) throw createHttpError(403, 'Cannot delete an admin user.');
 

@@ -30,6 +30,10 @@ interface GetProjectsRes {
 	};
 }
 
+interface GetProjectsReq {
+	userId: string;
+}
+
 interface GetProjectsQueryParams {
 	name?: string;
 	startDate?: Date;
@@ -64,6 +68,44 @@ interface GetProjectByIdRes {
 	}[];
 }
 
+interface GetProjectByIdReq {
+	userId: string;
+}
+
+interface GetProjectsInfoRes {
+	totalProjects: number;
+	totalValue: number;
+	averageValue: number;
+	averageTeamSize: number;
+	averageHourlyRate: number;
+	salesChannelPercentage: {
+		salesChannel: SalesChannel;
+		percentage: number;
+	}[];
+	projectTypeCount: {
+		count: number;
+		projectType: ProjectType;
+	}[];
+	revenueCostProfitPerProject: {
+		revenue: number;
+		cost: number;
+		profit: number;
+	}[];
+	totalRevenueCostProfit: {
+		totalRevenue: number;
+		totalCost: number;
+		totalProfit: number;
+	};
+}
+
+interface GetProjectsInfoReq {
+	userId: string;
+}
+
+interface GetProjectsInfoQueryParams {
+	year?: string;
+}
+
 interface GetEmployeesByProjectIdParams {
 	projectId: string;
 }
@@ -78,6 +120,10 @@ interface GetEmployeesByProjectIdRes {
 		techStack: string[];
 	};
 	fullTime: boolean;
+}
+
+interface GetEmployeesByProjectIdReq {
+	userId: string;
 }
 
 interface GetEmployeesPerProjectRes {
@@ -96,6 +142,10 @@ interface GetEmployeesPerProjectRes {
 	}[];
 }
 
+interface GetEmployeesPerProjectReq {
+	userId: string;
+}
+
 interface GetUsersByProjectIdParams {
 	projectId: string;
 }
@@ -110,6 +160,10 @@ interface GetUsersByProjectIdRes {
 	employee: Types.ObjectId;
 }
 
+interface GetUsersByProjectIdReq {
+	userId: string;
+}
+
 interface GetUsersPerProjectRes {
 	id: Types.ObjectId;
 	name: string;
@@ -122,6 +176,11 @@ interface GetUsersPerProjectRes {
 		employee: Types.ObjectId;
 	}[];
 }
+
+interface GetUsersPerProjectReq {
+	userId: string;
+}
+
 interface CreateProjectRes {
 	id: Types.ObjectId;
 	name: string;
@@ -166,23 +225,37 @@ interface DeleteProjectParams {
 	projectId: string;
 }
 
+interface DeleteProjectRes {
+	message: string;
+}
+
 interface DeleteProjectReq {
 	userId: string;
 }
 
 export {
 	GetProjectsRes,
+	GetProjectsReq,
 	GetProjectsQueryParams,
 	GetProjectByIdParams,
 	GetProjectByIdRes,
+	GetProjectByIdReq,
+	GetProjectsInfoRes,
+	GetProjectsInfoReq,
+	GetProjectsInfoQueryParams,
 	GetEmployeesByProjectIdParams,
 	GetEmployeesByProjectIdRes,
+	GetEmployeesByProjectIdReq,
 	GetEmployeesPerProjectRes,
+	GetEmployeesPerProjectReq,
 	GetUsersByProjectIdParams,
 	GetUsersByProjectIdRes,
+	GetUsersByProjectIdReq,
 	GetUsersPerProjectRes,
+	GetUsersPerProjectReq,
 	CreateProjectRes,
 	CreateProjectReq,
 	DeleteProjectParams,
+	DeleteProjectRes,
 	DeleteProjectReq,
 };
