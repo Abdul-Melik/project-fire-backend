@@ -67,10 +67,29 @@ export const getProjects: RequestHandler<
 		const sortOptions: { [key: string]: any } = {};
 		let orderVar = order === 'asc' ? 1 : -1; // "asc" === 1, "desc" === "-1
 		let orderByVar = !orderBy ? 'startDate' : orderBy;
-		orderBy === 'employees' ? (sortOptions['employeeCount'] = orderVar) : (sortOptions[orderByVar] = orderVar);
+		orderBy === 'employees'
+			? (sortOptions['employeeCount'] = orderVar)
+			: orderBy === 'projectStatus'
+			? (sortOptions['sortPriority'] = orderVar)
+			: (sortOptions[orderByVar] = orderVar);
 		const projects = await ProjectModel.aggregate([
 			{ $match: query },
 			{ $addFields: { employeeCount: { $size: '$employees' } } },
+			{
+				$addFields: {
+					sortPriority: {
+						$switch: {
+							branches: [
+								{ case: { $eq: ['$projectStatus', 'completed'] }, then: 1 },
+								{ case: { $eq: ['$projectStatus', 'active'] }, then: 2 },
+								{ case: { $eq: ['$projectStatus', 'inactive'] }, then: 3 },
+								{ case: { $eq: ['$projectStatus', 'on-hold'] }, then: 4 },
+							],
+							default: 5,
+						},
+					},
+				},
+			},
 			{ $sort: sortOptions },
 			{ $skip: skip },
 			{ $limit: limit },
