@@ -87,6 +87,7 @@ interface GetProjectsInfoRes {
 		projectType: ProjectType;
 	}[];
 	revenueCostProfitPerProject: {
+		id: Types.ObjectId;
 		revenue: number;
 		cost: number;
 		profit: number;

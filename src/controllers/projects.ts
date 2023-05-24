@@ -295,6 +295,7 @@ export const getProjectsInfo: RequestHandler<
 			salesChannelPercentage,
 			projectTypeCount,
 			revenueCostProfitPerProject: revenueCostProfitPerProject.map(obj => ({
+				id: obj._id,
 				revenue: obj.revenue,
 				cost: obj.cost,
 				profit: obj.profit,
