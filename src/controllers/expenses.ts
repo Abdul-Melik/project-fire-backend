@@ -37,7 +37,7 @@ export const createExpense: RequestHandler<
 
 		if (user.role !== UserRole.Admin) throw createHttpError(403, 'This user is not authorized to create any expense.');
 
-		const { expenseCategory, month, year, plannedExpense } = req.body;
+		const { expenseCategory, month, year, plannedExpense, actualExpense } = req.body;
 
 		if (!expenseCategory || !month || !year) throw createHttpError(400, 'Missing required fields.');
 
@@ -75,11 +75,15 @@ export const createExpense: RequestHandler<
 			}, 0);
 		}
 
+		const finalPlannedExpense =
+			expenseCategory.toLowerCase() === 'direct' ? calculatedPlannedExpense : plannedExpense || 0;
+
 		const expense = await ExpenseModel.create({
 			expenseCategory: existingExpenseCategory._id,
 			month,
 			year,
-			plannedExpense,
+			plannedExpense: finalPlannedExpense,
+			actualExpense: actualExpense || finalPlannedExpense,
 		});
 
 		const expenseResponse = {
@@ -87,7 +91,8 @@ export const createExpense: RequestHandler<
 			expenseCategory: expense.expenseCategory,
 			month: expense.month,
 			year: expense.year,
-			plannedExpense: expenseCategory.toLowerCase() === 'direct' ? calculatedPlannedExpense : plannedExpense || 0,
+			plannedExpense: expense.plannedExpense!,
+			actualExpense: expense.actualExpense!,
 		};
 
 		res.status(201).json(expenseResponse);

@@ -6,6 +6,7 @@ interface CreateExpenseRes {
 	month: string;
 	year: number;
 	plannedExpense: number;
+	actualExpense: number;
 }
 
 interface CreateExpenseReq {
@@ -14,6 +15,7 @@ interface CreateExpenseReq {
 	month?: string;
 	year?: number;
 	plannedExpense?: number;
+	actualExpense?: number;
 }
 
 export { CreateExpenseRes, CreateExpenseReq };
