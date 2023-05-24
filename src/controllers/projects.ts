@@ -499,7 +499,7 @@ export const createProject: RequestHandler<
 		const user = await UserModel.findById(userId);
 		if (!user) throw createHttpError(404, 'User not found.');
 		if (user.role !== UserRole.Admin) {
-			throw createHttpError(403, 'This user is not allowed to create projects.');
+			throw createHttpError(403, 'This user is not authorized to create any project.');
 		}
 
 		const {
@@ -599,7 +599,7 @@ export const deleteProject: RequestHandler<
 
 		const user = await UserModel.findById(userId);
 		if (!user) throw createHttpError(404, 'User not found.');
-		if (user.role !== UserRole.Admin) throw createHttpError(403, 'You are not authorized to delete any project.');
+		if (user.role !== UserRole.Admin) throw createHttpError(403, 'This user is not authorized to delete any project.');
 
 		await project.deleteOne();
 

@@ -333,7 +333,7 @@ export const deleteUser: RequestHandler<
 		if (!user) throw createHttpError(404, 'User not found.');
 		if (user.role === UserRole.Admin) throw createHttpError(403, 'Cannot delete an admin user.');
 
-		if (req.body.userId === userId) throw createHttpError(403, 'You are not authorized to delete yourself.');
+		if (req.body.userId === userId) throw createHttpError(403, 'This user is not authorized to delete him or herself.');
 
 		const employee = await EmployeeModel.findById(user.employee);
 		if (!employee) throw createHttpError(404, 'Employee not found.');

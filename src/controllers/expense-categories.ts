@@ -1,14 +1,14 @@
 import { RequestHandler } from 'express';
 import createHttpError from 'http-errors';
 
-import * as ExpenseCategoryInterface from '../interfaces/expense-categories';
+import * as ExpenseCategoriesInterfaces from '../interfaces/expense-categories';
 import { UserModel, UserRole } from '../models/user';
 import { ExpenseCategoryModel } from '../models/expense-category';
 
 export const getExpenseCategories: RequestHandler<
 	unknown,
-	ExpenseCategoryInterface.GetExpenseCategoriesRes[],
-	ExpenseCategoryInterface.GetExpenseCategoriesReq,
+	ExpenseCategoriesInterfaces.GetExpenseCategoriesRes[],
+	ExpenseCategoriesInterfaces.GetExpenseCategoriesReq,
 	unknown
 > = async (req, res, next) => {
 	try {
@@ -32,9 +32,9 @@ export const getExpenseCategories: RequestHandler<
 };
 
 export const getExpenseCategoryById: RequestHandler<
-	ExpenseCategoryInterface.GetExpenseCategoryByIdParams,
-	ExpenseCategoryInterface.GetExpenseCategoryByIdRes,
-	ExpenseCategoryInterface.GetExpenseCategoryByIdReq,
+	ExpenseCategoriesInterfaces.GetExpenseCategoryByIdParams,
+	ExpenseCategoriesInterfaces.GetExpenseCategoryByIdRes,
+	ExpenseCategoriesInterfaces.GetExpenseCategoryByIdReq,
 	unknown
 > = async (req, res, next) => {
 	try {
@@ -62,8 +62,8 @@ export const getExpenseCategoryById: RequestHandler<
 
 export const createExpenseCategory: RequestHandler<
 	unknown,
-	ExpenseCategoryInterface.CreateExpenseCategoryRes,
-	ExpenseCategoryInterface.CreateExpenseCategoryReq,
+	ExpenseCategoriesInterfaces.CreateExpenseCategoryRes,
+	ExpenseCategoriesInterfaces.CreateExpenseCategoryReq,
 	unknown
 > = async (req, res, next) => {
 	try {
@@ -73,10 +73,13 @@ export const createExpenseCategory: RequestHandler<
 		if (!user) throw createHttpError(404, 'User not found.');
 
 		if (user.role !== UserRole.Admin)
-			throw createHttpError(403, 'This user is not allowed to create an expense category.');
+			throw createHttpError(403, 'This user is not authorized to create any expense category.');
 
 		const { name, description } = req.body;
 		if (!name || !description) throw createHttpError(400, 'Missing required fields.');
+
+		const existingExpenseCategory = await ExpenseCategoryModel.findOne({ name });
+		if (existingExpenseCategory) throw createHttpError(409, 'Expense category already exists.');
 
 		const expenseCategory = await ExpenseCategoryModel.create({
 			name,
@@ -96,9 +99,9 @@ export const createExpenseCategory: RequestHandler<
 };
 
 export const deleteExpenseCategory: RequestHandler<
-	ExpenseCategoryInterface.DeleteExpenseCategoryParams,
-	ExpenseCategoryInterface.DeleteExpenseCategoryRes,
-	ExpenseCategoryInterface.DeleteExpenseCategoryReq,
+	ExpenseCategoriesInterfaces.DeleteExpenseCategoryParams,
+	ExpenseCategoriesInterfaces.DeleteExpenseCategoryRes,
+	ExpenseCategoriesInterfaces.DeleteExpenseCategoryReq,
 	unknown
 > = async (req, res, next) => {
 	try {
@@ -113,7 +116,7 @@ export const deleteExpenseCategory: RequestHandler<
 		if (!user) throw createHttpError(404, 'User not found.');
 
 		if (user.role !== UserRole.Admin)
-			throw createHttpError(403, 'This user is not allowed to delete any expense category.');
+			throw createHttpError(403, 'This user is not authorized to delete any expense category.');
 
 		await expenseCategory.deleteOne();
 

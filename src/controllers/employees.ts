@@ -91,7 +91,7 @@ export const addEmployee: RequestHandler<
 		const user = await UserModel.findById(userId);
 		if (!user) throw createHttpError(404, 'User not found.');
 
-		if (user.role !== UserRole.Admin) throw createHttpError(403, 'This user is not allowed to add employees.');
+		if (user.role !== UserRole.Admin) throw createHttpError(403, 'This user is not authorized to add any employee.');
 
 		const { firstName, lastName, department, salary, techStack } = req.body;
 
@@ -138,11 +138,11 @@ export const removeEmployee: RequestHandler<
 		const user = await UserModel.findById(userId);
 		if (!user) throw createHttpError(404, 'User not found.');
 
-		if (user.role !== UserRole.Admin) throw createHttpError(403, 'You are not authorized to remove any employee.');
+		if (user.role !== UserRole.Admin) throw createHttpError(403, 'This user is not authorized to remove any employee.');
 
 		const userWhoIsEmployee = await UserModel.findOne({ employee: employeeId });
 		if (userWhoIsEmployee && userWhoIsEmployee.id === userId)
-			throw createHttpError(403, 'You are not authorized to delete yourself.');
+			throw createHttpError(403, 'This user is not authorized to delete him or herself.');
 		if (userWhoIsEmployee && userWhoIsEmployee.role === UserRole.Admin)
 			throw createHttpError(403, 'Cannot delete an admin user.');
 
