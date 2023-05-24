@@ -27,7 +27,7 @@ const expenseSchema = new Schema({
 		required: true,
 	},
 	year: { type: Number, required: true },
-	plannedExpense: { type: Number, required: true },
+	plannedExpense: { type: Number },
 	actualExpense: { type: Number },
 });
 
