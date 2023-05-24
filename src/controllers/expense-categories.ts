@@ -78,7 +78,7 @@ export const createExpenseCategory: RequestHandler<
 		const { name, description } = req.body;
 		if (!name || !description) throw createHttpError(400, 'Missing required fields.');
 
-		const existingExpenseCategory = await ExpenseCategoryModel.findOne({ name });
+		const existingExpenseCategory = await ExpenseCategoryModel.findOne({ name: { $regex: name, $options: 'i' } });
 		if (existingExpenseCategory) throw createHttpError(409, 'Expense category already exists.');
 
 		const expenseCategory = await ExpenseCategoryModel.create({

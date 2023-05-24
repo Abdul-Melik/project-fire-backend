@@ -127,7 +127,7 @@ export const registerUser: RequestHandler<
 	try {
 		if (!email || !password || !firstName || !lastName) throw createHttpError(400, 'Missing required fields.');
 
-		const existingUser = await UserModel.findOne({ email });
+		const existingUser = await UserModel.findOne({ email: { $regex: email, $options: 'i' } });
 		if (existingUser) throw createHttpError(409, 'Email already registered.');
 
 		const saltRounds = 10;

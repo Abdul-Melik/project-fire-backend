@@ -529,7 +529,7 @@ export const createProject: RequestHandler<
 		)
 			throw createHttpError(400, 'Missing required fields.');
 
-		const existingProject = await ProjectModel.findOne({ name });
+		const existingProject = await ProjectModel.findOne({ name: { $regex: name, $options: 'i' } });
 		if (existingProject) throw createHttpError(409, 'Project already exists.');
 
 		if (!employees || employees.some(employee => !employee || !employee.employee || employee.fullTime === undefined))
