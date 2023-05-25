@@ -232,14 +232,14 @@ export const getProjectsInfo: RequestHandler<
 					from: 'employees',
 					localField: 'employees.employee',
 					foreignField: '_id',
-					as: 'employees',
+					as: 'employee',
 				},
 			},
 			{
 				$project: {
 					_id: 1,
 					revenue: '$projectValueBAM',
-					cost: { $sum: '$employees.salary' },
+					cost: { $sum: '$employee.salary' },
 				},
 			},
 			{
@@ -259,14 +259,14 @@ export const getProjectsInfo: RequestHandler<
 					from: 'employees',
 					localField: 'employees.employee',
 					foreignField: '_id',
-					as: 'employees',
+					as: 'employee',
 				},
 			},
 			{
 				$project: {
 					_id: 1,
 					projectValueBAM: 1,
-					cost: { $sum: '$employees.salary' },
+					cost: { $sum: '$employee.salary' },
 				},
 			},
 			{
