@@ -33,20 +33,9 @@ export const getProjects: RequestHandler<
 	ProjectsInterfaces.GetProjectsQueryParams
 > = async (req, res, next) => {
 	try {
-		const {
-			name,
-			startDate,
-			endDate,
-			projectType,
-			salesChannel,
-			projectStatus,
-			limit = 10,
-			page = 1,
-			order,
-			orderBy,
-		} = req.query;
+		const { name, startDate, endDate, projectType, salesChannel, projectStatus, page = 1, order, orderBy } = req.query;
 		const query: Query = {};
-
+		const limit = Number(req.query.limit) || 10;
 		if (name) query['name'] = { $regex: name, $options: 'i' };
 
 		if (startDate && endDate) {
