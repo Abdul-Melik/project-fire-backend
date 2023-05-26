@@ -7,6 +7,7 @@ interface GetEmployeesRes {
 	department: string;
 	salary: number;
 	techStack: string[];
+	image?: string;
 }
 
 interface GetEmployeesQueryParams {
@@ -24,6 +25,7 @@ interface GetEmployeeByIdRes {
 	department: string;
 	salary: number;
 	techStack: string[];
+	image?: string;
 }
 
 interface AddEmployeeRes {
@@ -33,6 +35,7 @@ interface AddEmployeeRes {
 	department: string;
 	salary: number;
 	techStack: string[];
+	image?: string;
 }
 
 interface AddEmployeeReq {
@@ -42,6 +45,7 @@ interface AddEmployeeReq {
 	department?: string;
 	salary?: number;
 	techStack?: string[];
+	image?: string;
 }
 
 interface RemoveEmployeeParams {
