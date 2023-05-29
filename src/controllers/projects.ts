@@ -1,611 +1,657 @@
-import { RequestHandler } from 'express';
-import createHttpError from 'http-errors';
-import { Types } from 'mongoose';
+import { RequestHandler } from "express";
+import createHttpError from "http-errors";
+import { Types } from "mongoose";
 
-import * as ProjectsInterfaces from '../interfaces/projects';
-import { ProjectModel, ProjectType, SalesChannel, ProjectStatus } from '../models/project';
-import { UserModel, UserRole } from '../models/user';
-import { EmployeeModel } from '../models/employee';
+import * as ProjectsInterfaces from "../interfaces/projects";
+import { ProjectModel, ProjectType, SalesChannel, ProjectStatus } from "../models/project";
+import { UserModel, UserRole } from "../models/user";
+import { EmployeeModel } from "../models/employee";
 
 type Query = {
-	name?: {
-		$regex: string;
-		$options: string;
-	};
-	startDate?: {
-		$gte: Date;
-	};
-	endDate?: {
-		$lte: Date;
-	};
-	projectType?: ProjectType;
-	salesChannel?: SalesChannel;
-	projectStatus?: ProjectStatus;
-	limit?: number;
-	page?: number;
+  name?: {
+    $regex: string;
+    $options: string;
+  };
+  startDate?: {
+    $gte: Date;
+  };
+  endDate?: {
+    $lte: Date;
+  };
+  projectType?: ProjectType;
+  salesChannel?: SalesChannel;
+  projectStatus?: ProjectStatus;
+  limit?: number;
+  page?: number;
 };
 
 export const getProjects: RequestHandler<
-	unknown,
-	ProjectsInterfaces.GetProjectsRes,
-	ProjectsInterfaces.GetProjectsReq,
-	ProjectsInterfaces.GetProjectsQueryParams
+  unknown,
+  ProjectsInterfaces.GetProjectsRes,
+  ProjectsInterfaces.GetProjectsReq,
+  ProjectsInterfaces.GetProjectsQueryParams
 > = async (req, res, next) => {
-	try {
-		const userId = req.body.userId;
+  try {
+    const userId = req.body.userId;
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
+    const user = await UserModel.findById(userId);
+    if (!user) throw createHttpError(404, "User not found.");
 
-		const { name, startDate, endDate, projectType, salesChannel, projectStatus, limit = 10, page = 1 } = req.query;
-		const query: Query = {};
+    const { name, startDate, endDate, projectType, salesChannel, projectStatus, limit = 10, page = 1 } = req.query;
+    const query: Query = {};
 
-		if (name) query['name'] = { $regex: name, $options: 'i' };
+    if (name) query["name"] = { $regex: name, $options: "i" };
 
-		if (startDate && endDate) {
-			query['startDate'] = { $gte: startDate };
-			query['endDate'] = { $lte: endDate };
-		}
+    if (startDate && endDate) {
+      query["startDate"] = { $gte: startDate };
+      query["endDate"] = { $lte: endDate };
+    }
 
-		if (projectType) query['projectType'] = projectType;
+    if (projectType) query["projectType"] = projectType;
 
-		if (salesChannel) query['salesChannel'] = salesChannel;
+    if (salesChannel) query["salesChannel"] = salesChannel;
 
-		if (projectStatus) query['projectStatus'] = projectStatus;
+    if (projectStatus) query["projectStatus"] = projectStatus;
 
-		const count = await ProjectModel.countDocuments(query);
-		const lastPage = Math.ceil(count / limit);
+    const count = await ProjectModel.countDocuments(query);
+    const lastPage = Math.ceil(count / limit);
 
-		const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-		const projects = await ProjectModel.find(query).skip(skip).limit(limit);
+    const projects = await ProjectModel.find(query).skip(skip).limit(limit);
 
-		const projectsResponse = projects.map(project => ({
-			id: project._id,
-			name: project.name,
-			description: project.description,
-			startDate: project.startDate,
-			endDate: project.endDate,
-			actualEndDate: project.actualEndDate,
-			projectType: project.projectType,
-			hourlyRate: project.hourlyRate,
-			projectValueBAM: project.projectValueBAM,
-			salesChannel: project.salesChannel,
-			projectStatus: project.projectStatus,
-			finished: project.finished,
-			employees: project.employees.map(employeeObj => ({
-				employee: employeeObj.employee,
-				fullTime: employeeObj.fullTime,
-			})),
-		}));
+    const projectsResponse = projects.map((project) => ({
+      id: project._id,
+      name: project.name,
+      description: project.description,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      actualEndDate: project.actualEndDate,
+      projectType: project.projectType,
+      hourlyRate: project.hourlyRate,
+      projectValueBAM: project.projectValueBAM,
+      salesChannel: project.salesChannel,
+      projectStatus: project.projectStatus,
+      finished: project.finished,
+      employees: project.employees.map((employeeObj) => ({
+        employee: employeeObj.employee,
+        fullTime: employeeObj.fullTime,
+      })),
+    }));
 
-		res.status(200).json({
-			projects: projectsResponse,
-			pageInfo: {
-				total: count,
-				currentPage: Number(page),
-				lastPage,
-				perPage: Number(limit),
-			},
-		});
-	} catch (error) {
-		next(error);
-	}
+    res.status(200).json({
+      projects: projectsResponse,
+      pageInfo: {
+        total: count,
+        currentPage: Number(page),
+        lastPage,
+        perPage: Number(limit),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getProjectById: RequestHandler<
-	ProjectsInterfaces.GetProjectByIdParams,
-	ProjectsInterfaces.GetProjectByIdRes,
-	ProjectsInterfaces.GetProjectByIdReq,
-	unknown
+  ProjectsInterfaces.GetProjectByIdParams,
+  ProjectsInterfaces.GetProjectByIdRes,
+  ProjectsInterfaces.GetProjectByIdReq,
+  unknown
 > = async (req, res, next) => {
-	try {
-		const projectId = req.params.projectId;
+  try {
+    const projectId = req.params.projectId;
 
-		const project = await ProjectModel.findById(projectId);
-		if (!project) throw createHttpError(404, 'Project not found.');
+    const project = await ProjectModel.findById(projectId);
+    if (!project) throw createHttpError(404, "Project not found.");
 
-		const userId = req.body.userId;
+    const userId = req.body.userId;
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
+    const user = await UserModel.findById(userId);
+    if (!user) throw createHttpError(404, "User not found.");
 
-		const projectResponse = {
-			id: project._id,
-			name: project.name,
-			description: project.description,
-			startDate: project.startDate,
-			endDate: project.endDate,
-			actualEndDate: project.actualEndDate,
-			projectType: project.projectType,
-			hourlyRate: project.hourlyRate,
-			projectValueBAM: project.projectValueBAM,
-			salesChannel: project.salesChannel,
-			projectStatus: project.projectStatus,
-			finished: project.finished,
-			employees: project.employees.map(employeeObj => ({
-				employee: employeeObj.employee,
-				fullTime: employeeObj.fullTime,
-			})),
-		};
+    const projectResponse = {
+      id: project._id,
+      name: project.name,
+      description: project.description,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      actualEndDate: project.actualEndDate,
+      projectType: project.projectType,
+      hourlyRate: project.hourlyRate,
+      projectValueBAM: project.projectValueBAM,
+      salesChannel: project.salesChannel,
+      projectStatus: project.projectStatus,
+      finished: project.finished,
+      employees: project.employees.map((employeeObj) => ({
+        employee: employeeObj.employee,
+        fullTime: employeeObj.fullTime,
+      })),
+    };
 
-		return res.status(200).json(projectResponse);
-	} catch (error) {
-		next(error);
-	}
+    return res.status(200).json(projectResponse);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getProjectsInfo: RequestHandler<
-	unknown,
-	ProjectsInterfaces.GetProjectsInfoRes,
-	ProjectsInterfaces.GetProjectsInfoReq,
-	ProjectsInterfaces.GetProjectsInfoQueryParams
+  unknown,
+  ProjectsInterfaces.GetProjectsInfoRes,
+  ProjectsInterfaces.GetProjectsInfoReq,
+  ProjectsInterfaces.GetProjectsInfoQueryParams
 > = async (req, res, next) => {
-	try {
-		const userId = req.body.userId;
+  try {
+    const userId = req.body.userId;
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
+    const user = await UserModel.findById(userId);
+    if (!user) throw createHttpError(404, "User not found.");
 
-		const { year } = req.query;
+    const { year } = req.query;
 
-		const startDate = new Date(`${year}-01-01`);
-		const endDate = new Date(`${year}-12-31`);
+    const startDate = new Date(`${year}-01-01`);
+    const endDate = new Date(`${year}-12-31`);
 
-		const totalProjects = await ProjectModel.countDocuments({
-			startDate: { $gte: startDate, $lte: endDate },
-		});
+    const totalProjects = await ProjectModel.countDocuments({
+      startDate: { $gte: startDate, $lte: endDate },
+    });
 
-		const totalValue = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{ $group: { _id: null, total: { $sum: '$projectValueBAM' } } },
-		]);
+    const totalValue = await ProjectModel.aggregate([
+      { $match: { startDate: { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, total: { $sum: "$projectValueBAM" } } },
+    ]);
 
-		const averageValue = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{ $group: { _id: null, average: { $avg: '$projectValueBAM' } } },
-		]);
+    const averageValue = await ProjectModel.aggregate([
+      { $match: { startDate: { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, average: { $avg: "$projectValueBAM" } } },
+    ]);
 
-		const averageTeamSize = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{
-				$group: {
-					_id: null,
-					totalTeamSize: { $sum: { $size: '$employees' } },
-				},
-			},
-			{
-				$project: {
-					_id: 0,
-					average: {
-						$cond: [{ $gt: [totalProjects, 0] }, { $divide: ['$totalTeamSize', totalProjects] }, 0],
-					},
-				},
-			},
-		]);
+    const averageTeamSize = await ProjectModel.aggregate([
+      { $match: { startDate: { $gte: startDate, $lte: endDate } } },
+      {
+        $group: {
+          _id: null,
+          totalTeamSize: { $sum: { $size: "$employees" } },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          average: {
+            $cond: [{ $gt: [totalProjects, 0] }, { $divide: ["$totalTeamSize", totalProjects] }, 0],
+          },
+        },
+      },
+    ]);
 
-		const averageRate = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{ $group: { _id: null, average: { $avg: '$hourlyRate' } } },
-		]);
+    const averageRate = await ProjectModel.aggregate([
+      { $match: { startDate: { $gte: startDate, $lte: endDate } } },
+      { $group: { _id: null, average: { $avg: "$hourlyRate" } } },
+    ]);
 
-		const salesChannelPercentage = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{
-				$group: {
-					_id: '$salesChannel',
-					count: { $sum: 1 },
-				},
-			},
-			{
-				$project: {
-					_id: 0,
-					salesChannel: '$_id',
-					percentage: {
-						$multiply: [{ $divide: ['$count', totalProjects] }, 100],
-					},
-				},
-			},
-		]);
+    const salesChannelPercentage = await ProjectModel.aggregate([
+      { $match: { startDate: { $gte: startDate, $lte: endDate } } },
+      {
+        $group: {
+          _id: "$salesChannel",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          salesChannel: "$_id",
+          percentage: {
+            $multiply: [{ $divide: ["$count", totalProjects] }, 100],
+          },
+        },
+      },
+    ]);
 
-		const projectTypeCount = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{
-				$group: {
-					_id: '$projectType',
-					count: { $sum: 1 },
-				},
-			},
-			{
-				$project: {
-					_id: 0,
-					projectType: '$_id',
-					count: 1,
-				},
-			},
-		]);
+    const projectTypeCount = await ProjectModel.aggregate([
+      { $match: { startDate: { $gte: startDate, $lte: endDate } } },
+      {
+        $group: {
+          _id: "$projectType",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          projectType: "$_id",
+          count: 1,
+        },
+      },
+    ]);
 
-		const revenueCostProfitPerProject = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{
-				$lookup: {
-					from: 'employees',
-					localField: 'employees.employee',
-					foreignField: '_id',
-					as: 'employee',
-				},
-			},
-			{
-				$project: {
-					_id: 1,
-					revenue: '$projectValueBAM',
-					cost: { $sum: '$employee.salary' },
-				},
-			},
-			{
-				$project: {
-					_id: 1,
-					revenue: 1,
-					cost: 1,
-					profit: { $subtract: ['$revenue', '$cost'] },
-				},
-			},
-		]);
+    const revenueCostProfitPerProject = await ProjectModel.aggregate([
+      { $match: { startDate: { $gte: startDate, $lte: endDate } } },
+      {
+        $lookup: {
+          from: "employees",
+          localField: "employees.employee",
+          foreignField: "_id",
+          as: "employee",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          revenue: "$projectValueBAM",
+          cost: { $sum: "$employee.salary" },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          revenue: 1,
+          cost: 1,
+          profit: { $subtract: ["$revenue", "$cost"] },
+        },
+      },
+    ]);
 
-		const totalRevenueCostProfit = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{
-				$lookup: {
-					from: 'employees',
-					localField: 'employees.employee',
-					foreignField: '_id',
-					as: 'employee',
-				},
-			},
-			{
-				$project: {
-					_id: 1,
-					projectValueBAM: 1,
-					cost: { $sum: '$employee.salary' },
-				},
-			},
-			{
-				$group: {
-					_id: null,
-					totalRevenue: { $sum: '$projectValueBAM' },
-					totalCost: { $sum: '$cost' },
-				},
-			},
-			{
-				$project: {
-					_id: 0,
-					totalRevenue: 1,
-					totalCost: 1,
-					totalProfit: { $subtract: ['$totalRevenue', '$totalCost'] },
-				},
-			},
-		]);
+    const totalRevenueCostProfit = await ProjectModel.aggregate([
+      { $match: { startDate: { $gte: startDate, $lte: endDate } } },
+      {
+        $lookup: {
+          from: "employees",
+          localField: "employees.employee",
+          foreignField: "_id",
+          as: "employee",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          projectValueBAM: 1,
+          cost: { $sum: "$employee.salary" },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$projectValueBAM" },
+          totalCost: { $sum: "$cost" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalRevenue: 1,
+          totalCost: 1,
+          totalProfit: { $subtract: ["$totalRevenue", "$totalCost"] },
+        },
+      },
+    ]);
 
-		const projectsInfoResponse = {
-			totalProjects,
-			totalValue: totalValue[0]?.total || 0,
-			averageValue: averageValue[0]?.average || 0,
-			averageTeamSize: averageTeamSize[0]?.average || 0,
-			averageHourlyRate: averageRate[0]?.average || 0,
-			salesChannelPercentage,
-			projectTypeCount,
-			revenueCostProfitPerProject: revenueCostProfitPerProject.map(obj => ({
-				id: obj._id,
-				revenue: obj.revenue,
-				cost: obj.cost,
-				profit: obj.profit,
-			})),
-			totalRevenueCostProfit: totalRevenueCostProfit[0] || {
-				totalRevenue: 0,
-				totalCost: 0,
-				totalProfit: 0,
-			},
-		};
+    const projectsInfoResponse = {
+      totalProjects,
+      totalValue: totalValue[0]?.total || 0,
+      averageValue: averageValue[0]?.average || 0,
+      averageTeamSize: averageTeamSize[0]?.average || 0,
+      averageHourlyRate: averageRate[0]?.average || 0,
+      salesChannelPercentage,
+      projectTypeCount,
+      revenueCostProfitPerProject: revenueCostProfitPerProject.map((obj) => ({
+        id: obj._id,
+        revenue: obj.revenue,
+        cost: obj.cost,
+        profit: obj.profit,
+      })),
+      totalRevenueCostProfit: totalRevenueCostProfit[0] || {
+        totalRevenue: 0,
+        totalCost: 0,
+        totalProfit: 0,
+      },
+    };
 
-		res.status(200).json(projectsInfoResponse);
-	} catch (error) {
-		next(error);
-	}
+    res.status(200).json(projectsInfoResponse);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getEmployeesByProjectId: RequestHandler<
-	ProjectsInterfaces.GetEmployeesByProjectIdParams,
-	ProjectsInterfaces.GetEmployeesByProjectIdRes[],
-	ProjectsInterfaces.GetEmployeesByProjectIdReq,
-	unknown
+  ProjectsInterfaces.GetEmployeesByProjectIdParams,
+  ProjectsInterfaces.GetEmployeesByProjectIdRes[],
+  ProjectsInterfaces.GetEmployeesByProjectIdReq,
+  unknown
 > = async (req, res, next) => {
-	try {
-		const projectId = req.params.projectId;
+  try {
+    const projectId = req.params.projectId;
 
-		const project = await ProjectModel.findById(projectId).populate<{
-			employees: {
-				employee: {
-					_id: Types.ObjectId;
-					firstName: string;
-					lastName: string;
-					department: string;
-					salary: number;
-					techStack: string[];
-				};
-				fullTime: boolean;
-			}[];
-		}>('employees.employee');
-		if (!project) throw createHttpError(404, 'Project not found');
+    const project = await ProjectModel.findById(projectId).populate<{
+      employees: {
+        employee: {
+          _id: Types.ObjectId;
+          firstName: string;
+          lastName: string;
+          department: string;
+          salary: number;
+          techStack: string[];
+        };
+        fullTime: boolean;
+      }[];
+    }>("employees.employee");
+    if (!project) throw createHttpError(404, "Project not found");
 
-		const userId = req.body.userId;
+    const userId = req.body.userId;
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
+    const user = await UserModel.findById(userId);
+    if (!user) throw createHttpError(404, "User not found.");
 
-		const employeesResponse = project.employees.map(employeeObj => ({
-			employee: {
-				id: employeeObj.employee._id,
-				firstName: employeeObj.employee.firstName,
-				lastName: employeeObj.employee.lastName,
-				department: employeeObj.employee.department,
-				salary: employeeObj.employee.salary,
-				techStack: employeeObj.employee.techStack,
-			},
-			fullTime: employeeObj.fullTime,
-		}));
+    const employeesResponse = project.employees.map((employeeObj) => ({
+      employee: {
+        id: employeeObj.employee._id,
+        firstName: employeeObj.employee.firstName,
+        lastName: employeeObj.employee.lastName,
+        department: employeeObj.employee.department,
+        salary: employeeObj.employee.salary,
+        techStack: employeeObj.employee.techStack,
+      },
+      fullTime: employeeObj.fullTime,
+    }));
 
-		res.status(200).json(employeesResponse);
-	} catch (error) {
-		next(error);
-	}
+    res.status(200).json(employeesResponse);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getEmployeesPerProject: RequestHandler<
-	unknown,
-	ProjectsInterfaces.GetEmployeesPerProjectRes[],
-	ProjectsInterfaces.GetEmployeesPerProjectReq,
-	unknown
+  unknown,
+  ProjectsInterfaces.GetEmployeesPerProjectRes[],
+  ProjectsInterfaces.GetEmployeesPerProjectReq,
+  unknown
 > = async (req, res, next) => {
-	try {
-		const userId = req.body.userId;
+  try {
+    const userId = req.body.userId;
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
+    const user = await UserModel.findById(userId);
+    if (!user) throw createHttpError(404, "User not found.");
 
-		const projects = await ProjectModel.find().populate<{
-			employees: {
-				employee: {
-					_id: Types.ObjectId;
-					firstName: string;
-					lastName: string;
-					department: string;
-					salary: number;
-					techStack: string[];
-				};
-				fullTime: boolean;
-			}[];
-		}>('employees.employee');
+    const projects = await ProjectModel.find().populate<{
+      employees: {
+        employee: {
+          _id: Types.ObjectId;
+          firstName: string;
+          lastName: string;
+          department: string;
+          salary: number;
+          techStack: string[];
+        };
+        fullTime: boolean;
+      }[];
+    }>("employees.employee");
 
-		const projectsResponse = projects.map(project => ({
-			id: project._id,
-			name: project.name,
-			employees: project.employees.map(employeeObj => ({
-				employee: {
-					id: employeeObj.employee._id,
-					firstName: employeeObj.employee.firstName,
-					lastName: employeeObj.employee.lastName,
-					department: employeeObj.employee.department,
-					salary: employeeObj.employee.salary,
-					techStack: employeeObj.employee.techStack,
-				},
-				fullTime: employeeObj.fullTime,
-			})),
-		}));
+    const projectsResponse = projects.map((project) => ({
+      id: project._id,
+      name: project.name,
+      employees: project.employees.map((employeeObj) => ({
+        employee: {
+          id: employeeObj.employee._id,
+          firstName: employeeObj.employee.firstName,
+          lastName: employeeObj.employee.lastName,
+          department: employeeObj.employee.department,
+          salary: employeeObj.employee.salary,
+          techStack: employeeObj.employee.techStack,
+        },
+        fullTime: employeeObj.fullTime,
+      })),
+    }));
 
-		res.status(200).json(projectsResponse);
-	} catch (error) {
-		next(error);
-	}
+    res.status(200).json(projectsResponse);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getUsersByProjectId: RequestHandler<
-	ProjectsInterfaces.GetUsersByProjectIdParams,
-	ProjectsInterfaces.GetUsersByProjectIdRes[],
-	ProjectsInterfaces.GetUsersByProjectIdReq,
-	unknown
+  ProjectsInterfaces.GetUsersByProjectIdParams,
+  ProjectsInterfaces.GetUsersByProjectIdRes[],
+  ProjectsInterfaces.GetUsersByProjectIdReq,
+  unknown
 > = async (req, res, next) => {
-	try {
-		const projectId = req.params.projectId;
+  try {
+    const projectId = req.params.projectId;
 
-		const project = await ProjectModel.findById(projectId);
-		if (!project) throw createHttpError(404, 'Project not found');
+    const project = await ProjectModel.findById(projectId);
+    if (!project) throw createHttpError(404, "Project not found");
 
-		const userId = req.body.userId;
+    const userId = req.body.userId;
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
+    const user = await UserModel.findById(userId);
+    if (!user) throw createHttpError(404, "User not found.");
 
-		const employeeIds = project.employees.map(employeeObj => employeeObj.employee._id);
+    const employeeIds = project.employees.map((employeeObj) => employeeObj.employee._id);
 
-		const users = await UserModel.find({ employee: { $in: employeeIds } }).select('-password');
+    const users = await UserModel.find({ employee: { $in: employeeIds } }).select("-password");
 
-		const usersResponse = users.map(user => ({
-			id: user._id,
-			email: user.email,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			role: user.role,
-			image: user.image,
-			employee: user.employee,
-		}));
+    const usersResponse = users.map((user) => ({
+      id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      image: user.image,
+      employee: user.employee,
+    }));
 
-		res.status(200).json(usersResponse);
-	} catch (error) {
-		next(error);
-	}
+    res.status(200).json(usersResponse);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getUsersPerProject: RequestHandler<
-	unknown,
-	ProjectsInterfaces.GetUsersPerProjectRes[],
-	ProjectsInterfaces.GetUsersPerProjectReq,
-	unknown
+  unknown,
+  ProjectsInterfaces.GetUsersPerProjectRes[],
+  ProjectsInterfaces.GetUsersPerProjectReq,
+  unknown
 > = async (req, res, next) => {
-	try {
-		const userId = req.body.userId;
+  try {
+    const userId = req.body.userId;
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
+    const user = await UserModel.findById(userId);
+    if (!user) throw createHttpError(404, "User not found.");
 
-		const projects = await ProjectModel.find();
+    const projects = await ProjectModel.find();
 
-		const employeeIds = projects.flatMap(project => project.employees.map(employeeObj => employeeObj.employee));
+    const employeeIds = projects.flatMap((project) => project.employees.map((employeeObj) => employeeObj.employee));
 
-		const users = await UserModel.find({ employee: { $in: employeeIds } }).select('-password');
+    const users = await UserModel.find({ employee: { $in: employeeIds } }).select("-password");
 
-		const userMap = new Map();
-		users.forEach(user => userMap.set(user.employee.toString(), user));
+    const userMap = new Map();
+    users.forEach((user) => userMap.set(user.employee.toString(), user));
 
-		const usersPerProject = projects.map(project => {
-			const users = project.employees.map(employeeObj => userMap.get(employeeObj.employee.toString()));
-			return {
-				id: project._id,
-				name: project.name,
-				users: users.map(user => ({
-					id: user._id,
-					firstName: user.firstName,
-					lastName: user.lastName,
-					role: user.role,
-					image: user.image,
-					employee: user.employee,
-				})),
-			};
-		});
+    const usersPerProject = projects.map((project) => {
+      const users = project.employees.map((employeeObj) => userMap.get(employeeObj.employee.toString()));
+      return {
+        id: project._id,
+        name: project.name,
+        users: users.map((user) => ({
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          image: user.image,
+          employee: user.employee,
+        })),
+      };
+    });
 
-		res.status(200).json(usersPerProject);
-	} catch (error) {
-		next(error);
-	}
+    res.status(200).json(usersPerProject);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const createProject: RequestHandler<
-	unknown,
-	ProjectsInterfaces.CreateProjectRes,
-	ProjectsInterfaces.CreateProjectReq,
-	unknown
+  unknown,
+  ProjectsInterfaces.CreateProjectRes,
+  ProjectsInterfaces.CreateProjectReq,
+  unknown
 > = async (req, res, next) => {
-	try {
-		const userId = req.body.userId;
+  try {
+    const userId = req.body.userId;
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-		if (user.role !== UserRole.Admin) {
-			throw createHttpError(403, 'This user is not authorized to create any project.');
-		}
+    const user = await UserModel.findById(userId);
+    if (!user) throw createHttpError(404, "User not found.");
+    if (user.role !== UserRole.Admin) {
+      throw createHttpError(403, "This user is not authorized to create any project.");
+    }
 
-		const {
-			name,
-			description,
-			startDate,
-			endDate,
-			actualEndDate,
-			projectType,
-			hourlyRate,
-			projectValueBAM,
-			salesChannel,
-			projectStatus,
-			finished,
-			employees,
-		} = req.body;
+    const {
+      name,
+      description,
+      startDate,
+      endDate,
+      actualEndDate,
+      projectType,
+      hourlyRate,
+      projectValueBAM,
+      salesChannel,
+      projectStatus,
+      finished,
+      employees,
+    } = req.body;
 
-		if (
-			!name ||
-			!description ||
-			!startDate ||
-			!endDate ||
-			!projectType ||
-			!hourlyRate ||
-			!projectValueBAM ||
-			!salesChannel
-		)
-			throw createHttpError(400, 'Missing required fields.');
+    if (
+      !name ||
+      !description ||
+      !startDate ||
+      !endDate ||
+      !projectType ||
+      !hourlyRate ||
+      !projectValueBAM ||
+      !salesChannel
+    )
+      throw createHttpError(400, "Missing required fields.");
 
-		const existingProject = await ProjectModel.findOne({ name: { $regex: name, $options: 'i' } });
-		if (existingProject) throw createHttpError(409, 'Project already exists.');
+    const existingProject = await ProjectModel.findOne({ name: { $regex: name, $options: "i" } });
+    if (existingProject) throw createHttpError(409, "Project already exists.");
 
-		if (!employees || employees.some(employee => !employee || !employee.employee || employee.fullTime === undefined))
-			throw createHttpError(400, 'Invalid employee data.');
+    if (!employees || employees.some((employee) => !employee || !employee.employee || employee.fullTime === undefined))
+      throw createHttpError(400, "Invalid employee data.");
 
-		const employeeIds = employees.map(e => e.employee);
-		if (new Set(employeeIds).size !== employeeIds.length) {
-			throw createHttpError(400, 'Some employees are duplicates.');
-		}
+    const employeeIds = employees.map((e) => e.employee);
+    if (new Set(employeeIds).size !== employeeIds.length) {
+      throw createHttpError(400, "Some employees are duplicates.");
+    }
 
-		const existingEmployees = await EmployeeModel.find({ _id: { $in: employeeIds } });
-		if (existingEmployees.length !== employeeIds.length) throw createHttpError(400, 'Some employees do not exist.');
+    const existingEmployees = await EmployeeModel.find({ _id: { $in: employeeIds } });
+    if (existingEmployees.length !== employeeIds.length) throw createHttpError(400, "Some employees do not exist.");
 
-		const project = await ProjectModel.create({
-			name,
-			description,
-			startDate,
-			endDate,
-			actualEndDate,
-			projectType,
-			hourlyRate,
-			projectValueBAM,
-			salesChannel,
-			projectStatus,
-			finished,
-			employees,
-		});
+    const project = await ProjectModel.create({
+      name,
+      description,
+      startDate,
+      endDate,
+      actualEndDate,
+      projectType,
+      hourlyRate,
+      projectValueBAM,
+      salesChannel,
+      projectStatus,
+      finished,
+      employees,
+    });
 
-		const projectResponse = {
-			id: project._id,
-			name: project.name,
-			description: project.description,
-			startDate: project.startDate,
-			endDate: project.endDate,
-			actualEndDate: project.actualEndDate,
-			projectType: project.projectType,
-			hourlyRate: project.hourlyRate,
-			projectValueBAM: project.projectValueBAM,
-			salesChannel: project.salesChannel,
-			projectStatus: project.projectStatus,
-			finished: project.finished,
-			employees: project.employees.map(employeeObj => ({
-				employee: employeeObj.employee,
-				fullTime: employeeObj.fullTime,
-			})),
-		};
+    const projectResponse = {
+      id: project._id,
+      name: project.name,
+      description: project.description,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      actualEndDate: project.actualEndDate,
+      projectType: project.projectType,
+      hourlyRate: project.hourlyRate,
+      projectValueBAM: project.projectValueBAM,
+      salesChannel: project.salesChannel,
+      projectStatus: project.projectStatus,
+      finished: project.finished,
+      employees: project.employees.map((employeeObj) => ({
+        employee: employeeObj.employee,
+        fullTime: employeeObj.fullTime,
+      })),
+    };
 
-		return res.status(201).json(projectResponse);
-	} catch (error) {
-		next(error);
-	}
+    return res.status(201).json(projectResponse);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const deleteProject: RequestHandler<
-	ProjectsInterfaces.DeleteProjectParams,
-	ProjectsInterfaces.DeleteProjectRes,
-	ProjectsInterfaces.DeleteProjectReq,
-	unknown
+  ProjectsInterfaces.DeleteProjectParams,
+  ProjectsInterfaces.DeleteProjectRes,
+  ProjectsInterfaces.DeleteProjectReq,
+  unknown
 > = async (req, res, next) => {
-	try {
-		const projectId = req.params.projectId;
+  try {
+    const projectId = req.params.projectId;
 
-		const project = await ProjectModel.findById(projectId);
-		if (!project) throw createHttpError(404, 'Project not found.');
+    const project = await ProjectModel.findById(projectId);
+    if (!project) throw createHttpError(404, "Project not found.");
 
-		const userId = req.body.userId;
+    const userId = req.body.userId;
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-		if (user.role !== UserRole.Admin) throw createHttpError(403, 'This user is not authorized to delete any project.');
+    const user = await UserModel.findById(userId);
+    if (!user) throw createHttpError(404, "User not found.");
+    if (user.role !== UserRole.Admin) throw createHttpError(403, "This user is not authorized to delete any project.");
 
-		await project.deleteOne();
+    await project.deleteOne();
 
-		return res.status(200).json({ message: 'Project deleted successfully.' });
-	} catch (error) {
-		next(error);
-	}
+    return res.status(200).json({ message: "Project deleted successfully." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateProject: RequestHandler<
+  ProjectsInterfaces.UpdateProjectParams,
+  ProjectsInterfaces.UpdateProjectRes,
+  ProjectsInterfaces.UpdateProjectReq,
+  unknown
+> = async (req, res, next) => {
+  try {
+    const projectId = req.params.projectId;
+    const projectUpdates = req.body;
+
+    const userId = req.body.userId;
+
+    const user = await UserModel.findById(userId);
+    if (!user) throw createHttpError(404, "User not found.");
+
+    const updatedProject = await ProjectModel.findByIdAndUpdate(projectId, projectUpdates, { new: true });
+
+    if (!updatedProject) {
+      throw createHttpError(404, "Project not found");
+    }
+
+    const projectResponse = {
+      id: updatedProject._id,
+      name: updatedProject.name,
+      description: updatedProject.description,
+      startDate: updatedProject.startDate,
+      endDate: updatedProject.endDate,
+      actualEndDate: updatedProject.actualEndDate,
+      projectType: updatedProject.projectType,
+      hourlyRate: updatedProject.hourlyRate,
+      projectValueBAM: updatedProject.projectValueBAM,
+      salesChannel: updatedProject.salesChannel,
+      projectStatus: updatedProject.projectStatus,
+      finished: updatedProject.finished,
+      employees: updatedProject.employees.map((employeeObj) => ({
+        employee: employeeObj.employee,
+        fullTime: employeeObj.fullTime,
+      })),
+    };
+
+    res.status(200).json(projectResponse);
+  } catch (error) {
+    next(error);
+  }
 };
