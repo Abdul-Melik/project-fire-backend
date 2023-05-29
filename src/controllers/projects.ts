@@ -6,6 +6,7 @@ import * as ProjectsInterfaces from '../interfaces/projects';
 import { ProjectModel, ProjectType, SalesChannel, ProjectStatus } from '../models/project';
 import { UserModel, UserRole } from '../models/user';
 import { EmployeeModel } from '../models/employee';
+import { stringify } from 'querystring';
 
 type Query = {
 	name?: {
@@ -32,14 +33,9 @@ export const getProjects: RequestHandler<
 	ProjectsInterfaces.GetProjectsQueryParams
 > = async (req, res, next) => {
 	try {
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
-		const { name, startDate, endDate, projectType, salesChannel, projectStatus, limit = 10, page = 1 } = req.query;
+		const { name, startDate, endDate, projectType, salesChannel, projectStatus, page = 1, order, orderBy } = req.query;
 		const query: Query = {};
-
+		const limit = Number(req.query.limit) || 10;
 		if (name) query['name'] = { $regex: name, $options: 'i' };
 
 		if (startDate && endDate) {
@@ -57,9 +53,39 @@ export const getProjects: RequestHandler<
 		const lastPage = Math.ceil(count / limit);
 
 		const skip = (page - 1) * limit;
+		const sortOptions: { [key: string]: any } = {};
+		let orderVar = order === 'asc' ? 1 : -1; // "asc" === 1, "desc" === "-1
+		let orderByVar = !orderBy ? 'startDate' : orderBy; // default sort by startDate
 
-		const projects = await ProjectModel.find(query).skip(skip).limit(limit);
+		orderBy === 'employees' // employees and projectStatus require special handling
+			? (sortOptions['employeeCount'] = orderVar)
+			: orderBy === 'projectStatus'
+			? (sortOptions['sortPriority'] = orderVar)
+			: (sortOptions[orderByVar] = orderVar);
 
+		const projects = await ProjectModel.aggregate([
+			{ $match: query },
+			{ $addFields: { employeeCount: { $size: '$employees' } } }, // add employeeCount field to sort by employees
+			{
+				$addFields: {
+					// add sortPriority field to sort by projectStatus
+					sortPriority: {
+						$switch: {
+							branches: [
+								{ case: { $eq: ['$projectStatus', 'active'] }, then: 1 },
+								{ case: { $eq: ['$projectStatus', 'on-hold'] }, then: 2 },
+								{ case: { $eq: ['$projectStatus', 'inactive'] }, then: 3 },
+								{ case: { $eq: ['$projectStatus', 'completed'] }, then: 4 },
+							],
+							default: 5,
+						},
+					},
+				},
+			},
+			{ $sort: sortOptions },
+			{ $skip: skip },
+			{ $limit: limit },
+		]);
 		const projectsResponse = projects.map(project => ({
 			id: project._id,
 			name: project.name,
@@ -73,7 +99,7 @@ export const getProjects: RequestHandler<
 			salesChannel: project.salesChannel,
 			projectStatus: project.projectStatus,
 			finished: project.finished,
-			employees: project.employees.map(employeeObj => ({
+			employees: project.employees.map((employeeObj: any) => ({
 				employee: employeeObj.employee,
 				fullTime: employeeObj.fullTime,
 			})),

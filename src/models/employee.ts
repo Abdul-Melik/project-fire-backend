@@ -21,6 +21,9 @@ const employeeSchema = new Schema({
 		type: [String],
 		default: [],
 	},
+	image: {
+		type: String,
+	},
 	user: {
 		type: Schema.Types.ObjectId,
 		ref: 'User',

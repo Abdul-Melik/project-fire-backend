@@ -121,6 +121,7 @@ export const registerUser: RequestHandler<
 > = async (req, res, next) => {
 	const { email, password, firstName, lastName, role, department, salary, techStack } = req.body;
 
+	console.log(req.body);
 	let user;
 	let employee;
 
@@ -148,6 +149,7 @@ export const registerUser: RequestHandler<
 			department,
 			salary,
 			techStack,
+			image: imageData,
 		});
 
 		user = await UserModel.create({
