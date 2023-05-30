@@ -70,6 +70,11 @@ export const getExpenseById: RequestHandler = async (req, res, next) => {
 	}
 };
 
+// @desc    Get Expenses Info
+// @route   GET /api/expenses/info
+// @access  Private
+export const getExpensesInfo: RequestHandler = async (req, res, next) => {};
+
 // @desc    Create Expense
 // @route   POST /api/expenses
 // @access  Private
