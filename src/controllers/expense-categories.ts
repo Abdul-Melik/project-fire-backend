@@ -1,126 +1,147 @@
 import { RequestHandler } from 'express';
+import { PrismaClient, Role } from '@prisma/client';
 import createHttpError from 'http-errors';
 
-import * as ExpenseCategoriesInterfaces from '../interfaces/expense-categories';
-import { UserModel, UserRole } from '../models/user';
-import { ExpenseCategoryModel } from '../models/expense-category';
+const prisma = new PrismaClient();
 
-export const getExpenseCategories: RequestHandler<
-	unknown,
-	ExpenseCategoriesInterfaces.GetExpenseCategoriesRes[],
-	ExpenseCategoriesInterfaces.GetExpenseCategoriesReq,
-	unknown
-> = async (req, res, next) => {
+// @desc    Get Expense Categories
+// @route   GET /api/expense-categories
+// @access  Private
+export const getExpenseCategories: RequestHandler = async (req, res, next) => {
 	try {
-		const userId = req.body.userId;
+		const expenseCategories = await prisma.expenseCategory.findMany();
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
-		const expenseCategories = await ExpenseCategoryModel.find();
-
-		const expenseCategoriesResponse = expenseCategories.map(expenseCategory => ({
-			id: expenseCategory._id,
-			name: expenseCategory.name,
-			description: expenseCategory.description,
-		}));
-
-		res.status(200).json(expenseCategoriesResponse);
+		return res.status(200).json(expenseCategories);
 	} catch (error) {
 		next(error);
 	}
 };
 
-export const getExpenseCategoryById: RequestHandler<
-	ExpenseCategoriesInterfaces.GetExpenseCategoryByIdParams,
-	ExpenseCategoriesInterfaces.GetExpenseCategoryByIdRes,
-	ExpenseCategoriesInterfaces.GetExpenseCategoryByIdReq,
-	unknown
-> = async (req, res, next) => {
+// @desc    Get Expense Category
+// @route   GET /api/expense-categories/:expenseCategoryId
+// @access  Private
+export const getExpenseCategoryById: RequestHandler = async (req, res, next) => {
 	try {
 		const expenseCategoryId = req.params.expenseCategoryId;
-
-		const expenseCategory = await ExpenseCategoryModel.findById(expenseCategoryId);
+		const expenseCategory = await prisma.expenseCategory.findUnique({
+			where: {
+				id: expenseCategoryId,
+			},
+		});
 		if (!expenseCategory) throw createHttpError(404, 'Expense category not found.');
 
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
-		const expenseCategoryResponse = {
-			id: expenseCategory._id,
-			name: expenseCategory.name,
-			description: expenseCategory.description,
-		};
-
-		res.status(200).json(expenseCategoryResponse);
+		return res.status(200).json(expenseCategory);
 	} catch (error) {
 		next(error);
 	}
 };
 
-export const createExpenseCategory: RequestHandler<
-	unknown,
-	ExpenseCategoriesInterfaces.CreateExpenseCategoryRes,
-	ExpenseCategoriesInterfaces.CreateExpenseCategoryReq,
-	unknown
-> = async (req, res, next) => {
+// @desc    Create Expense Category
+// @route   POST /api/expense-categories
+// @access  Private
+export const createExpenseCategory: RequestHandler = async (req, res, next) => {
 	try {
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
-		if (user.role !== UserRole.Admin)
-			throw createHttpError(403, 'This user is not authorized to create any expense category.');
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin)
+			throw createHttpError(403, 'This user is not allowed to create expense categories.');
 
 		const { name, description } = req.body;
 		if (!name || !description) throw createHttpError(400, 'Missing required fields.');
 
-		const existingExpenseCategory = await ExpenseCategoryModel.findOne({ name: { $regex: name, $options: 'i' } });
+		const existingExpenseCategory = await prisma.expenseCategory.findFirst({
+			where: {
+				name: {
+					equals: name,
+					mode: 'insensitive',
+				},
+			},
+		});
 		if (existingExpenseCategory) throw createHttpError(409, 'Expense category already exists.');
 
-		const expenseCategory = await ExpenseCategoryModel.create({
-			name,
-			description,
+		const expenseCategory = await prisma.expenseCategory.create({
+			data: {
+				name,
+				description,
+			},
 		});
 
-		const expenseCategoryResponse = {
-			id: expenseCategory._id,
-			name: expenseCategory.name,
-			description: expenseCategory.description,
-		};
-
-		return res.status(201).json(expenseCategoryResponse);
+		return res.status(201).json(expenseCategory);
 	} catch (error) {
 		next(error);
 	}
 };
 
-export const deleteExpenseCategory: RequestHandler<
-	ExpenseCategoriesInterfaces.DeleteExpenseCategoryParams,
-	ExpenseCategoriesInterfaces.DeleteExpenseCategoryRes,
-	ExpenseCategoriesInterfaces.DeleteExpenseCategoryReq,
-	unknown
-> = async (req, res, next) => {
+// @desc    Update Expense Category
+// @route   PATCH /api/expense-categories/:expenseCategoryId
+// @access  Private
+export const updateExpenseCategory: RequestHandler = async (req, res, next) => {
 	try {
-		const expenseCategoryId = req.params.expenseCategoryId;
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin)
+			throw createHttpError(403, 'This user is not allowed to update expense categories.');
 
-		const expenseCategory = await ExpenseCategoryModel.findById(expenseCategoryId);
+		const expenseCategoryId = req.params.expenseCategoryId;
+		const expenseCategory = await prisma.expenseCategory.findUnique({
+			where: {
+				id: expenseCategoryId,
+			},
+		});
 		if (!expenseCategory) throw createHttpError(404, 'Expense category not found.');
 
-		const userId = req.body.userId;
+		const { name, description } = req.body;
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
+		if (name) {
+			const existingExpenseCategory = await prisma.expenseCategory.findFirst({
+				where: {
+					name: {
+						equals: name,
+						mode: 'insensitive',
+					},
+				},
+			});
+			if (existingExpenseCategory) throw createHttpError(409, 'Expense category already exists.');
+		}
 
-		if (user.role !== UserRole.Admin)
-			throw createHttpError(403, 'This user is not authorized to delete any expense category.');
+		const updatedExpenseCategory = await prisma.expenseCategory.update({
+			where: {
+				id: expenseCategoryId,
+			},
+			data: {
+				name,
+				description,
+			},
+		});
 
-		await expenseCategory.deleteOne();
+		return res.status(200).json(updatedExpenseCategory);
+	} catch (error) {
+		next(error);
+	}
+};
 
-		return res.status(200).json({ message: 'Expense category deleted successfully.' });
+// @desc    Delete Expense Category
+// @route   DELETE /api/expense-categories/:expenseCategoryId
+// @access  Private
+export const deleteExpenseCategory: RequestHandler = async (req, res, next) => {
+	try {
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin)
+			throw createHttpError(403, 'This user is not allowed to delete expense categories.');
+
+		const expenseCategoryId = req.params.expenseCategoryId;
+		const expenseCategory = await prisma.expenseCategory.findUnique({
+			where: {
+				id: expenseCategoryId,
+			},
+		});
+		if (!expenseCategory) throw createHttpError(404, 'Expense category not found.');
+
+		await prisma.expenseCategory.delete({
+			where: {
+				id: expenseCategoryId,
+			},
+		});
+
+		return res.status(204).send();
 	} catch (error) {
 		next(error);
 	}

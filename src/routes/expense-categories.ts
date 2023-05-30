@@ -8,6 +8,7 @@ const router = express.Router();
 router.get('/', authenticateToken, ExpenseCategoriesController.getExpenseCategories);
 router.get('/:expenseCategoryId', authenticateToken, ExpenseCategoriesController.getExpenseCategoryById);
 router.post('/', authenticateToken, ExpenseCategoriesController.createExpenseCategory);
+router.patch('/:expenseCategoryId', authenticateToken, ExpenseCategoriesController.updateExpenseCategory);
 router.delete('/:expenseCategoryId', authenticateToken, ExpenseCategoriesController.deleteExpenseCategory);
 
 export default router;

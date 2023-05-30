@@ -1,91 +1,59 @@
 import { RequestHandler } from 'express';
+import { PrismaClient, Role, ProjectType, SalesChannel, ProjectStatus } from '@prisma/client';
 import createHttpError from 'http-errors';
-import { Types } from 'mongoose';
 
-import * as ProjectsInterfaces from '../interfaces/projects';
-import { ProjectModel, ProjectType, SalesChannel, ProjectStatus } from '../models/project';
-import { UserModel, UserRole } from '../models/user';
-import { EmployeeModel } from '../models/employee';
+const prisma = new PrismaClient();
 
-type Query = {
-	name?: {
-		$regex: string;
-		$options: string;
-	};
-	startDate?: {
-		$gte: Date;
-	};
-	endDate?: {
-		$lte: Date;
-	};
-	projectType?: ProjectType;
-	salesChannel?: SalesChannel;
-	projectStatus?: ProjectStatus;
-	limit?: number;
-	page?: number;
-};
-
-export const getProjects: RequestHandler<
-	unknown,
-	ProjectsInterfaces.GetProjectsRes,
-	ProjectsInterfaces.GetProjectsReq,
-	ProjectsInterfaces.GetProjectsQueryParams
-> = async (req, res, next) => {
+// @desc    Get Projects
+// @route   GET /api/projects
+// @access  Private
+export const getProjects: RequestHandler = async (req, res, next) => {
 	try {
-		const userId = req.body.userId;
+		const { name, startDate, endDate, projectType, salesChannel, projectStatus, take = 10, page = 1 } = req.query;
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
+		const count = await prisma.project.count();
+		const lastPage = Math.ceil(count / Number(take));
+		const skip = (Number(page) - 1) * Number(take);
 
-		const { name, startDate, endDate, projectType, salesChannel, projectStatus, limit = 10, page = 1 } = req.query;
-		const query: Query = {};
+		const projects = await prisma.project.findMany({
+			where: {
+				name: {
+					contains: name ? name.toString() : '',
+					mode: 'insensitive',
+				},
+				...(startDate && {
+					startDate: {
+						gte: new Date(startDate as string),
+					},
+				}),
+				...(endDate && {
+					endDate: {
+						lte: new Date(endDate as string),
+					},
+				}),
+				projectType: projectType as ProjectType,
+				salesChannel: salesChannel as SalesChannel,
+				projectStatus: projectStatus as ProjectStatus,
+			},
+			skip,
+			take: Number(take),
+			include: {
+				employees: {
+					select: {
+						partTime: true,
+						employee: true,
+					},
+				},
+			},
+		});
 
-		if (name) query['name'] = { $regex: name, $options: 'i' };
-
-		if (startDate && endDate) {
-			query['startDate'] = { $gte: startDate };
-			query['endDate'] = { $lte: endDate };
-		}
-
-		if (projectType) query['projectType'] = projectType;
-
-		if (salesChannel) query['salesChannel'] = salesChannel;
-
-		if (projectStatus) query['projectStatus'] = projectStatus;
-
-		const count = await ProjectModel.countDocuments(query);
-		const lastPage = Math.ceil(count / limit);
-
-		const skip = (page - 1) * limit;
-
-		const projects = await ProjectModel.find(query).skip(skip).limit(limit);
-
-		const projectsResponse = projects.map(project => ({
-			id: project._id,
-			name: project.name,
-			description: project.description,
-			startDate: project.startDate,
-			endDate: project.endDate,
-			actualEndDate: project.actualEndDate,
-			projectType: project.projectType,
-			hourlyRate: project.hourlyRate,
-			projectValueBAM: project.projectValueBAM,
-			salesChannel: project.salesChannel,
-			projectStatus: project.projectStatus,
-			finished: project.finished,
-			employees: project.employees.map(employeeObj => ({
-				employee: employeeObj.employee,
-				fullTime: employeeObj.fullTime,
-			})),
-		}));
-
-		res.status(200).json({
-			projects: projectsResponse,
+		return res.status(200).json({
+			projects,
 			pageInfo: {
 				total: count,
 				currentPage: Number(page),
 				lastPage,
-				perPage: Number(limit),
+				perPage: Number(take),
 			},
 		});
 	} catch (error) {
@@ -93,415 +61,197 @@ export const getProjects: RequestHandler<
 	}
 };
 
-export const getProjectById: RequestHandler<
-	ProjectsInterfaces.GetProjectByIdParams,
-	ProjectsInterfaces.GetProjectByIdRes,
-	ProjectsInterfaces.GetProjectByIdReq,
-	unknown
-> = async (req, res, next) => {
+// @desc    Get Project
+// @route   GET /api/projects/:projectId
+// @access  Private
+export const getProjectById: RequestHandler = async (req, res, next) => {
 	try {
 		const projectId = req.params.projectId;
-
-		const project = await ProjectModel.findById(projectId);
+		const project = await prisma.project.findUnique({
+			where: {
+				id: projectId,
+			},
+			include: {
+				employees: {
+					select: {
+						partTime: true,
+						employee: true,
+					},
+				},
+			},
+		});
 		if (!project) throw createHttpError(404, 'Project not found.');
 
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
-		const projectResponse = {
-			id: project._id,
-			name: project.name,
-			description: project.description,
-			startDate: project.startDate,
-			endDate: project.endDate,
-			actualEndDate: project.actualEndDate,
-			projectType: project.projectType,
-			hourlyRate: project.hourlyRate,
-			projectValueBAM: project.projectValueBAM,
-			salesChannel: project.salesChannel,
-			projectStatus: project.projectStatus,
-			finished: project.finished,
-			employees: project.employees.map(employeeObj => ({
-				employee: employeeObj.employee,
-				fullTime: employeeObj.fullTime,
-			})),
-		};
-
-		return res.status(200).json(projectResponse);
+		return res.status(200).json(project);
 	} catch (error) {
 		next(error);
 	}
 };
 
-export const getProjectsInfo: RequestHandler<
-	unknown,
-	ProjectsInterfaces.GetProjectsInfoRes,
-	ProjectsInterfaces.GetProjectsInfoReq,
-	ProjectsInterfaces.GetProjectsInfoQueryParams
-> = async (req, res, next) => {
+// @desc    Get Projects Info
+// @route   GET /api/projects/info
+// @access  Private
+export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 	try {
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
 		const { year } = req.query;
 
 		const startDate = new Date(`${year}-01-01`);
 		const endDate = new Date(`${year}-12-31`);
 
-		const totalProjects = await ProjectModel.countDocuments({
-			startDate: { $gte: startDate, $lte: endDate },
-		});
-
-		const totalValue = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{ $group: { _id: null, total: { $sum: '$projectValueBAM' } } },
-		]);
-
-		const averageValue = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{ $group: { _id: null, average: { $avg: '$projectValueBAM' } } },
-		]);
-
-		const averageTeamSize = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{
-				$group: {
-					_id: null,
-					totalTeamSize: { $sum: { $size: '$employees' } },
-				},
+		const yearFilter = {
+			startDate: {
+				gte: startDate,
 			},
-			{
-				$project: {
-					_id: 0,
-					average: {
-						$cond: [{ $gt: [totalProjects, 0] }, { $divide: ['$totalTeamSize', totalProjects] }, 0],
-					},
-				},
-			},
-		]);
-
-		const averageRate = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{ $group: { _id: null, average: { $avg: '$hourlyRate' } } },
-		]);
-
-		const salesChannelPercentage = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{
-				$group: {
-					_id: '$salesChannel',
-					count: { $sum: 1 },
-				},
-			},
-			{
-				$project: {
-					_id: 0,
-					salesChannel: '$_id',
-					percentage: {
-						$multiply: [{ $divide: ['$count', totalProjects] }, 100],
-					},
-				},
-			},
-		]);
-
-		const projectTypeCount = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{
-				$group: {
-					_id: '$projectType',
-					count: { $sum: 1 },
-				},
-			},
-			{
-				$project: {
-					_id: 0,
-					projectType: '$_id',
-					count: 1,
-				},
-			},
-		]);
-
-		const revenueCostProfitPerProject = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{
-				$lookup: {
-					from: 'employees',
-					localField: 'employees.employee',
-					foreignField: '_id',
-					as: 'employee',
-				},
-			},
-			{
-				$project: {
-					_id: 1,
-					revenue: '$projectValueBAM',
-					cost: { $sum: '$employee.salary' },
-				},
-			},
-			{
-				$project: {
-					_id: 1,
-					revenue: 1,
-					cost: 1,
-					profit: { $subtract: ['$revenue', '$cost'] },
-				},
-			},
-		]);
-
-		const totalRevenueCostProfit = await ProjectModel.aggregate([
-			{ $match: { startDate: { $gte: startDate, $lte: endDate } } },
-			{
-				$lookup: {
-					from: 'employees',
-					localField: 'employees.employee',
-					foreignField: '_id',
-					as: 'employee',
-				},
-			},
-			{
-				$project: {
-					_id: 1,
-					projectValueBAM: 1,
-					cost: { $sum: '$employee.salary' },
-				},
-			},
-			{
-				$group: {
-					_id: null,
-					totalRevenue: { $sum: '$projectValueBAM' },
-					totalCost: { $sum: '$cost' },
-				},
-			},
-			{
-				$project: {
-					_id: 0,
-					totalRevenue: 1,
-					totalCost: 1,
-					totalProfit: { $subtract: ['$totalRevenue', '$totalCost'] },
-				},
-			},
-		]);
-
-		const projectsInfoResponse = {
-			totalProjects,
-			totalValue: totalValue[0]?.total || 0,
-			averageValue: averageValue[0]?.average || 0,
-			averageTeamSize: averageTeamSize[0]?.average || 0,
-			averageHourlyRate: averageRate[0]?.average || 0,
-			salesChannelPercentage,
-			projectTypeCount,
-			revenueCostProfitPerProject: revenueCostProfitPerProject.map(obj => ({
-				id: obj._id,
-				revenue: obj.revenue,
-				cost: obj.cost,
-				profit: obj.profit,
-			})),
-			totalRevenueCostProfit: totalRevenueCostProfit[0] || {
-				totalRevenue: 0,
-				totalCost: 0,
-				totalProfit: 0,
+			endDate: {
+				lte: endDate,
 			},
 		};
 
-		res.status(200).json(projectsInfoResponse);
-	} catch (error) {
-		next(error);
-	}
-};
-
-export const getEmployeesByProjectId: RequestHandler<
-	ProjectsInterfaces.GetEmployeesByProjectIdParams,
-	ProjectsInterfaces.GetEmployeesByProjectIdRes[],
-	ProjectsInterfaces.GetEmployeesByProjectIdReq,
-	unknown
-> = async (req, res, next) => {
-	try {
-		const projectId = req.params.projectId;
-
-		const project = await ProjectModel.findById(projectId).populate<{
-			employees: {
-				employee: {
-					_id: Types.ObjectId;
-					firstName: string;
-					lastName: string;
-					department: string;
-					salary: number;
-					techStack: string[];
-				};
-				fullTime: boolean;
-			}[];
-		}>('employees.employee');
-		if (!project) throw createHttpError(404, 'Project not found');
-
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
-		const employeesResponse = project.employees.map(employeeObj => ({
-			employee: {
-				id: employeeObj.employee._id,
-				firstName: employeeObj.employee.firstName,
-				lastName: employeeObj.employee.lastName,
-				department: employeeObj.employee.department,
-				salary: employeeObj.employee.salary,
-				techStack: employeeObj.employee.techStack,
-			},
-			fullTime: employeeObj.fullTime,
-		}));
-
-		res.status(200).json(employeesResponse);
-	} catch (error) {
-		next(error);
-	}
-};
-
-export const getEmployeesPerProject: RequestHandler<
-	unknown,
-	ProjectsInterfaces.GetEmployeesPerProjectRes[],
-	ProjectsInterfaces.GetEmployeesPerProjectReq,
-	unknown
-> = async (req, res, next) => {
-	try {
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
-		const projects = await ProjectModel.find().populate<{
-			employees: {
-				employee: {
-					_id: Types.ObjectId;
-					firstName: string;
-					lastName: string;
-					department: string;
-					salary: number;
-					techStack: string[];
-				};
-				fullTime: boolean;
-			}[];
-		}>('employees.employee');
-
-		const projectsResponse = projects.map(project => ({
-			id: project._id,
-			name: project.name,
-			employees: project.employees.map(employeeObj => ({
-				employee: {
-					id: employeeObj.employee._id,
-					firstName: employeeObj.employee.firstName,
-					lastName: employeeObj.employee.lastName,
-					department: employeeObj.employee.department,
-					salary: employeeObj.employee.salary,
-					techStack: employeeObj.employee.techStack,
-				},
-				fullTime: employeeObj.fullTime,
-			})),
-		}));
-
-		res.status(200).json(projectsResponse);
-	} catch (error) {
-		next(error);
-	}
-};
-
-export const getUsersByProjectId: RequestHandler<
-	ProjectsInterfaces.GetUsersByProjectIdParams,
-	ProjectsInterfaces.GetUsersByProjectIdRes[],
-	ProjectsInterfaces.GetUsersByProjectIdReq,
-	unknown
-> = async (req, res, next) => {
-	try {
-		const projectId = req.params.projectId;
-
-		const project = await ProjectModel.findById(projectId);
-		if (!project) throw createHttpError(404, 'Project not found');
-
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
-		const employeeIds = project.employees.map(employeeObj => employeeObj.employee._id);
-
-		const users = await UserModel.find({ employee: { $in: employeeIds } }).select('-password');
-
-		const usersResponse = users.map(user => ({
-			id: user._id,
-			email: user.email,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			role: user.role,
-			image: user.image,
-			employee: user.employee,
-		}));
-
-		res.status(200).json(usersResponse);
-	} catch (error) {
-		next(error);
-	}
-};
-
-export const getUsersPerProject: RequestHandler<
-	unknown,
-	ProjectsInterfaces.GetUsersPerProjectRes[],
-	ProjectsInterfaces.GetUsersPerProjectReq,
-	unknown
-> = async (req, res, next) => {
-	try {
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
-		const projects = await ProjectModel.find();
-
-		const employeeIds = projects.flatMap(project => project.employees.map(employeeObj => employeeObj.employee));
-
-		const users = await UserModel.find({ employee: { $in: employeeIds } }).select('-password');
-
-		const userMap = new Map();
-		users.forEach(user => userMap.set(user.employee.toString(), user));
-
-		const usersPerProject = projects.map(project => {
-			const users = project.employees.map(employeeObj => userMap.get(employeeObj.employee.toString()));
-			return {
-				id: project._id,
-				name: project.name,
-				users: users.map(user => ({
-					id: user._id,
-					firstName: user.firstName,
-					lastName: user.lastName,
-					role: user.role,
-					image: user.image,
-					employee: user.employee,
-				})),
-			};
+		const totalProjects = await prisma.project.count({
+			where: yearFilter,
 		});
 
-		res.status(200).json(usersPerProject);
+		type Project = {
+			name: string;
+			hourlyRate: number;
+			numberOfEmployees: number;
+			revenue: number;
+			cost: number;
+			profit: number;
+		};
+
+		let projects: Project[] = [];
+		let totalValue = 0;
+		let totalCost = 0;
+		let grossProfit = 0;
+		let averageValue = 0;
+		let averageRate = 0;
+		let averageTeamSize = 0;
+		let salesChannelPercentage = {};
+		let projectTypeCount = {};
+
+		if (totalProjects) {
+			const projectsData = await prisma.project.findMany({
+				where: yearFilter,
+				select: {
+					name: true,
+					hourlyRate: true,
+					projectValueBAM: true,
+					_count: true,
+					employees: {
+						select: {
+							partTime: true,
+							employee: {
+								select: {
+									salary: true,
+								},
+							},
+						},
+					},
+				},
+			});
+
+			projects = projectsData.map(project => {
+				const revenue = project.projectValueBAM;
+				const cost = project.employees.reduce((sum, obj) => {
+					const partTime = obj.partTime;
+					const salary = obj.employee.salary || 0;
+					return sum + salary * (partTime ? 0.5 : 1);
+				}, 0);
+				const profit = revenue - cost;
+				return {
+					name: project.name,
+					hourlyRate: project.hourlyRate,
+					numberOfEmployees: project._count.employees,
+					revenue,
+					cost,
+					profit,
+				};
+			});
+
+			totalValue = projects.reduce((sum, project) => {
+				return sum + project.revenue;
+			}, 0);
+
+			totalCost = projects.reduce((sum, project) => {
+				return sum + project.cost;
+			}, 0);
+
+			const totalHourlyRate = projects.reduce((sum, project) => {
+				return sum + project.hourlyRate;
+			}, 0);
+
+			const totalEmployees = projects.reduce((sum, project) => {
+				const numberOfEmployees = project.numberOfEmployees;
+				return sum + numberOfEmployees;
+			}, 0);
+
+			grossProfit = totalValue - totalCost;
+
+			averageValue = totalValue / totalProjects;
+
+			averageRate = totalHourlyRate / totalProjects;
+
+			averageTeamSize = totalEmployees / totalProjects;
+
+			const salesChannelCountData = await prisma.project.groupBy({
+				where: yearFilter,
+				by: ['salesChannel'],
+				_count: {
+					id: true,
+				},
+			});
+
+			salesChannelPercentage = salesChannelCountData.reduce((result, obj) => {
+				const count = obj._count.id;
+				const percentage = (count / totalProjects) * 100;
+				return {
+					...result,
+					[obj.salesChannel]: percentage,
+				};
+			}, {});
+
+			const projectTypeCountData = await prisma.project.groupBy({
+				where: yearFilter,
+				by: ['projectType'],
+				_count: {
+					id: true,
+				},
+			});
+
+			projectTypeCount = projectTypeCountData.reduce((result, obj) => {
+				const count = obj._count.id;
+				return {
+					...result,
+					[obj.projectType]: count,
+				};
+			}, {});
+		}
+
+		return res.status(200).json({
+			projects,
+			totalProjects,
+			totalValue,
+			totalCost,
+			grossProfit,
+			averageValue,
+			averageRate,
+			averageTeamSize,
+			salesChannelPercentage,
+			projectTypeCount,
+		});
 	} catch (error) {
 		next(error);
 	}
 };
 
-export const createProject: RequestHandler<
-	unknown,
-	ProjectsInterfaces.CreateProjectRes,
-	ProjectsInterfaces.CreateProjectReq,
-	unknown
-> = async (req, res, next) => {
+// @desc    Create Project
+// @route   POST /api/projects
+// @access  Private
+export const createProject: RequestHandler = async (req, res, next) => {
 	try {
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-		if (user.role !== UserRole.Admin) {
-			throw createHttpError(403, 'This user is not authorized to create any project.');
-		}
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to create projects.');
 
 		const {
 			name,
@@ -514,8 +264,7 @@ export const createProject: RequestHandler<
 			projectValueBAM,
 			salesChannel,
 			projectStatus,
-			finished,
-			employees,
+			employeesOnProject = [],
 		} = req.body;
 
 		if (
@@ -530,21 +279,94 @@ export const createProject: RequestHandler<
 		)
 			throw createHttpError(400, 'Missing required fields.');
 
-		const existingProject = await ProjectModel.findOne({ name: { $regex: name, $options: 'i' } });
+		const existingProject = await prisma.project.findFirst({
+			where: {
+				name: {
+					equals: name,
+					mode: 'insensitive',
+				},
+			},
+		});
 		if (existingProject) throw createHttpError(409, 'Project already exists.');
 
-		if (!employees || employees.some(employee => !employee || !employee.employee || employee.fullTime === undefined))
-			throw createHttpError(400, 'Invalid employee data.');
-
-		const employeeIds = employees.map(e => e.employee);
-		if (new Set(employeeIds).size !== employeeIds.length) {
-			throw createHttpError(400, 'Some employees are duplicates.');
+		if (!Array.isArray(employeesOnProject)) throw createHttpError(400, 'Invalid employees data.');
+		for (const employee of employeesOnProject) {
+			if (
+				!employee ||
+				typeof employee !== 'object' ||
+				typeof employee.employeeId !== 'string' ||
+				typeof employee.partTime !== 'boolean'
+			)
+				throw createHttpError(400, 'Invalid employees data.');
 		}
 
-		const existingEmployees = await EmployeeModel.find({ _id: { $in: employeeIds } });
+		const employeeIds = employeesOnProject.map(employee => employee.employeeId);
+		if (new Set(employeeIds).size !== employeeIds.length) throw createHttpError(400, 'Some employees are duplicates.');
+
+		const existingEmployees = await prisma.employee.findMany({
+			where: {
+				id: { in: employeeIds },
+			},
+			select: { id: true },
+		});
 		if (existingEmployees.length !== employeeIds.length) throw createHttpError(400, 'Some employees do not exist.');
 
-		const project = await ProjectModel.create({
+		const project = await prisma.project.create({
+			data: {
+				name,
+				description,
+				startDate: new Date(startDate),
+				endDate: new Date(endDate),
+				actualEndDate: actualEndDate ? new Date(actualEndDate) : undefined,
+				projectType,
+				hourlyRate,
+				projectValueBAM,
+				salesChannel,
+				projectStatus,
+				employees: {
+					create: employeesOnProject.map(employee => ({
+						partTime: employee.partTime,
+						employee: {
+							connect: {
+								id: employee.employeeId,
+							},
+						},
+					})),
+				},
+			},
+			include: {
+				employees: {
+					select: {
+						partTime: true,
+						employee: true,
+					},
+				},
+			},
+		});
+
+		return res.status(201).json(project);
+	} catch (error) {
+		next(error);
+	}
+};
+
+// @desc    Update Project
+// @route   POST /api/projects/:projectId
+// @access  Private
+export const updateProject: RequestHandler = async (req, res, next) => {
+	try {
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to update projects.');
+
+		const projectId = req.params.projectId;
+		const project = await prisma.project.findUnique({
+			where: {
+				id: projectId,
+			},
+		});
+		if (!project) throw createHttpError(404, 'Project not found.');
+
+		const {
 			name,
 			description,
 			startDate,
@@ -555,56 +377,119 @@ export const createProject: RequestHandler<
 			projectValueBAM,
 			salesChannel,
 			projectStatus,
-			finished,
-			employees,
-		});
+			employeesOnProject,
+		} = req.body;
 
-		const projectResponse = {
-			id: project._id,
-			name: project.name,
-			description: project.description,
-			startDate: project.startDate,
-			endDate: project.endDate,
-			actualEndDate: project.actualEndDate,
-			projectType: project.projectType,
-			hourlyRate: project.hourlyRate,
-			projectValueBAM: project.projectValueBAM,
-			salesChannel: project.salesChannel,
-			projectStatus: project.projectStatus,
-			finished: project.finished,
-			employees: project.employees.map(employeeObj => ({
-				employee: employeeObj.employee,
-				fullTime: employeeObj.fullTime,
-			})),
+		if (name) {
+			const existingProject = await prisma.project.findFirst({
+				where: {
+					name: {
+						equals: name,
+						mode: 'insensitive',
+					},
+				},
+			});
+			if (existingProject) throw createHttpError(409, 'Project already exists.');
+		}
+
+		if (employeesOnProject) {
+			if (!Array.isArray(employeesOnProject)) throw createHttpError(400, 'Invalid employees data.');
+			for (const employee of employeesOnProject) {
+				if (
+					!employee ||
+					typeof employee !== 'object' ||
+					typeof employee.employeeId !== 'string' ||
+					typeof employee.partTime !== 'boolean'
+				)
+					throw createHttpError(400, 'Invalid employees data.');
+			}
+
+			const employeeIds = employeesOnProject.map(employee => employee.employeeId);
+			if (new Set(employeeIds).size !== employeeIds.length)
+				throw createHttpError(400, 'Some employees are duplicates.');
+
+			const existingEmployees = await prisma.employee.findMany({
+				where: {
+					id: { in: employeeIds },
+				},
+				select: { id: true },
+			});
+			if (existingEmployees.length !== employeeIds.length) throw createHttpError(400, 'Some employees do not exist.');
+		}
+
+		type Employee = {
+			employeeId: string;
+			partTime: boolean;
 		};
 
-		return res.status(201).json(projectResponse);
+		const updatedProject = await prisma.project.update({
+			where: {
+				id: projectId,
+			},
+			data: {
+				name,
+				description,
+				startDate: startDate ? new Date(startDate) : undefined,
+				endDate: endDate ? new Date(endDate) : undefined,
+				actualEndDate: actualEndDate ? new Date(actualEndDate) : undefined,
+				projectType,
+				hourlyRate,
+				projectValueBAM,
+				salesChannel,
+				projectStatus,
+				employees: employeesOnProject
+					? {
+							deleteMany: {},
+							create: employeesOnProject.map((employee: Employee) => ({
+								partTime: employee.partTime,
+								employee: {
+									connect: {
+										id: employee.employeeId,
+									},
+								},
+							})),
+					  }
+					: undefined,
+			},
+			include: {
+				employees: {
+					select: {
+						partTime: true,
+						employee: true,
+					},
+				},
+			},
+		});
+
+		return res.status(200).json(updatedProject);
 	} catch (error) {
 		next(error);
 	}
 };
 
-export const deleteProject: RequestHandler<
-	ProjectsInterfaces.DeleteProjectParams,
-	ProjectsInterfaces.DeleteProjectRes,
-	ProjectsInterfaces.DeleteProjectReq,
-	unknown
-> = async (req, res, next) => {
+// @desc    Delete Project
+// @route   DELETE /api/projects/:projectId
+// @access  Private
+export const deleteProject: RequestHandler = async (req, res, next) => {
 	try {
-		const projectId = req.params.projectId;
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to delete projects.');
 
-		const project = await ProjectModel.findById(projectId);
+		const projectId = req.params.projectId;
+		const project = await prisma.project.findUnique({
+			where: {
+				id: projectId,
+			},
+		});
 		if (!project) throw createHttpError(404, 'Project not found.');
 
-		const userId = req.body.userId;
+		await prisma.project.delete({
+			where: {
+				id: projectId,
+			},
+		});
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-		if (user.role !== UserRole.Admin) throw createHttpError(403, 'This user is not authorized to delete any project.');
-
-		await project.deleteOne();
-
-		return res.status(200).json({ message: 'Project deleted successfully.' });
+		return res.status(204).send();
 	} catch (error) {
 		next(error);
 	}

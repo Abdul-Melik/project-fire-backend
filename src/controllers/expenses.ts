@@ -1,12 +1,8 @@
-import { Types } from 'mongoose';
 import { RequestHandler } from 'express';
+import { PrismaClient, Role } from '@prisma/client';
 import createHttpError from 'http-errors';
 
-import * as ExpensesInterfaces from '../interfaces/expenses';
-import { UserModel, UserRole } from '../models/user';
-import { ExpenseCategoryModel } from '../models/expense-category';
-import { ProjectModel } from '../models/project';
-import { ExpenseModel } from '../models/expense';
+const prisma = new PrismaClient();
 
 const months = [
 	'January',
@@ -23,79 +19,267 @@ const months = [
 	'December',
 ];
 
-export const createExpense: RequestHandler<
-	unknown,
-	ExpensesInterfaces.CreateExpenseRes,
-	ExpensesInterfaces.CreateExpenseReq,
-	unknown
-> = async (req, res, next) => {
+const exclude = <Expense, Key extends keyof Expense>(expense: Expense, keys: Key[]): Omit<Expense, Key> => {
+	return keys.reduce(
+		(result, key) => {
+			delete result[key];
+			return result;
+		},
+		{ ...expense }
+	);
+};
+
+// @desc    Get Expenses
+// @route   GET /api/expenses
+// @access  Private
+export const getExpenses: RequestHandler = async (req, res, next) => {
 	try {
-		const userId = req.body.userId;
+		const expenses = (
+			await prisma.expense.findMany({
+				include: {
+					expenseCategory: true,
+				},
+			})
+		).map(expense => exclude(expense, ['expenseCategoryId']));
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
+		return res.status(200).json(expenses);
+	} catch (error) {
+		next(error);
+	}
+};
 
-		if (user.role !== UserRole.Admin) throw createHttpError(403, 'This user is not authorized to create any expense.');
+// @desc    Get Expense
+// @route   GET /api/expenses/:expenseId
+// @access  Private
+export const getExpenseById: RequestHandler = async (req, res, next) => {
+	try {
+		const expenseId = req.params.expenseId;
+		const expense = await prisma.expense.findUnique({
+			where: {
+				id: expenseId,
+			},
+			include: {
+				expenseCategory: true,
+			},
+		});
+		if (!expense) throw createHttpError(404, 'Expense not found.');
 
-		const { expenseCategory, month, year, plannedExpense, actualExpense } = req.body;
+		return res.status(200).json(exclude(expense, ['expenseCategoryId']));
+	} catch (error) {
+		next(error);
+	}
+};
 
-		if (!expenseCategory || !month || !year) throw createHttpError(400, 'Missing required fields.');
+// @desc    Create Expense
+// @route   POST /api/expenses
+// @access  Private
+export const createExpense: RequestHandler = async (req, res, next) => {
+	try {
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to create expenses.');
 
-		const existingExpenseCategory = await ExpenseCategoryModel.findOne({
-			name: expenseCategory,
+		const { year, month, plannedExpense, actualExpense, expenseCategory } = req.body;
+		if (!year || !month || !expenseCategory) throw createHttpError(400, 'Missing required fields.');
+
+		const existingExpenseCategory = await prisma.expenseCategory.findFirst({
+			where: {
+				name: {
+					equals: expenseCategory,
+					mode: 'insensitive',
+				},
+			},
 		});
 		if (!existingExpenseCategory) throw createHttpError(404, 'Expense category not found.');
+
+		const existingExpense = await prisma.expense.findUnique({
+			where: {
+				year_month_expenseCategoryId: { year, month, expenseCategoryId: existingExpenseCategory.id },
+			},
+		});
+		if (existingExpense) throw createHttpError(409, 'Expense already exists.');
 
 		let calculatedPlannedExpense = 0;
 
 		if (expenseCategory.toLowerCase() === 'direct') {
-			const projects = await ProjectModel.find({
-				startDate: { $lte: new Date(year, months.indexOf(month) + 1, 0) },
-				endDate: { $gte: new Date(year, months.indexOf(month), 1) },
-			}).populate<{
-				employees: {
-					employee: {
-						_id: Types.ObjectId;
-						firstName: string;
-						lastName: string;
-						department: string;
-						salary: number;
-						techStack: string[];
-					};
-					fullTime: boolean;
-				}[];
-			}>('employees.employee');
+			const projects = await prisma.project.findMany({
+				where: {
+					startDate: { lte: new Date(year, months.indexOf(month) + 1, 0) },
+					endDate: { gte: new Date(year, months.indexOf(month), 1) },
+				},
+				select: {
+					employees: {
+						select: {
+							partTime: true,
+							employee: {
+								select: {
+									salary: true,
+								},
+							},
+						},
+					},
+				},
+			});
 
-			calculatedPlannedExpense = projects.reduce((totalSalary, project) => {
-				const projectSalary = project.employees.reduce((projectTotalSalary, employeeData) => {
-					const { salary } = employeeData.employee;
-					return projectTotalSalary + salary;
+			calculatedPlannedExpense = projects.reduce((total, project) => {
+				const cost = project.employees.reduce((sum, obj) => {
+					const partTime = obj.partTime;
+					const salary = obj.employee.salary || 0;
+					return sum + salary * (partTime ? 0.5 : 1);
 				}, 0);
-				return totalSalary + projectSalary;
+				return total + cost;
 			}, 0);
 		}
 
-		const finalPlannedExpense =
-			expenseCategory.toLowerCase() === 'direct' ? calculatedPlannedExpense : plannedExpense || 0;
+		const finalPlannedExpense = expenseCategory.toLowerCase() === 'direct' ? calculatedPlannedExpense : plannedExpense;
 
-		const expense = await ExpenseModel.create({
-			expenseCategory: existingExpenseCategory._id,
-			month,
-			year,
-			plannedExpense: finalPlannedExpense,
-			actualExpense: actualExpense || finalPlannedExpense,
+		const expense = await prisma.expense.create({
+			data: {
+				year,
+				month,
+				plannedExpense: finalPlannedExpense || actualExpense,
+				actualExpense: actualExpense || finalPlannedExpense,
+				expenseCategoryId: existingExpenseCategory.id,
+			},
+			include: {
+				expenseCategory: true,
+			},
 		});
 
-		const expenseResponse = {
-			id: expense._id,
-			expenseCategory: expense.expenseCategory,
-			month: expense.month,
-			year: expense.year,
-			plannedExpense: expense.plannedExpense!,
-			actualExpense: expense.actualExpense!,
-		};
+		return res.status(201).json(exclude(expense, ['expenseCategoryId']));
+	} catch (error) {
+		next(error);
+	}
+};
 
-		res.status(201).json(expenseResponse);
+// @desc    Update Expense
+// @route   PATCH /api/expenses/:expenseId
+// @access  Private
+export const updateExpense: RequestHandler = async (req, res, next) => {
+	try {
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to update expenses.');
+
+		const expenseId = req.params.expenseId;
+		const expense = await prisma.expense.findUnique({
+			where: {
+				id: expenseId,
+			},
+			include: {
+				expenseCategory: {
+					select: {
+						name: true,
+					},
+				},
+			},
+		});
+		if (!expense) throw createHttpError(404, 'Expense not found.');
+
+		const { year, month, plannedExpense, actualExpense, expenseCategory } = req.body;
+
+		const searchYear = year || expense.year;
+		const searchMonth = month || expense.month;
+		const searchName = expenseCategory || expense.expenseCategory.name;
+
+		const existingExpenseCategory = await prisma.expenseCategory.findFirst({
+			where: {
+				name: {
+					equals: searchName,
+					mode: 'insensitive',
+				},
+			},
+		});
+		if (!existingExpenseCategory) throw createHttpError(404, 'Expense category not found.');
+
+		const existingExpense = await prisma.expense.findUnique({
+			where: {
+				year_month_expenseCategoryId: {
+					year: searchYear,
+					month: searchMonth,
+					expenseCategoryId: existingExpenseCategory.id,
+				},
+			},
+		});
+		if (existingExpense && existingExpense.id !== expenseId) throw createHttpError(409, 'Expense already exists.');
+
+		let calculatedPlannedExpense = 0;
+
+		if (searchName.toLowerCase() === 'direct') {
+			const projects = await prisma.project.findMany({
+				where: {
+					startDate: { lte: new Date(searchYear, months.indexOf(searchMonth) + 1, 0) },
+					endDate: { gte: new Date(searchYear, months.indexOf(searchMonth), 1) },
+				},
+				select: {
+					employees: {
+						select: {
+							partTime: true,
+							employee: {
+								select: {
+									salary: true,
+								},
+							},
+						},
+					},
+				},
+			});
+
+			calculatedPlannedExpense = projects.reduce((total, project) => {
+				const cost = project.employees.reduce((sum, obj) => {
+					const partTime = obj.partTime;
+					const salary = obj.employee.salary || 0;
+					return sum + salary * (partTime ? 0.5 : 1);
+				}, 0);
+				return total + cost;
+			}, 0);
+		}
+
+		const finalPlannedExpense = searchName.toLowerCase() === 'direct' ? calculatedPlannedExpense : plannedExpense;
+
+		const updatedExpense = await prisma.expense.update({
+			where: {
+				id: expenseId,
+			},
+			data: {
+				year,
+				month,
+				plannedExpense: finalPlannedExpense,
+				actualExpense,
+				expenseCategoryId: existingExpenseCategory.id,
+			},
+			include: {
+				expenseCategory: true,
+			},
+		});
+
+		return res.status(200).json(exclude(updatedExpense, ['expenseCategoryId']));
+	} catch (error) {
+		next(error);
+	}
+};
+
+// @desc    Delete Expense
+// @route   DELETE /api/expenses/:expenseId
+// @access  Private
+export const deleteExpense: RequestHandler = async (req, res, next) => {
+	try {
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to delete expenses.');
+
+		const expenseId = req.params.expenseId;
+		const expense = await prisma.expense.findUnique({
+			where: {
+				id: expenseId,
+			},
+		});
+		if (!expense) throw createHttpError(404, 'Expense not found.');
+
+		await prisma.expense.delete({
+			where: {
+				id: expenseId,
+			},
+		});
+
+		return res.status(204).send();
 	} catch (error) {
 		next(error);
 	}

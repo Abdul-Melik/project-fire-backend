@@ -1,161 +1,157 @@
 import { RequestHandler } from 'express';
+import { PrismaClient, Role } from '@prisma/client';
 import createHttpError from 'http-errors';
+import fs from 'fs';
 
-import * as EmployeesInterfaces from '../interfaces/employees';
-import { EmployeeModel } from '../models/employee';
-import { UserModel, UserRole } from '../models/user';
-import { ProjectModel } from '../models/project';
+const prisma = new PrismaClient();
 
-type Query = {
-	firstName?: {
-		$regex: string;
-		$options: string;
-	};
-};
-
-export const getEmployees: RequestHandler<
-	unknown,
-	EmployeesInterfaces.GetEmployeesRes[],
-	EmployeesInterfaces.GetEmployeesReq,
-	EmployeesInterfaces.GetEmployeesQueryParams
-> = async (req, res, next) => {
+// @desc    Get Employees
+// @route   GET /api/employees
+// @access  Private
+export const getEmployees: RequestHandler = async (req, res, next) => {
 	try {
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
 		const { firstName } = req.query;
-		const query: Query = {};
+		const employees = await prisma.employee.findMany({
+			where: {
+				firstName: {
+					contains: firstName ? firstName.toString() : '',
+					mode: 'insensitive',
+				},
+			},
+		});
 
-		if (firstName) query['firstName'] = { $regex: firstName, $options: 'i' };
-
-		const employees = await EmployeeModel.find(query);
-
-		const employeesResponse = employees.map(employee => ({
-			id: employee._id,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
-			department: employee.department,
-			salary: employee.salary,
-			techStack: employee.techStack,
-		}));
-
-		return res.status(200).json(employeesResponse);
+		return res.status(200).json(employees);
 	} catch (error) {
 		next(error);
 	}
 };
 
-export const getEmployeeById: RequestHandler<
-	EmployeesInterfaces.GetEmployeeByIdParams,
-	EmployeesInterfaces.GetEmployeeByIdRes,
-	EmployeesInterfaces.GetEmployeeByIdReq,
-	unknown
-> = async (req, res, next) => {
+// @desc    Get Employee
+// @route   GET /api/employees/:employeeId
+// @access  Private
+export const getEmployeeById: RequestHandler = async (req, res, next) => {
 	try {
 		const employeeId = req.params.employeeId;
-
-		const employee = await EmployeeModel.findById(employeeId);
+		const employee = await prisma.employee.findUnique({
+			where: {
+				id: employeeId,
+			},
+		});
 		if (!employee) throw createHttpError(404, 'Employee not found.');
 
-		const userId = req.body.userId;
-
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
-		const employeeResponse = {
-			id: employee._id,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
-			department: employee.department,
-			salary: employee.salary,
-			techStack: employee.techStack,
-		};
-
-		return res.status(200).json(employeeResponse);
+		return res.status(200).json(employee);
 	} catch (error) {
 		next(error);
 	}
 };
 
-export const addEmployee: RequestHandler<
-	unknown,
-	EmployeesInterfaces.AddEmployeeRes,
-	EmployeesInterfaces.AddEmployeeReq,
-	unknown
-> = async (req, res, next) => {
+// @desc    Create Employee
+// @route   POST /api/employees
+// @access  Private
+export const createEmployee: RequestHandler = async (req, res, next) => {
 	try {
-		const userId = req.body.userId;
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to create employees.');
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
+		const { firstName, lastName, department, salary, techStack } = req.body;
+		if (!firstName || !lastName) throw createHttpError(400, 'Missing required fields.');
 
-		if (user.role !== UserRole.Admin) throw createHttpError(403, 'This user is not authorized to add any employee.');
+		let imageData: string | undefined;
+		if (req.file) {
+			const buffer = await fs.promises.readFile(req.file.path);
+			const fileType = req.file.mimetype.split('/')[1];
+			const base64EncodedData = buffer.toString('base64');
+			imageData = `data:image/${fileType};base64,${base64EncodedData}`;
+			await fs.promises.unlink(req.file.path);
+		}
+
+		const employee = await prisma.employee.create({
+			data: {
+				firstName,
+				lastName,
+				image: imageData,
+				department,
+				salary: parseFloat(salary) || 0,
+				techStack,
+			},
+		});
+
+		return res.status(201).json(employee);
+	} catch (error) {
+		next(error);
+	}
+};
+
+// @desc    Update Employee
+// @route   PATCH /api/employees/:employeeId
+// @access  Private
+export const updateEmployee: RequestHandler = async (req, res, next) => {
+	try {
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to update employees.');
+
+		const employeeId = req.params.employeeId;
+		const employee = await prisma.employee.findUnique({
+			where: {
+				id: employeeId,
+			},
+		});
+		if (!employee) throw createHttpError(404, 'Employee not found.');
 
 		const { firstName, lastName, department, salary, techStack } = req.body;
 
-		if (!firstName || !lastName || !department || !salary || !techStack)
-			throw createHttpError(400, 'Missing required fields.');
+		let imageData: string | undefined;
+		if (req.file) {
+			const buffer = await fs.promises.readFile(req.file.path);
+			const fileType = req.file.mimetype.split('/')[1];
+			const base64EncodedData = buffer.toString('base64');
+			imageData = `data:image/${fileType};base64,${base64EncodedData}`;
+			await fs.promises.unlink(req.file.path);
+		}
 
-		const employee = await EmployeeModel.create({
-			firstName,
-			lastName,
-			department,
-			salary,
-			techStack,
+		const updatedEmployee = await prisma.employee.update({
+			where: {
+				id: employeeId,
+			},
+			data: {
+				firstName,
+				lastName,
+				image: imageData,
+				department,
+				salary: salary ? parseFloat(salary) : undefined,
+				techStack,
+			},
 		});
 
-		const employeeResponse = {
-			id: employee._id,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
-			department: employee.department,
-			salary: employee.salary,
-			techStack: employee.techStack,
-		};
-
-		return res.status(201).json(employeeResponse);
+		return res.status(200).json(updatedEmployee);
 	} catch (error) {
 		next(error);
 	}
 };
 
-export const removeEmployee: RequestHandler<
-	EmployeesInterfaces.RemoveEmployeeParams,
-	EmployeesInterfaces.RemoveEmployeeRes,
-	EmployeesInterfaces.RemoveEmployeeReq,
-	unknown
-> = async (req, res, next) => {
+// @desc    Delete Employee
+// @route   DELETE /api/employees/:employeeId
+// @access  Private
+export const deleteEmployee: RequestHandler = async (req, res, next) => {
 	try {
-		const employeeId = req.params.employeeId;
+		const loggedInUser = req.user;
+		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to delete employees.');
 
-		const employee = await EmployeeModel.findById(employeeId);
+		const employeeId = req.params.employeeId;
+		const employee = await prisma.employee.findUnique({
+			where: {
+				id: employeeId,
+			},
+		});
 		if (!employee) throw createHttpError(404, 'Employee not found.');
 
-		const userId = req.body.userId;
+		await prisma.employee.delete({
+			where: {
+				id: employeeId,
+			},
+		});
 
-		const user = await UserModel.findById(userId);
-		if (!user) throw createHttpError(404, 'User not found.');
-
-		if (user.role !== UserRole.Admin) throw createHttpError(403, 'This user is not authorized to remove any employee.');
-
-		const userWhoIsEmployee = await UserModel.findOne({ employee: employeeId });
-		if (userWhoIsEmployee && userWhoIsEmployee.id === userId)
-			throw createHttpError(403, 'This user is not authorized to delete him or herself.');
-		if (userWhoIsEmployee && userWhoIsEmployee.role === UserRole.Admin)
-			throw createHttpError(403, 'Cannot delete an admin user.');
-
-		const projects = await ProjectModel.find({ 'employees.employee': employeeId });
-		for (const project of projects) {
-			project.employees = project.employees.filter(employeeObj => employeeObj.employee.toString() !== employeeId);
-			await project.save();
-		}
-
-		await employee.deleteOne();
-		await userWhoIsEmployee?.deleteOne();
-
-		return res.status(200).json({ message: 'Employee removed successfully.' });
+		return res.status(204).send();
 	} catch (error) {
 		next(error);
 	}

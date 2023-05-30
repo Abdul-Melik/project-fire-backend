@@ -1,28 +1,36 @@
 import { RequestHandler } from 'express';
+import { PrismaClient } from '@prisma/client';
 import createHttpError from 'http-errors';
 import jwt from 'jsonwebtoken';
 
-import * as AuthTokenInterfaces from '../interfaces/authenticate-token';
 import env from '../utils/validate-env';
 
-const authenticateToken: RequestHandler<unknown, unknown, AuthTokenInterfaces.AuthenticatedRequest, unknown> = (
-	req,
-	res,
-	next
-) => {
-	const token = req.headers.authorization?.split(' ')[1] ?? null;
+interface DecodedToken {
+	userId: string;
+}
 
-	if (!token) {
-		return next(createHttpError(401, 'No token provided. Please provide a valid token.'));
-	}
+const prisma = new PrismaClient();
 
+const authenticateToken: RequestHandler = async (req, res, next) => {
 	try {
-		const decodedToken = jwt.verify(token, env.JWT_SECRET) as AuthTokenInterfaces.DecodedToken;
-		req.body.userId = decodedToken.userId;
+		const token = req.headers.authorization?.split(' ')[1] ?? null;
+		if (!token) throw Error();
+
+		const decodedToken = jwt.verify(token, env.JWT_SECRET) as DecodedToken;
+
+		const userId = decodedToken.userId;
+		const user = await prisma.user.findUnique({
+			where: {
+				id: userId,
+			},
+		});
+		if (!user) throw Error();
+
+		req.user = user;
 
 		next();
-	} catch (err) {
-		return next(createHttpError(401, 'Invalid or expired token. Please log in again.'));
+	} catch (error) {
+		next(createHttpError(401, 'Authentication failed.'));
 	}
 };
 

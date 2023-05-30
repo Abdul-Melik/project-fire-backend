@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  Admin
+  Guest
+}
+
+enum ProjectType {
+  Fixed
+  OnGoing
+}
+
+enum SalesChannel {
+  Online
+  InPerson
+  Referral
+  Other
+}
+
+enum ProjectStatus {
+  Active
+  Inactive
+  OnHold
+  Completed
+}
+
+enum Month {
+  January
+  February
+  March
+  April
+  May
+  June
+  July
+  August
+  September
+  October
+  November
+  December
+}
+
+model User {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  email     String  @unique
+  firstName String
+  lastName  String
+  password  String
+  image     String?
+  role      Role?   @default(Guest)
+  token     Token?
+}
+
+model Token {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  token      String   @unique
+  expiration DateTime
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String   @unique @db.ObjectId
+}
+
+model Employee {
+  id         String            @id @default(auto()) @map("_id") @db.ObjectId
+  firstName  String
+  lastName   String
+  image      String?
+  department String?           @default("None")
+  salary     Float?            @default(0)
+  techStack  String[]          @default([])
+  projects   ProjectEmployee[]
+}
+
+model Project {
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  name            String            @unique
+  description     String
+  startDate       DateTime          @db.Date
+  endDate         DateTime          @db.Date
+  actualEndDate   DateTime?         @db.Date
+  projectType     ProjectType
+  hourlyRate      Float
+  projectValueBAM Float
+  salesChannel    SalesChannel
+  projectStatus   ProjectStatus?    @default(Active)
+  employees       ProjectEmployee[]
+}
+
+model ProjectEmployee {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  projectId  String   @db.ObjectId
+  employeeId String   @db.ObjectId
+  partTime   Boolean  @default(false)
+
+  @@unique([projectId, employeeId])
+}
+
+model ExpenseCategory {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String    @unique
+  description String
+  Expense     Expense[]
+}
+
+model Expense {
+  id                String          @id @default(auto()) @map("_id") @db.ObjectId
+  year              Int
+  month             Month
+  plannedExpense    Float?
+  actualExpense     Float?
+  expenseCategory   ExpenseCategory @relation(fields: [expenseCategoryId], references: [id], onDelete: Cascade)
+  expenseCategoryId String          @db.ObjectId
+
+  @@unique([year, month, expenseCategoryId])
+}
