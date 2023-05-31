@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, Month } from '@prisma/client';
 import createHttpError from 'http-errors';
 
 const prisma = new PrismaClient();
@@ -73,7 +73,54 @@ export const getExpenseById: RequestHandler = async (req, res, next) => {
 // @desc    Get Expenses Info
 // @route   GET /api/expenses/info
 // @access  Private
-export const getExpensesInfo: RequestHandler = async (req, res, next) => {};
+export const getExpensesInfo: RequestHandler = async (req, res, next) => {
+	try {
+		const { startDate, endDate } = req.query;
+
+		let expenses;
+
+		expenses = await prisma.expense.groupBy({
+			by: ['year', 'month'],
+			where: {
+				year: {
+					gte: startDate ? new Date(startDate as string).getFullYear() : undefined,
+					lte: endDate ? new Date(endDate as string).getFullYear() : undefined,
+				},
+				month: {
+					in: months
+						.filter((_, index) => {
+							const startMonth = startDate ? new Date(startDate as string).getMonth() : 0;
+							const endMonth = endDate ? new Date(endDate as string).getMonth() : months.length - 1;
+							return index >= startMonth && index <= endMonth;
+						})
+						.map(month => month as Month),
+				},
+			},
+			_sum: {
+				plannedExpense: true,
+				actualExpense: true,
+			},
+			orderBy: {
+				year: 'desc',
+			},
+		});
+
+		expenses = expenses.map(expense => ({
+			year: expense.year,
+			month: expense.month,
+			plannedExpense: expense._sum.plannedExpense || 0,
+			actualExpense: expense._sum.actualExpense || 0,
+		}));
+
+		const totalPlannedExpense = expenses.reduce((total, expense) => total + expense.plannedExpense, 0);
+		const totalActualExpense = expenses.reduce((total, expense) => total + expense.actualExpense, 0);
+		const netProfit = totalPlannedExpense - totalActualExpense;
+
+		return res.status(200).json({ totalPlannedExpense, totalActualExpense, netProfit, expenses });
+	} catch (error) {
+		next(error);
+	}
+};
 
 // @desc    Create Expense
 // @route   POST /api/expenses

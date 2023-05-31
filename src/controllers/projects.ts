@@ -120,7 +120,6 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 			profit: number;
 		};
 
-		let projects: Project[] = [];
 		let totalValue = 0;
 		let totalCost = 0;
 		let grossProfit = 0;
@@ -129,6 +128,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 		let averageTeamSize = 0;
 		let salesChannelPercentage = {};
 		let projectTypeCount = {};
+		let projects: Project[] = [];
 
 		if (totalProjects) {
 			const projectsData = await prisma.project.findMany({
@@ -229,7 +229,6 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 		}
 
 		return res.status(200).json({
-			projects,
 			totalProjects,
 			totalValue,
 			totalCost,
@@ -239,6 +238,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 			averageTeamSize,
 			salesChannelPercentage,
 			projectTypeCount,
+			projects,
 		});
 	} catch (error) {
 		next(error);
