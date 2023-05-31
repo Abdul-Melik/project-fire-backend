@@ -2,8 +2,10 @@ import { RequestHandler } from 'express';
 import { PrismaClient, Role } from '@prisma/client';
 import createHttpError from 'http-errors';
 import nodemailer from 'nodemailer';
+import handlebars from 'handlebars';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import path from 'path';
 import fs from 'fs';
 
 import env from '../utils/validate-env';
@@ -183,11 +185,19 @@ export const sendResetPasswordEmail: RequestHandler = async (req, res, next) => 
 			},
 		});
 
+		const template = handlebars.compile(
+			fs.readFileSync(path.join(__dirname, '..', 'views', 'reset-password.hbs'), 'utf8')
+		);
+
+		const htmlToSend = template({
+			resetLink: `${env.CLIENT_URL}/${tokenObj.userId}/reset-password/${tokenObj.token}/`,
+		});
+
 		const mailOptions = {
 			from: env.EMAIL_ADDRESS,
 			to: email,
 			subject: 'Password Reset Request',
-			text: `Please click on the following link to reset your password: ${env.CLIENT_URL}/${tokenObj.userId}/reset-password/${tokenObj.token}/`,
+			html: htmlToSend,
 		};
 
 		transporter.sendMail(mailOptions);
