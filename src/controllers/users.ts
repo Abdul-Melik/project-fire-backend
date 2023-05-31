@@ -223,6 +223,11 @@ export const resetPassword: RequestHandler = async (req, res, next) => {
 		});
 		if (!tokenObj) throw createHttpError(400, 'Link is invalid or has expired.');
 
+		const currentDate = new Date();
+		const expirationDate = tokenObj.expiration;
+
+		if (currentDate > expirationDate) throw createHttpError(400, 'Link is invalid or has expired.');
+
 		const { password } = req.body;
 		if (!password) throw createHttpError(400, 'Password not provided.');
 
