@@ -1,8 +1,10 @@
 import 'dotenv/config';
 import express, { NextFunction, Request, Response } from 'express';
 import createHttpError, { isHttpError } from 'http-errors';
+import swaggerUI from 'swagger-ui-express';
 import cors from 'cors';
 
+import swaggerDocs from './utils/swagger';
 import UsersRoutes from './routes/users';
 import EmployeesRoutes from './routes/employees';
 import ProjectsRoutes from './routes/projects';
@@ -13,6 +15,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
 app.use('/api/users', UsersRoutes);
 app.use('/api/employees', EmployeesRoutes);
