@@ -157,25 +157,18 @@ export const sendResetPasswordEmail: RequestHandler = async (req, res, next) => 
 		});
 		if (!user) throw createHttpError(404, 'User not found.');
 
-		let tokenObj = await prisma.token.findUnique({
-			where: {
+		// 1h in milliseconds
+		const expiresIn = 60 * 60 * 1000;
+
+		const tokenObj = await prisma.token.create({
+			data: {
+				token: jwt.sign({ userId: user.id }, env.JWT_SECRET, {
+					expiresIn,
+				}),
+				expiration: new Date(Date.now() + expiresIn),
 				userId: user.id,
 			},
 		});
-		if (!tokenObj) {
-			// 1h in milliseconds
-			const expiresIn = 60 * 60 * 1000;
-
-			tokenObj = await prisma.token.create({
-				data: {
-					token: jwt.sign({ userId: user.id }, env.JWT_SECRET, {
-						expiresIn,
-					}),
-					expiration: new Date(Date.now() + expiresIn),
-					userId: user.id,
-				},
-			});
-		}
 
 		const transporter = nodemailer.createTransport({
 			service: 'gmail',
@@ -225,7 +218,7 @@ export const resetPassword: RequestHandler = async (req, res, next) => {
 
 		const tokenObj = await prisma.token.findUnique({
 			where: {
-				userId,
+				token_userId: { token, userId },
 			},
 		});
 		if (!tokenObj) throw createHttpError(400, 'Link is invalid or has expired.');
@@ -244,7 +237,7 @@ export const resetPassword: RequestHandler = async (req, res, next) => {
 			},
 		});
 
-		await prisma.token.delete({
+		await prisma.token.deleteMany({
 			where: {
 				userId,
 			},
