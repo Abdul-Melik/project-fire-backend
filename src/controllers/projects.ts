@@ -90,13 +90,13 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 		});
 
 		return res.status(200).json({
-			projects,
 			pageInfo: {
 				total: count,
 				currentPage: Number(page),
 				lastPage,
 				perPage: Number(take),
 			},
+			projects,
 		});
 	} catch (error) {
 		next(error);
