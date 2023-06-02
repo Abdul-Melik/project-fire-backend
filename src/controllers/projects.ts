@@ -26,12 +26,18 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 			'name',
 			'description',
 			'startDate',
-			'employeesCount',
+			'endDate',
+			'actualEndDate',
+			'projectType',
 			'hourlyRate',
 			'projectValueBAM',
+			'salesChannel',
 			'projectStatus',
+			'employeesCount',
 		];
-		if (!orderByFields.includes(orderByField as string)) throw createHttpError(400, 'Invalid sort option.');
+		const orderDirections = ['asc', 'desc'];
+		if (!orderByFields.includes(orderByField as string) || !orderDirections.includes(orderDirection as string))
+			throw createHttpError(400, 'Invalid sort option.');
 
 		let orderBy = {
 			[orderByField as string]: orderDirection,

@@ -13,15 +13,15 @@ enum Role {
 }
 
 enum ProjectType {
-  Fixed
-  OnGoing
+  Fixed   @map("1")
+  OnGoing @map("2")
 }
 
 enum SalesChannel {
-  Online
-  InPerson
-  Referral
-  Other
+  Online   @map("1")
+  InPerson @map("2")
+  Referral @map("3")
+  Other    @map("4")
 }
 
 enum ProjectStatus {
