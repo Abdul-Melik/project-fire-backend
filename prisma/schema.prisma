@@ -26,8 +26,8 @@ enum SalesChannel {
 
 enum ProjectStatus {
   Active
-  Inactive
   OnHold
+  Inactive
   Completed
 }
 

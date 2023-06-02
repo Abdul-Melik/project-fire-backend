@@ -9,7 +9,42 @@ const prisma = new PrismaClient();
 // @access  Private
 export const getProjects: RequestHandler = async (req, res, next) => {
 	try {
-		const { name, startDate, endDate, projectType, salesChannel, projectStatus, take = 10, page = 1 } = req.query;
+		const {
+			name,
+			startDate,
+			endDate,
+			projectType,
+			salesChannel,
+			projectStatus,
+			orderByField = 'startDate',
+			orderDirection = 'desc',
+			take = 10,
+			page = 1,
+		} = req.query;
+
+		const orderByFields = [
+			'name',
+			'description',
+			'startDate',
+			'employeesCount',
+			'hourlyRate',
+			'projectValueBAM',
+			'projectStatus',
+		];
+		if (!orderByFields.includes(orderByField as string)) throw createHttpError(400, 'Invalid sort option.');
+
+		let orderBy = {
+			[orderByField as string]: orderDirection,
+		};
+
+		if (orderByField === 'employeesCount') {
+			const employeesOrder = {
+				employees: {
+					_count: orderDirection,
+				},
+			};
+			orderBy = employeesOrder;
+		}
 
 		const count = await prisma.project.count();
 		const lastPage = Math.ceil(count / Number(take));
@@ -35,6 +70,7 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 				salesChannel: salesChannel as SalesChannel,
 				projectStatus: projectStatus as ProjectStatus,
 			},
+			orderBy,
 			skip,
 			take: Number(take),
 			include: {
