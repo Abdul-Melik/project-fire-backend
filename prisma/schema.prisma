@@ -25,10 +25,10 @@ enum SalesChannel {
 }
 
 enum ProjectStatus {
-  Active
-  OnHold
-  Inactive
-  Completed
+  Active    @map("1")
+  OnHold    @map("2")
+  Inactive  @map("3")
+  Completed @map("4")
 }
 
 enum Month {
