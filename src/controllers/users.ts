@@ -35,7 +35,7 @@ export const getUsers: RequestHandler = async (req, res, next) => {
 	}
 };
 
-// @desc    Get User
+// @desc    Get User By Id
 // @route   GET /api/users/:userId
 // @access  Private
 export const getUserById: RequestHandler = async (req, res, next) => {

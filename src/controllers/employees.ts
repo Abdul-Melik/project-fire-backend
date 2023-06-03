@@ -26,7 +26,7 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 	}
 };
 
-// @desc    Get Employee
+// @desc    Get Employee By Id
 // @route   GET /api/employees/:employeeId
 // @access  Private
 export const getEmployeeById: RequestHandler = async (req, res, next) => {

@@ -48,7 +48,7 @@ export const getExpenses: RequestHandler = async (req, res, next) => {
 	}
 };
 
-// @desc    Get Expense
+// @desc    Get Expense By Id
 // @route   GET /api/expenses/:expenseId
 // @access  Private
 export const getExpenseById: RequestHandler = async (req, res, next) => {

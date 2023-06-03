@@ -17,7 +17,7 @@ export const getExpenseCategories: RequestHandler = async (req, res, next) => {
 	}
 };
 
-// @desc    Get Expense Category
+// @desc    Get Expense Category By Id
 // @route   GET /api/expense-categories/:expenseCategoryId
 // @access  Private
 export const getExpenseCategoryById: RequestHandler = async (req, res, next) => {

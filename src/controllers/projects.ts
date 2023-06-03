@@ -103,7 +103,7 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 	}
 };
 
-// @desc    Get Project
+// @desc    Get Project By Id
 // @route   GET /api/projects/:projectId
 // @access  Private
 export const getProjectById: RequestHandler = async (req, res, next) => {
