@@ -5,11 +5,11 @@ import swaggerUI from 'swagger-ui-express';
 import cors from 'cors';
 
 import swaggerDocs from './utils/swagger';
-import UsersRoutes from './routes/users';
-import EmployeesRoutes from './routes/employees';
-import ProjectsRoutes from './routes/projects';
-import ExpenseCategoriesRoutes from './routes/expense-categories';
-import ExpensesRoutes from './routes/expenses';
+import usersRoutes from './routes/users';
+import employeesRoutes from './routes/employees';
+import projectsRoutes from './routes/projects';
+import expenseCategoriesRoutes from './routes/expense-categories';
+import expensesRoutes from './routes/expenses';
 
 const app = express();
 
@@ -17,11 +17,11 @@ app.use(cors());
 app.use(express.json());
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
-app.use('/api/users', UsersRoutes);
-app.use('/api/employees', EmployeesRoutes);
-app.use('/api/projects', ProjectsRoutes);
-app.use('/api/expense-categories', ExpenseCategoriesRoutes);
-app.use('/api/expenses', ExpensesRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/employees', employeesRoutes);
+app.use('/api/projects', projectsRoutes);
+app.use('/api/expense-categories', expenseCategoriesRoutes);
+app.use('/api/expenses', expensesRoutes);
 
 app.use((req, res, next) => {
 	next(createHttpError(404, 'Endpoint not found.'));
