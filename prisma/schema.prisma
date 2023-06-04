@@ -32,18 +32,18 @@ enum ProjectStatus {
 }
 
 enum Month {
-  January
-  February
-  March
-  April
-  May
-  June
-  July
-  August
-  September
-  October
-  November
-  December
+  January   @map("1")
+  February  @map("2")
+  March     @map("3")
+  April     @map("4")
+  May       @map("5")
+  June      @map("6")
+  July      @map("7")
+  August    @map("8")
+  September @map("9")
+  October   @map("10")
+  November  @map("11")
+  December  @map("12")
 }
 
 model User {

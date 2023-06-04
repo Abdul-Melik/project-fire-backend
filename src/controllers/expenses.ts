@@ -100,9 +100,6 @@ export const getExpensesInfo: RequestHandler = async (req, res, next) => {
 				plannedExpense: true,
 				actualExpense: true,
 			},
-			orderBy: {
-				year: 'desc',
-			},
 		});
 
 		expenses = expenses.map(expense => ({
@@ -175,7 +172,7 @@ export const createExpense: RequestHandler = async (req, res, next) => {
 			calculatedPlannedExpense = projects.reduce((total, project) => {
 				const cost = project.employees.reduce((sum, obj) => {
 					const partTime = obj.partTime;
-					const salary = obj.employee.salary || 0;
+					const salary = obj.employee.salary ?? 0;
 					return sum + salary * (partTime ? 0.5 : 1);
 				}, 0);
 				return total + cost;
@@ -278,7 +275,7 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
 			calculatedPlannedExpense = projects.reduce((total, project) => {
 				const cost = project.employees.reduce((sum, obj) => {
 					const partTime = obj.partTime;
-					const salary = obj.employee.salary || 0;
+					const salary = obj.employee.salary ?? 0;
 					return sum + salary * (partTime ? 0.5 : 1);
 				}, 0);
 				return total + cost;
