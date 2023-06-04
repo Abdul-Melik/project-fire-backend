@@ -197,7 +197,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 				const revenue = project.projectValueBAM;
 				const cost = project.employees.reduce((sum, obj) => {
 					const partTime = obj.partTime;
-					const salary = obj.employee.salary || 0;
+					const salary = obj.employee.salary ?? 0;
 					return sum + salary * (partTime ? 0.5 : 1);
 				}, 0);
 				const profit = revenue - cost;
