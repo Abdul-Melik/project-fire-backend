@@ -108,8 +108,8 @@ export const getExpensesInfo: RequestHandler = async (req, res, next) => {
 		expenses = expenses.map(expense => ({
 			year: expense.year,
 			month: expense.month,
-			plannedExpense: expense._sum.plannedExpense || 0,
-			actualExpense: expense._sum.actualExpense || 0,
+			plannedExpense: expense._sum.plannedExpense ?? 0,
+			actualExpense: expense._sum.actualExpense ?? 0,
 		}));
 
 		const totalPlannedExpense = expenses.reduce((total, expense) => total + expense.plannedExpense, 0);
@@ -188,8 +188,8 @@ export const createExpense: RequestHandler = async (req, res, next) => {
 			data: {
 				year,
 				month,
-				plannedExpense: finalPlannedExpense || actualExpense,
-				actualExpense: actualExpense || finalPlannedExpense,
+				plannedExpense: finalPlannedExpense ?? actualExpense,
+				actualExpense: actualExpense ?? finalPlannedExpense,
 				expenseCategoryId: existingExpenseCategory.id,
 			},
 			include: {
