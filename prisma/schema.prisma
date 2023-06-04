@@ -8,8 +8,8 @@ datasource db {
 }
 
 enum Role {
-  Admin
-  Guest
+  Admin @map("1")
+  Guest @map("2")
 }
 
 enum ProjectType {
@@ -55,6 +55,8 @@ model User {
   image     String?
   role      Role?   @default(Guest)
   token     Token[]
+
+  @@map("Users")
 }
 
 model Token {
@@ -65,6 +67,7 @@ model Token {
   userId     String   @db.ObjectId
 
   @@unique([token, userId])
+  @@map("Tokens")
 }
 
 model Employee {
@@ -76,6 +79,8 @@ model Employee {
   salary     Float?            @default(0)
   techStack  String[]          @default([])
   projects   ProjectEmployee[]
+
+  @@map("Employees")
 }
 
 model Project {
@@ -91,6 +96,8 @@ model Project {
   salesChannel    SalesChannel
   projectStatus   ProjectStatus?    @default(Active)
   employees       ProjectEmployee[]
+
+  @@map("Projects")
 }
 
 model ProjectEmployee {
@@ -102,6 +109,7 @@ model ProjectEmployee {
   partTime   Boolean  @default(false)
 
   @@unique([projectId, employeeId])
+  @@map("Employees On Projects")
 }
 
 model ExpenseCategory {
@@ -109,6 +117,8 @@ model ExpenseCategory {
   name        String    @unique
   description String
   Expense     Expense[]
+
+  @@map("Expense Categories")
 }
 
 model Expense {
@@ -121,4 +131,5 @@ model Expense {
   expenseCategoryId String          @db.ObjectId
 
   @@unique([year, month, expenseCategoryId])
+  @@map("Expenses")
 }
