@@ -74,11 +74,7 @@ export const registerUser: RequestHandler = async (req, res, next) => {
 
 		let imageData: string | undefined;
 		if (req.file) {
-			const buffer = await fs.promises.readFile(req.file.path);
-			const fileType = req.file.mimetype.split('/')[1];
-			const base64EncodedData = buffer.toString('base64');
-			imageData = `data:image/${fileType};base64,${base64EncodedData}`;
-			await fs.promises.unlink(req.file.path);
+			imageData = 'https://www.dmarge.com/wp-content/uploads/2021/01/dwayne-the-rock-.jpg';
 		}
 
 		const user = await prisma.user.create({
@@ -290,11 +286,7 @@ export const updateUser: RequestHandler = async (req, res, next) => {
 
 		let imageData: string | undefined;
 		if (req.file) {
-			const buffer = await fs.promises.readFile(req.file.path);
-			const fileType = req.file.mimetype.split('/')[1];
-			const base64EncodedData = buffer.toString('base64');
-			imageData = `data:image/${fileType};base64,${base64EncodedData}`;
-			await fs.promises.unlink(req.file.path);
+			imageData = 'https://www.dmarge.com/wp-content/uploads/2021/01/dwayne-the-rock-.jpg';
 		}
 
 		const updatedUser = await prisma.user.update({
