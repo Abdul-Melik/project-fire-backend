@@ -39,6 +39,13 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 		if (!orderByFields.includes(orderByField as string) || !orderDirections.includes(orderDirection as string))
 			throw createHttpError(400, 'Invalid sort option.');
 
+		const count = await prisma.project.count();
+		const lastPage = Math.ceil(count / Number(take));
+		const skip = (Number(page) - 1) * Number(take);
+
+		if (Number(take) < 1 || Number(page) < 1 || Number(page) > lastPage)
+			throw createHttpError(400, 'Invalid pagination options.');
+
 		let orderBy = {
 			[orderByField as string]: orderDirection,
 		};
@@ -51,10 +58,6 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 			};
 			orderBy = employeesOrder;
 		}
-
-		const count = await prisma.project.count();
-		const lastPage = Math.ceil(count / Number(take));
-		const skip = (Number(page) - 1) * Number(take);
 
 		const projects = await prisma.project.findMany({
 			where: {
