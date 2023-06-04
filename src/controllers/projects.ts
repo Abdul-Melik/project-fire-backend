@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 export const getProjects: RequestHandler = async (req, res, next) => {
 	try {
 		const {
-			name,
+			name = '',
 			startDate,
 			endDate,
 			projectType,
@@ -75,9 +75,9 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 						lte: new Date(endDate as string),
 					},
 				}),
-				projectType: projectType as ProjectType,
-				salesChannel: salesChannel as SalesChannel,
-				projectStatus: projectStatus as ProjectStatus,
+				projectType: projectType ? (projectType as ProjectType) : undefined,
+				salesChannel: salesChannel ? (salesChannel as SalesChannel) : undefined,
+				projectStatus: projectStatus ? (projectStatus as ProjectStatus) : undefined,
 			},
 			orderBy,
 			skip,
