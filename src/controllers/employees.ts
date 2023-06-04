@@ -10,11 +10,15 @@ const prisma = new PrismaClient();
 // @access  Private
 export const getEmployees: RequestHandler = async (req, res, next) => {
 	try {
-		const { firstName } = req.query;
+		const { firstName, lastName } = req.query;
 		const employees = await prisma.employee.findMany({
 			where: {
 				firstName: {
 					contains: firstName ? firstName.toString() : '',
+					mode: 'insensitive',
+				},
+				lastName: {
+					contains: lastName ? lastName.toString() : '',
 					mode: 'insensitive',
 				},
 			},
