@@ -15,7 +15,7 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 			endDate,
 			projectType,
 			salesChannel,
-			projectStatus,
+			projectStatus = 'Active',
 			orderByField = 'startDate',
 			orderDirection = 'desc',
 			take = 10,
