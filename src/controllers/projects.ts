@@ -434,7 +434,7 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 					},
 				},
 			});
-			if (existingProject) throw createHttpError(409, 'Project already exists.');
+			if (existingProject && existingProject.id !== projectId) throw createHttpError(409, 'Project already exists.');
 		}
 
 		if (employeesOnProject) {
