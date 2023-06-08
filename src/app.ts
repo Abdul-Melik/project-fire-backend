@@ -12,9 +12,16 @@ import projectsRoutes from './routes/projects';
 import expenseCategoriesRoutes from './routes/expense-categories';
 import expensesRoutes from './routes/expenses';
 
+import env from '../src/utils/validate-env';
+
 const app = express();
 
-app.use(cors());
+app.use(
+	cors({
+		origin: env.CLIENT_URL,
+		credentials: true,
+	})
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
