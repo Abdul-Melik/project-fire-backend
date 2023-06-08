@@ -9,6 +9,7 @@ import path from 'path';
 import fs from 'fs';
 
 import env from '../utils/validate-env';
+import createCookie from '../utils/create-cookie';
 
 const prisma = new PrismaClient();
 
@@ -90,15 +91,9 @@ export const registerUser: RequestHandler = async (req, res, next) => {
 
 		// 1d in milliseconds
 		const expiresIn = 1000 * 60 * 60 * 24;
-		const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, {
-			expiresIn,
-		});
+		createCookie(res, user.id, expiresIn);
 
-		return res.status(201).json({
-			user: exclude(user, ['password']),
-			token,
-			expiresIn,
-		});
+		return res.status(201).json(exclude(user, ['password']));
 	} catch (error) {
 		next(error);
 	}
@@ -124,15 +119,25 @@ export const loginUser: RequestHandler = async (req, res, next) => {
 
 		// Either 7d in milliseconds, or 1d in milliseconds
 		const expiresIn = rememberMe ? 1000 * 60 * 60 * 24 * 7 : 1000 * 60 * 60 * 24;
-		const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, {
-			expiresIn,
+		createCookie(res, user.id, expiresIn);
+
+		return res.status(200).json(exclude(user, ['password']));
+	} catch (error) {
+		next(error);
+	}
+};
+
+// @desc    Logout User
+// @route   POST /api/users/logout
+// @access  Public
+export const logoutUser: RequestHandler = async (req, res, next) => {
+	try {
+		res.cookie('jwt', '', {
+			httpOnly: true,
+			expires: new Date(Date.now()),
 		});
 
-		return res.status(200).json({
-			user: exclude(user, ['password']),
-			token,
-			expiresIn,
-		});
+		res.status(200).json({ message: 'User logged out successfully.' });
 	} catch (error) {
 		next(error);
 	}
@@ -154,7 +159,7 @@ export const sendResetPasswordEmail: RequestHandler = async (req, res, next) => 
 		if (!user) throw createHttpError(404, 'User not found.');
 
 		// 1h in milliseconds
-		const expiresIn = 60 * 60 * 1000;
+		const expiresIn = 1 * 60 * 60 * 1000;
 
 		const tokenObj = await prisma.token.create({
 			data: {

@@ -10,6 +10,7 @@ router.get('/', authenticateToken, usersController.getUsers);
 router.get('/:userId', authenticateToken, usersController.getUserById);
 router.post('/register', imageUpload, usersController.registerUser);
 router.post('/login', usersController.loginUser);
+router.post('/logout', usersController.logoutUser);
 router.post('/reset-password', usersController.sendResetPasswordEmail);
 router.post('/:userId/reset-password/:token', usersController.resetPassword);
 router.patch('/:userId', authenticateToken, imageUpload, usersController.updateUser);

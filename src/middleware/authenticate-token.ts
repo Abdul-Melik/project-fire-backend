@@ -13,7 +13,7 @@ const prisma = new PrismaClient();
 
 const authenticateToken: RequestHandler = async (req, res, next) => {
 	try {
-		const token = req.headers.authorization?.split(' ')[1] ?? null;
+		const token = req.cookies.jwt;
 		if (!token) throw Error();
 
 		const decodedToken = jwt.verify(token, env.JWT_SECRET) as DecodedToken;

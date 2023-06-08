@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { NextFunction, Request, Response } from 'express';
 import createHttpError, { isHttpError } from 'http-errors';
 import swaggerUI from 'swagger-ui-express';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 
 import swaggerDocs from './utils/swagger';
@@ -15,6 +16,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
 app.use('/api/users', usersRoutes);

@@ -8,6 +8,7 @@ dependencies
 
     "@prisma/client": "^4.15.0",
     "bcrypt": "^5.1.0",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "envalid": "^7.3.1",
@@ -24,6 +25,7 @@ devDependencies:
 
     "@swc/core": "^1.3.60",
     "@types/bcrypt": "^5.0.0",
+    "@types/cookie-parser": "^1.4.3",
     "@types/cors": "^2.8.13",
     "@types/express": "^4.17.17",
     "@types/http-errors": "^2.0.1",
