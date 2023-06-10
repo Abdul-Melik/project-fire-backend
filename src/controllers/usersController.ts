@@ -8,8 +8,8 @@ import bcrypt from 'bcrypt';
 import path from 'path';
 import fs from 'fs';
 
-import env from '../utils/validate-env';
-import createCookie from '../utils/create-cookie';
+import env from '../utils/validateEnv';
+import createCookie from '../utils/createCookie';
 
 const prisma = new PrismaClient();
 
@@ -177,7 +177,7 @@ export const sendResetPasswordEmail: RequestHandler = async (req, res, next) => 
 		});
 
 		const template = handlebars.compile(
-			fs.readFileSync(path.join(__dirname, '..', 'views', 'reset-password.hbs'), 'utf8')
+			fs.readFileSync(path.join(__dirname, '..', 'views', 'resetPassword.hbs'), 'utf8')
 		);
 
 		const htmlToSend = template({

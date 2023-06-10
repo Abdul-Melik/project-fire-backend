@@ -1,5 +1,5 @@
 import app from './app';
-import env from './utils/validate-env';
+import env from './utils/validateEnv';
 
 const port = env.PORT;
 

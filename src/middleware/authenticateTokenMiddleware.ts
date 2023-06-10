@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import createHttpError from 'http-errors';
 import jwt from 'jsonwebtoken';
 
-import env from '../utils/validate-env';
+import env from '../utils/validateEnv';
 
 interface DecodedToken {
 	userId: string;

@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 
-import env from './validate-env';
+import env from './validateEnv';
 
 const createCookie = (res: Response, userId: string, expiresIn: number) => {
 	const token = jwt.sign({ userId }, env.JWT_SECRET, { expiresIn });

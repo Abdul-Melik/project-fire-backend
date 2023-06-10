@@ -6,13 +6,13 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 
 import swaggerDocs from './utils/swagger';
-import usersRoutes from './routes/users';
-import employeesRoutes from './routes/employees';
-import projectsRoutes from './routes/projects';
-import expenseCategoriesRoutes from './routes/expense-categories';
-import expensesRoutes from './routes/expenses';
+import userRoutes from './routes/userRoutes';
+import employeeRoutes from './routes/employeeRoutes';
+import projectRoutes from './routes/projectRoutes';
+import expenseCategoryRoutes from './routes/expenseCategoryRoutes';
+import expenseRoutes from './routes/expenseRoutes';
 
-import env from '../src/utils/validate-env';
+import env from './utils/validateEnv';
 
 const app = express();
 
@@ -27,11 +27,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
-app.use('/api/users', usersRoutes);
-app.use('/api/employees', employeesRoutes);
-app.use('/api/projects', projectsRoutes);
-app.use('/api/expense-categories', expenseCategoriesRoutes);
-app.use('/api/expenses', expensesRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/expense-categories', expenseCategoryRoutes);
+app.use('/api/expenses', expenseRoutes);
 
 app.use((req, res, next) => {
 	next(createHttpError(404, 'Endpoint not found.'));
