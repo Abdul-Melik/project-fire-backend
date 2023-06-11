@@ -3,17 +3,9 @@ import { PrismaClient, Role } from '@prisma/client';
 import createHttpError from 'http-errors';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+import { exclude } from '../utils/excludeUserFields';
 
-const exclude = <User, Key extends keyof User>(user: User, keys: Key[]): Omit<User, Key> => {
-	return keys.reduce(
-		(result, key) => {
-			delete result[key];
-			return result;
-		},
-		{ ...user }
-	);
-};
+const prisma = new PrismaClient();
 
 // @desc    Get Users
 // @route   GET /api/users

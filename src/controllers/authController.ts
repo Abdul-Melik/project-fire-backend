@@ -10,18 +10,9 @@ import fs from 'fs';
 
 import env from '../utils/validateEnv';
 import createCookie from '../utils/createCookie';
+import { exclude } from '../utils/excludeUserFields';
 
 const prisma = new PrismaClient();
-
-const exclude = <User, Key extends keyof User>(user: User, keys: Key[]): Omit<User, Key> => {
-	return keys.reduce(
-		(result, key) => {
-			delete result[key];
-			return result;
-		},
-		{ ...user }
-	);
-};
 
 // @desc    Register User
 // @route   POST /api/auth/register
