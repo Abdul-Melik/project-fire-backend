@@ -91,9 +91,11 @@ export const loginUser: RequestHandler = async (req, res, next) => {
 // @access  Public
 export const logoutUser: RequestHandler = async (req, res, next) => {
 	try {
-		res.clearCookie('jwt');
+		const cookies = req.cookies;
+		if (!cookies?.jwt) return res.sendStatus(204);
+		res.clearCookie('jwt', { httpOnly: true, sameSite: 'none', secure: true });
 
-		res.status(200).json({ message: 'User logged out successfully.' });
+		return res.status(200).json({ message: 'User logged out successfully.' });
 	} catch (error) {
 		next(error);
 	}
@@ -152,7 +154,7 @@ export const sendResetPasswordEmail: RequestHandler = async (req, res, next) => 
 
 		transporter.sendMail(mailOptions);
 
-		res.status(200).json({ message: 'An email has been sent to reset your password.' });
+		return res.status(200).json({ message: 'An email has been sent to reset your password.' });
 	} catch (error) {
 		next(error);
 	}
@@ -205,7 +207,7 @@ export const resetPassword: RequestHandler = async (req, res, next) => {
 			},
 		});
 
-		res.status(200).json({ message: 'Your password has been reset successfully.' });
+		return res.status(200).json({ message: 'Your password has been reset successfully.' });
 	} catch (error) {
 		next(error);
 	}
