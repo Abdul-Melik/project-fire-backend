@@ -84,7 +84,7 @@ export const registerUser: RequestHandler = async (req, res, next) => {
 
 		res.cookie('jwt', refreshToken, {
 			httpOnly: true,
-			secure: env.NODE_ENV === 'production',
+			secure: true,
 			sameSite: 'none',
 			maxAge: 1 * 24 * 60 * 60 * 1000,
 		});
@@ -120,7 +120,7 @@ export const loginUser: RequestHandler = async (req, res, next) => {
 
 		res.cookie('jwt', refreshToken, {
 			httpOnly: true,
-			secure: env.NODE_ENV === 'production',
+			secure: true,
 			sameSite: 'none',
 			maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 1 * 24 * 60 * 60 * 1000,
 		});
