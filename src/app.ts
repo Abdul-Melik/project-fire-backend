@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express, { NextFunction, Request, Response } from 'express';
+import express from 'express';
 import createHttpError, { isHttpError } from 'http-errors';
 import swaggerUI from 'swagger-ui-express';
 import cookieParser from 'cookie-parser';
@@ -7,6 +7,7 @@ import cors, { CorsOptions } from 'cors';
 
 import { corsOptions } from './config/corsOptions';
 import swaggerDocs from './utils/swagger';
+import errorHandlingMiddleware from './middleware/errorHandlingMiddleware';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import employeeRoutes from './routes/employeeRoutes';
@@ -33,15 +34,6 @@ app.use((req, res, next) => {
 	next(createHttpError(404, 'Endpoint not found.'));
 });
 
-app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
-	console.error(error);
-	let errorMessage = 'An unknown error occured.';
-	let statusCode = 500;
-	if (isHttpError(error)) {
-		errorMessage = error.message;
-		statusCode = error.status;
-	}
-	res.status(statusCode).json({ error: errorMessage });
-});
+app.use(errorHandlingMiddleware);
 
 export default app;

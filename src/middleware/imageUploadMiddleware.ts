@@ -39,6 +39,6 @@ const upload = multer({
 	limits,
 });
 
-const imageUpload = upload.single('image');
+const imageUploadMiddleware = upload.single('image');
 
-export default imageUpload;
+export default imageUploadMiddleware;

@@ -11,7 +11,7 @@ interface DecodedToken {
 
 const prisma = new PrismaClient();
 
-const authenticateToken: RequestHandler = async (req, res, next) => {
+const verifyTokenMiddleware: RequestHandler = async (req, res, next) => {
 	try {
 		const token = req.cookies.jwt;
 		if (!token) throw Error();
@@ -30,8 +30,8 @@ const authenticateToken: RequestHandler = async (req, res, next) => {
 
 		next();
 	} catch (error) {
-		next(createHttpError(401, 'Authentication failed.'));
+		next(createHttpError(403, 'Authorization failed.'));
 	}
 };
 
-export default authenticateToken;
+export default verifyTokenMiddleware;

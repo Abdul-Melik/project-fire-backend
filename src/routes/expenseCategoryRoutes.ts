@@ -1,14 +1,14 @@
 import express from 'express';
 
-import authenticateTokenMiddleware from '../middleware/authenticateTokenMiddleware';
+import verifyTokenMiddleware from '../middleware/verifyTokenMiddleware';
 import * as expenseCategoriesController from '../controllers/expenseCategoriesController';
 
 const router = express.Router();
 
-router.get('/', authenticateTokenMiddleware, expenseCategoriesController.getExpenseCategories);
-router.get('/:expenseCategoryId', authenticateTokenMiddleware, expenseCategoriesController.getExpenseCategoryById);
-router.post('/', authenticateTokenMiddleware, expenseCategoriesController.createExpenseCategory);
-router.patch('/:expenseCategoryId', authenticateTokenMiddleware, expenseCategoriesController.updateExpenseCategory);
-router.delete('/:expenseCategoryId', authenticateTokenMiddleware, expenseCategoriesController.deleteExpenseCategory);
+router.get('/', verifyTokenMiddleware, expenseCategoriesController.getExpenseCategories);
+router.get('/:expenseCategoryId', verifyTokenMiddleware, expenseCategoriesController.getExpenseCategoryById);
+router.post('/', verifyTokenMiddleware, expenseCategoriesController.createExpenseCategory);
+router.patch('/:expenseCategoryId', verifyTokenMiddleware, expenseCategoriesController.updateExpenseCategory);
+router.delete('/:expenseCategoryId', verifyTokenMiddleware, expenseCategoriesController.deleteExpenseCategory);
 
 export default router;

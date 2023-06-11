@@ -1,15 +1,15 @@
 import express from 'express';
 
-import authenticateTokenMiddleware from '../middleware/authenticateTokenMiddleware';
+import verifyTokenMiddleware from '../middleware/verifyTokenMiddleware';
 import imageUploadMiddleware from '../middleware/imageUploadMiddleware';
 import * as employeesController from '../controllers/employeesController';
 
 const router = express.Router();
 
-router.get('/', authenticateTokenMiddleware, employeesController.getEmployees);
-router.get('/:employeeId', authenticateTokenMiddleware, employeesController.getEmployeeById);
-router.post('/', imageUploadMiddleware, authenticateTokenMiddleware, employeesController.createEmployee);
-router.patch('/:employeeId', imageUploadMiddleware, authenticateTokenMiddleware, employeesController.updateEmployee);
-router.delete('/:employeeId', authenticateTokenMiddleware, employeesController.deleteEmployee);
+router.get('/', verifyTokenMiddleware, employeesController.getEmployees);
+router.get('/:employeeId', verifyTokenMiddleware, employeesController.getEmployeeById);
+router.post('/', imageUploadMiddleware, verifyTokenMiddleware, employeesController.createEmployee);
+router.patch('/:employeeId', imageUploadMiddleware, verifyTokenMiddleware, employeesController.updateEmployee);
+router.delete('/:employeeId', verifyTokenMiddleware, employeesController.deleteEmployee);
 
 export default router;

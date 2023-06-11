@@ -1,14 +1,14 @@
 import express from 'express';
 
-import authenticateTokenMiddleware from '../middleware/authenticateTokenMiddleware';
+import verifyTokenMiddleware from '../middleware/verifyTokenMiddleware';
 import imageUploadMiddleware from '../middleware/imageUploadMiddleware';
 import * as usersController from '../controllers/usersController';
 
 const router = express.Router();
 
-router.get('/', authenticateTokenMiddleware, usersController.getUsers);
-router.get('/:userId', authenticateTokenMiddleware, usersController.getUserById);
-router.patch('/:userId', authenticateTokenMiddleware, imageUploadMiddleware, usersController.updateUser);
-router.delete('/:userId', authenticateTokenMiddleware, usersController.deleteUser);
+router.get('/', verifyTokenMiddleware, usersController.getUsers);
+router.get('/:userId', verifyTokenMiddleware, usersController.getUserById);
+router.patch('/:userId', verifyTokenMiddleware, imageUploadMiddleware, usersController.updateUser);
+router.delete('/:userId', verifyTokenMiddleware, usersController.deleteUser);
 
 export default router;
