@@ -6,10 +6,12 @@ import * as employeesController from '../controllers/employeesController';
 
 const router = express.Router();
 
-router.get('/', verifyTokenMiddleware, employeesController.getEmployees);
-router.get('/:employeeId', verifyTokenMiddleware, employeesController.getEmployeeById);
-router.post('/', imageUploadMiddleware, verifyTokenMiddleware, employeesController.createEmployee);
-router.patch('/:employeeId', imageUploadMiddleware, verifyTokenMiddleware, employeesController.updateEmployee);
-router.delete('/:employeeId', verifyTokenMiddleware, employeesController.deleteEmployee);
+router.use(verifyTokenMiddleware);
+
+router.get('/', employeesController.getEmployees);
+router.get('/:employeeId', employeesController.getEmployeeById);
+router.post('/', imageUploadMiddleware, employeesController.createEmployee);
+router.patch('/:employeeId', imageUploadMiddleware, employeesController.updateEmployee);
+router.delete('/:employeeId', employeesController.deleteEmployee);
 
 export default router;

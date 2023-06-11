@@ -5,10 +5,12 @@ import * as expenseCategoriesController from '../controllers/expenseCategoriesCo
 
 const router = express.Router();
 
-router.get('/', verifyTokenMiddleware, expenseCategoriesController.getExpenseCategories);
-router.get('/:expenseCategoryId', verifyTokenMiddleware, expenseCategoriesController.getExpenseCategoryById);
-router.post('/', verifyTokenMiddleware, expenseCategoriesController.createExpenseCategory);
-router.patch('/:expenseCategoryId', verifyTokenMiddleware, expenseCategoriesController.updateExpenseCategory);
-router.delete('/:expenseCategoryId', verifyTokenMiddleware, expenseCategoriesController.deleteExpenseCategory);
+router.use(verifyTokenMiddleware);
+
+router.get('/', expenseCategoriesController.getExpenseCategories);
+router.get('/:expenseCategoryId', expenseCategoriesController.getExpenseCategoryById);
+router.post('/', expenseCategoriesController.createExpenseCategory);
+router.patch('/:expenseCategoryId', expenseCategoriesController.updateExpenseCategory);
+router.delete('/:expenseCategoryId', expenseCategoriesController.deleteExpenseCategory);
 
 export default router;

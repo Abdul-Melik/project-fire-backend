@@ -5,11 +5,13 @@ import * as expensesController from '../controllers/expensesController';
 
 const router = express.Router();
 
-router.get('/', verifyTokenMiddleware, expensesController.getExpenses);
-router.get('/info', verifyTokenMiddleware, expensesController.getExpensesInfo);
-router.get('/:expenseId', verifyTokenMiddleware, expensesController.getExpenseById);
-router.post('/', verifyTokenMiddleware, expensesController.createExpense);
-router.patch('/:expenseId', verifyTokenMiddleware, expensesController.updateExpense);
-router.delete('/:expenseId', verifyTokenMiddleware, expensesController.deleteExpense);
+router.use(verifyTokenMiddleware);
+
+router.get('/', expensesController.getExpenses);
+router.get('/info', expensesController.getExpensesInfo);
+router.get('/:expenseId', expensesController.getExpenseById);
+router.post('/', expensesController.createExpense);
+router.patch('/:expenseId', expensesController.updateExpense);
+router.delete('/:expenseId', expensesController.deleteExpense);
 
 export default router;

@@ -6,9 +6,11 @@ import * as usersController from '../controllers/usersController';
 
 const router = express.Router();
 
-router.get('/', verifyTokenMiddleware, usersController.getUsers);
-router.get('/:userId', verifyTokenMiddleware, usersController.getUserById);
-router.patch('/:userId', verifyTokenMiddleware, imageUploadMiddleware, usersController.updateUser);
-router.delete('/:userId', verifyTokenMiddleware, usersController.deleteUser);
+router.use(verifyTokenMiddleware);
+
+router.get('/', usersController.getUsers);
+router.get('/:userId', usersController.getUserById);
+router.patch('/:userId', imageUploadMiddleware, usersController.updateUser);
+router.delete('/:userId', usersController.deleteUser);
 
 export default router;
