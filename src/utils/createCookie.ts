@@ -8,7 +8,7 @@ const createCookie = (res: Response, userId: string, expiresIn: number) => {
 	res.cookie('jwt', token, {
 		httpOnly: true,
 		secure: env.NODE_ENV === 'production',
-		sameSite: 'strict',
+		sameSite: 'none',
 		maxAge: expiresIn,
 	});
 };

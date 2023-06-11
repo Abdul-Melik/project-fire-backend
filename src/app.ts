@@ -3,8 +3,9 @@ import express, { NextFunction, Request, Response } from 'express';
 import createHttpError, { isHttpError } from 'http-errors';
 import swaggerUI from 'swagger-ui-express';
 import cookieParser from 'cookie-parser';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 
+import { corsOptions } from './config/corsOptions';
 import swaggerDocs from './utils/swagger';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
@@ -13,16 +14,9 @@ import projectRoutes from './routes/projectRoutes';
 import expenseCategoryRoutes from './routes/expenseCategoryRoutes';
 import expenseRoutes from './routes/expenseRoutes';
 
-import env from './utils/validateEnv';
-
 const app = express();
 
-app.use(
-	cors({
-		origin: env.CLIENT_URL,
-		credentials: true,
-	})
-);
+app.use(cors(corsOptions as CorsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
