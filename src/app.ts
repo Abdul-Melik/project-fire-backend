@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 
 import swaggerDocs from './utils/swagger';
+import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import employeeRoutes from './routes/employeeRoutes';
 import projectRoutes from './routes/projectRoutes';
@@ -27,6 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/projects', projectRoutes);

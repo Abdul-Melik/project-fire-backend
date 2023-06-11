@@ -1,7 +1,6 @@
 import { RequestHandler } from 'express';
 import { PrismaClient, Role } from '@prisma/client';
 import createHttpError from 'http-errors';
-import fs from 'fs';
 
 const prisma = new PrismaClient();
 
