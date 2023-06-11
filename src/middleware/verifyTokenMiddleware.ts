@@ -5,20 +5,24 @@ import jwt from 'jsonwebtoken';
 
 import env from '../utils/validateEnv';
 
-interface DecodedToken {
+type DecodedToken = {
 	userId: string;
-}
+};
 
 const prisma = new PrismaClient();
 
 const verifyTokenMiddleware: RequestHandler = async (req, res, next) => {
 	try {
-		const token = req.cookies.jwt;
+		const authHeader = (req.headers.authorization || req.headers.Authorization) as string;
+
+		if (!authHeader?.startsWith('Bearer ')) throw Error();
+
+		const token = authHeader.split(' ')[1];
 		if (!token) throw Error();
 
-		const decodedToken = jwt.verify(token, env.JWT_SECRET) as DecodedToken;
+		const decodedAccessToken = jwt.verify(token, env.ACCESS_TOKEN_SECRET) as DecodedToken;
 
-		const userId = decodedToken.userId;
+		const userId = decodedAccessToken.userId;
 		const user = await prisma.user.findUnique({
 			where: {
 				id: userId,

@@ -9,10 +9,41 @@ import path from 'path';
 import fs from 'fs';
 
 import env from '../utils/validateEnv';
-import createCookie from '../utils/createCookie';
 import { exclude } from '../utils/excludeUserFields';
 
 const prisma = new PrismaClient();
+
+type DecodedToken = {
+	userId: string;
+};
+
+// @desc    Refresh Token
+// @route   GET /api/auth/refresh
+// @access  Public
+export const refreshToken: RequestHandler = async (req, res, next) => {
+	try {
+		const cookies = req.cookies;
+		if (!cookies?.jwt) throw Error();
+
+		const refreshToken = cookies.jwt;
+
+		const decodedRefreshToken = jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET) as DecodedToken;
+
+		const userId = decodedRefreshToken.userId;
+		const user = await prisma.user.findUnique({
+			where: {
+				id: userId,
+			},
+		});
+		if (!user) throw Error();
+
+		const accessToken = jwt.sign({ userId: user.id }, env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+
+		return res.status(200).json({ user: exclude(user, ['password']), accessToken });
+	} catch (error) {
+		next(createHttpError(403, 'Authorization failed.'));
+	}
+};
 
 // @desc    Register User
 // @route   POST /api/auth/register
@@ -48,11 +79,17 @@ export const registerUser: RequestHandler = async (req, res, next) => {
 			},
 		});
 
-		// 1d in milliseconds
-		const expiresIn = 1000 * 60 * 60 * 24;
-		createCookie(res, user.id, expiresIn);
+		const accessToken = jwt.sign({ userId: user.id }, env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+		const refreshToken = jwt.sign({ userId: user.id }, env.REFRESH_TOKEN_SECRET, { expiresIn: '1d' });
 
-		return res.status(201).json(exclude(user, ['password']));
+		res.cookie('jwt', refreshToken, {
+			httpOnly: true,
+			secure: env.NODE_ENV === 'production',
+			sameSite: 'none',
+			maxAge: 1 * 24 * 60 * 60 * 1000,
+		});
+
+		return res.status(201).json({ user: exclude(user, ['password']), accessToken });
 	} catch (error) {
 		next(error);
 	}
@@ -76,11 +113,19 @@ export const loginUser: RequestHandler = async (req, res, next) => {
 		const isPasswordValid = await bcrypt.compare(password, user.password);
 		if (!isPasswordValid) throw createHttpError(401, 'Invalid email or password.');
 
-		// Either 7d in milliseconds, or 1d in milliseconds
-		const expiresIn = rememberMe ? 1000 * 60 * 60 * 24 * 7 : 1000 * 60 * 60 * 24;
-		createCookie(res, user.id, expiresIn);
+		const accessToken = jwt.sign({ userId: user.id }, env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+		const refreshToken = jwt.sign({ userId: user.id }, env.REFRESH_TOKEN_SECRET, {
+			expiresIn: rememberMe ? '7d' : '1d',
+		});
 
-		return res.status(200).json(exclude(user, ['password']));
+		res.cookie('jwt', refreshToken, {
+			httpOnly: true,
+			secure: env.NODE_ENV === 'production',
+			sameSite: 'none',
+			maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 1 * 24 * 60 * 60 * 1000,
+		});
+
+		return res.status(200).json({ user: exclude(user, ['password']), accessToken });
 	} catch (error) {
 		next(error);
 	}
@@ -116,15 +161,12 @@ export const sendResetPasswordEmail: RequestHandler = async (req, res, next) => 
 		});
 		if (!user) throw createHttpError(404, 'User not found.');
 
-		// 1h in milliseconds
-		const expiresIn = 1 * 60 * 60 * 1000;
-
 		const tokenObj = await prisma.token.create({
 			data: {
-				token: jwt.sign({ userId: user.id }, env.JWT_SECRET, {
-					expiresIn,
+				token: jwt.sign({ userId: user.id }, env.TOKEN_OBJ_SECRET, {
+					expiresIn: '15m',
 				}),
-				expiration: new Date(Date.now() + expiresIn),
+				expiration: new Date(Date.now() + 15 * 60 * 1000),
 				userId: user.id,
 			},
 		});
