@@ -141,7 +141,7 @@ export const deleteExpenseCategory: RequestHandler = async (req, res, next) => {
 			},
 		});
 
-		return res.status(204).send();
+		return res.sendStatus(204);
 	} catch (error) {
 		next(error);
 	}
