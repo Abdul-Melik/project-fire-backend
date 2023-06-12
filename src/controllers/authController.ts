@@ -41,7 +41,7 @@ export const refreshToken: RequestHandler = async (req, res, next) => {
 
 		return res.status(200).json({ user: exclude(user, ['password']), accessToken });
 	} catch (error) {
-		next(createHttpError(403, 'Authorization failed.'));
+		next(createHttpError(403, 'Failed to refresh token.'));
 	}
 };
 

@@ -34,7 +34,7 @@ const verifyTokenMiddleware: RequestHandler = async (req, res, next) => {
 
 		next();
 	} catch (error) {
-		next(createHttpError(403, 'Authorization failed.'));
+		next(createHttpError(401, 'Authorization failed.'));
 	}
 };
 
