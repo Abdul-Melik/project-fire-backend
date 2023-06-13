@@ -9,17 +9,39 @@ const prisma = new PrismaClient();
 // @access  Private
 export const getEmployees: RequestHandler = async (req, res, next) => {
 	try {
-		const { firstName, lastName } = req.query;
+		const { searchTerm } = req.query;
 		const employees = await prisma.employee.findMany({
 			where: {
-				firstName: {
-					contains: firstName ? firstName.toString() : '',
-					mode: 'insensitive',
-				},
-				lastName: {
-					contains: lastName ? lastName.toString() : '',
-					mode: 'insensitive',
-				},
+				OR: [
+					{
+						AND: [
+							{
+								firstName: {
+									contains: searchTerm ? searchTerm.toString().split(' ')[0] : '',
+									mode: 'insensitive',
+								},
+							},
+							{
+								lastName: {
+									contains: searchTerm ? searchTerm.toString().split(' ')[1] : '',
+									mode: 'insensitive',
+								},
+							},
+						],
+					},
+					{
+						firstName: {
+							contains: searchTerm ? searchTerm.toString() : '',
+							mode: 'insensitive',
+						},
+					},
+					{
+						lastName: {
+							contains: searchTerm ? searchTerm.toString() : '',
+							mode: 'insensitive',
+						},
+					},
+				],
 			},
 		});
 
