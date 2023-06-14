@@ -105,6 +105,16 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 
 		if (
 			salary <= 0 ||
+			(department !== 'Administration' &&
+				department !== 'Management' &&
+				department !== 'Development' &&
+				department !== 'Design') ||
+			(techStack !== 'AdminNA' &&
+				techStack !== 'MgmtNA' &&
+				techStack !== 'FullStack' &&
+				techStack !== 'Backend' &&
+				techStack !== 'Frontend' &&
+				techStack !== 'UXUI') ||
 			(department === 'Administration' && techStack !== 'AdminNA') ||
 			(department === 'Management' && techStack !== 'MgmtNA') ||
 			(department === 'Development' &&
