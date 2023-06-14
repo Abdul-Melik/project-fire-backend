@@ -9,7 +9,17 @@ const prisma = new PrismaClient();
 // @access  Private
 export const getEmployees: RequestHandler = async (req, res, next) => {
 	try {
-		const { searchTerm } = req.query;
+		const { searchTerm = '', orderByField = 'firstName', orderDirection = 'desc' } = req.query;
+
+		const orderByFields = ['firstName', 'lastName', 'department', 'salary', 'techStack'];
+		const orderDirections = ['asc', 'desc'];
+		if (!orderByFields.includes(orderByField as string) || !orderDirections.includes(orderDirection as string))
+			throw createHttpError(400, 'Invalid sort option.');
+
+		const orderBy = {
+			[orderByField as string]: orderDirection,
+		};
+
 		const employees = await prisma.employee.findMany({
 			where: {
 				OR: [
@@ -17,13 +27,13 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 						AND: [
 							{
 								firstName: {
-									contains: searchTerm ? searchTerm.toString().split(' ')[0] : '',
+									contains: searchTerm && searchTerm.toString().split(' ')[0],
 									mode: 'insensitive',
 								},
 							},
 							{
 								lastName: {
-									contains: searchTerm ? searchTerm.toString().split(' ')[1] : '',
+									contains: searchTerm && searchTerm.toString().split(' ')[1],
 									mode: 'insensitive',
 								},
 							},
@@ -31,18 +41,19 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 					},
 					{
 						firstName: {
-							contains: searchTerm ? searchTerm.toString() : '',
+							contains: searchTerm && searchTerm.toString(),
 							mode: 'insensitive',
 						},
 					},
 					{
 						lastName: {
-							contains: searchTerm ? searchTerm.toString() : '',
+							contains: searchTerm && searchTerm.toString(),
 							mode: 'insensitive',
 						},
 					},
 				],
 			},
+			orderBy,
 		});
 
 		return res.status(200).json(employees);

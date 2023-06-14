@@ -62,7 +62,7 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 		const projects = await prisma.project.findMany({
 			where: {
 				name: {
-					contains: name ? name.toString() : '',
+					contains: name && name.toString(),
 					mode: 'insensitive',
 				},
 				...(startDate && {

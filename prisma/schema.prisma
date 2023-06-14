@@ -12,6 +12,22 @@ enum Role {
   Guest @map("2")
 }
 
+enum Department {
+  Administration @map("1")
+  Management     @map("2")
+  Development    @map("3")
+  Design         @map("4")
+}
+
+enum TechStack {
+  AdminNA   @map("1")
+  MgmtNA    @map("2")
+  FullStack @map("3")
+  Backend   @map("4")
+  Frontend  @map("5")
+  UXUI      @map("6")
+}
+
 enum ProjectType {
   Fixed   @map("1")
   OnGoing @map("2")
@@ -75,9 +91,9 @@ model Employee {
   firstName  String
   lastName   String
   image      String?
-  department String?           @default("None")
-  salary     Float?            @default(0)
-  techStack  String[]          @default([])
+  department Department
+  salary     Float
+  techStack  TechStack
   projects   ProjectEmployee[]
 
   @@map("Employees")
