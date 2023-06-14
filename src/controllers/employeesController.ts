@@ -9,7 +9,14 @@ const prisma = new PrismaClient();
 // @access  Private
 export const getEmployees: RequestHandler = async (req, res, next) => {
 	try {
-		const { searchTerm = '', department, techStack, orderByField = 'firstName', orderDirection = 'desc' } = req.query;
+		const {
+			searchTerm = '',
+			department,
+			techStack,
+			isEmployed,
+			orderByField = 'firstName',
+			orderDirection = 'desc',
+		} = req.query;
 
 		const orderByFields = ['firstName', 'lastName', 'department', 'salary', 'techStack'];
 		const orderDirections = ['asc', 'desc'];
@@ -54,6 +61,7 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 				],
 				department: department ? (department as Department) : undefined,
 				techStack: techStack ? (techStack as TechStack) : undefined,
+				isEmployed: isEmployed ? JSON.parse(isEmployed as string) : undefined,
 			},
 			orderBy,
 		});
@@ -135,7 +143,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 		});
 		if (!employee) throw createHttpError(404, 'Employee not found.');
 
-		const { firstName, lastName, department, salary, techStack } = req.body;
+		const { firstName, lastName, department, salary, techStack, isEmployed } = req.body;
 		if (salary <= 0) throw createHttpError(400, 'Invalid input fields.');
 
 		let imageData: string | undefined;
@@ -154,6 +162,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 				department,
 				salary: salary ? parseFloat(salary) : undefined,
 				techStack,
+				isEmployed: isEmployed ? JSON.parse(isEmployed as string) : undefined,
 			},
 		});
 

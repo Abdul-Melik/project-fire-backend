@@ -94,6 +94,7 @@ model Employee {
   department Department
   salary     Float
   techStack  TechStack
+  isEmployed Boolean           @default(true)
   projects   ProjectEmployee[]
 
   @@map("Employees")
