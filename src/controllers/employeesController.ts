@@ -92,7 +92,10 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to create employees.');
 
 		const { firstName, lastName, department, salary, techStack } = req.body;
-		if (!firstName || !lastName) throw createHttpError(400, 'Missing required fields.');
+		if (!firstName || !lastName || !department || !salary || !techStack)
+			throw createHttpError(400, 'Missing required fields.');
+
+		if (salary <= 0) throw createHttpError(400, 'Invalid input fields.');
 
 		let imageData: string | undefined;
 		if (req.file) {
@@ -105,7 +108,7 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 				lastName,
 				image: imageData,
 				department,
-				salary: parseFloat(salary) || 0,
+				salary: parseFloat(salary),
 				techStack,
 			},
 		});
