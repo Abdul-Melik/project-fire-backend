@@ -118,6 +118,7 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 			throw createHttpError(400, 'Missing required fields.');
 
 		if (
+			isNaN(salary) ||
 			salary <= 0 ||
 			(department !== 'Administration' &&
 				department !== 'Management' &&
@@ -180,7 +181,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 		const { firstName, lastName, department, salary, techStack, isEmployed } = req.body;
 
 		if (
-			(salary && salary <= 0) ||
+			(salary && (isNaN(salary) || salary <= 0)) ||
 			(department &&
 				department !== 'Administration' &&
 				department !== 'Management' &&
