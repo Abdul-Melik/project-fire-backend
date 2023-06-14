@@ -48,6 +48,9 @@ export const createExpenseCategory: RequestHandler = async (req, res, next) => {
 		const { name, description } = req.body;
 		if (!name || !description) throw createHttpError(400, 'Missing required fields.');
 
+		if (typeof name !== 'string' || typeof description !== 'string')
+			throw createHttpError(400, 'Invalid input fields.');
+
 		const existingExpenseCategory = await prisma.expenseCategory.findFirst({
 			where: {
 				name: {
@@ -90,6 +93,9 @@ export const updateExpenseCategory: RequestHandler = async (req, res, next) => {
 
 		const { name, description } = req.body;
 
+		if ((name && typeof name !== 'string') || (description && typeof description !== 'string'))
+			throw createHttpError(400, 'Invalid input fields.');
+
 		if (name) {
 			const existingExpenseCategory = await prisma.expenseCategory.findFirst({
 				where: {
@@ -99,7 +105,8 @@ export const updateExpenseCategory: RequestHandler = async (req, res, next) => {
 					},
 				},
 			});
-			if (existingExpenseCategory) throw createHttpError(409, 'Expense category already exists.');
+			if (existingExpenseCategory && existingExpenseCategory.id !== expenseCategoryId)
+				throw createHttpError(409, 'Expense category already exists.');
 		}
 
 		const updatedExpenseCategory = await prisma.expenseCategory.update({
