@@ -9,23 +9,37 @@ const prisma = new PrismaClient();
 // @access  Private
 export const getEmployees: RequestHandler = async (req, res, next) => {
 	try {
-		const {
-			searchTerm = '',
-			department,
-			techStack,
-			isEmployed,
-			orderByField = 'firstName',
-			orderDirection = 'desc',
-		} = req.query;
+		const { searchTerm = '', department, techStack, isEmployed, orderByField, orderDirection } = req.query;
 
-		const orderByFields = ['firstName', 'lastName', 'department', 'salary', 'techStack'];
-		const orderDirections = ['asc', 'desc'];
-		if (!orderByFields.includes(orderByField as string) || !orderDirections.includes(orderDirection as string))
-			throw createHttpError(400, 'Invalid sort option.');
+		if (
+			(department &&
+				department !== 'Administration' &&
+				department !== 'Management' &&
+				department !== 'Development' &&
+				department !== 'Design') ||
+			(techStack &&
+				techStack !== 'AdminNA' &&
+				techStack !== 'MgmtNA' &&
+				techStack !== 'FullStack' &&
+				techStack !== 'Backend' &&
+				techStack !== 'Frontend' &&
+				techStack !== 'UXUI') ||
+			(isEmployed && isEmployed !== 'true' && isEmployed !== 'false') ||
+			(orderByField &&
+				orderByField !== 'firstName' &&
+				orderByField !== 'lastName' &&
+				orderByField !== 'department' &&
+				orderByField !== 'salary' &&
+				orderByField !== 'techStack') ||
+			(orderDirection && orderDirection !== 'asc' && orderDirection !== 'desc')
+		)
+			throw createHttpError(400, 'Invalid input fields.');
 
-		const orderBy = {
-			[orderByField as string]: orderDirection,
-		};
+		let orderBy;
+		if (orderByField && orderDirection)
+			orderBy = {
+				[orderByField as string]: orderDirection,
+			};
 
 		const employees = await prisma.employee.findMany({
 			where: {
