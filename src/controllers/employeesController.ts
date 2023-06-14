@@ -103,7 +103,17 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 		if (!firstName || !lastName || !department || !salary || !techStack)
 			throw createHttpError(400, 'Missing required fields.');
 
-		if (salary <= 0) throw createHttpError(400, 'Invalid input fields.');
+		if (
+			salary <= 0 ||
+			(department === 'Administration' && techStack !== 'AdminNA') ||
+			(department === 'Management' && techStack !== 'MgmtNA') ||
+			(department === 'Development' &&
+				techStack !== 'FullStack' &&
+				techStack !== 'Backend' &&
+				techStack !== 'Frontend') ||
+			(department === 'Design' && techStack !== 'UXUI')
+		)
+			throw createHttpError(400, 'Invalid input fields.');
 
 		let imageData: string | undefined;
 		if (req.file) {
