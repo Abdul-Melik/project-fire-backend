@@ -113,7 +113,8 @@ export const loginUser: RequestHandler = async (req, res, next) => {
 		const { email, password, rememberMe } = req.body;
 		if (!email || !password) throw createHttpError(400, 'Missing required fields.');
 
-		if (typeof email !== 'string' || typeof password !== 'string' || typeof rememberMe !== 'boolean')
+		const pattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+		if (!pattern.test(email) || typeof password !== 'string' || typeof rememberMe !== 'boolean')
 			throw createHttpError(400, 'Invalid input fields.');
 
 		const user = await prisma.user.findUnique({
@@ -166,6 +167,9 @@ export const sendResetPasswordEmail: RequestHandler = async (req, res, next) => 
 	try {
 		const { email } = req.body;
 		if (!email) throw createHttpError(400, 'Email not provided.');
+
+		const pattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+		if (!pattern.test(email)) throw createHttpError(400, 'Invalid input fields.');
 
 		const user = await prisma.user.findUnique({
 			where: {
@@ -244,6 +248,8 @@ export const resetPassword: RequestHandler = async (req, res, next) => {
 
 		const { password } = req.body;
 		if (!password) throw createHttpError(400, 'Password not provided.');
+
+		if (typeof password !== 'string') throw createHttpError(400, 'Invalid input fields.');
 
 		const saltRounds = 10;
 		const hashedPassword = await bcrypt.hash(password, saltRounds);
