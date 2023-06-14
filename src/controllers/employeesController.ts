@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, Department, TechStack } from '@prisma/client';
 import createHttpError from 'http-errors';
 
 const prisma = new PrismaClient();
@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // @access  Private
 export const getEmployees: RequestHandler = async (req, res, next) => {
 	try {
-		const { searchTerm = '', orderByField = 'firstName', orderDirection = 'desc' } = req.query;
+		const { searchTerm = '', department, techStack, orderByField = 'firstName', orderDirection = 'desc' } = req.query;
 
 		const orderByFields = ['firstName', 'lastName', 'department', 'salary', 'techStack'];
 		const orderDirections = ['asc', 'desc'];
@@ -52,6 +52,8 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 						},
 					},
 				],
+				department: department ? (department as Department) : undefined,
+				techStack: techStack ? (techStack as TechStack) : undefined,
 			},
 			orderBy,
 		});
