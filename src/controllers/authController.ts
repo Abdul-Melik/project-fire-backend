@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import createHttpError from 'http-errors';
 import nodemailer from 'nodemailer';
 import handlebars from 'handlebars';
@@ -53,6 +53,16 @@ export const registerUser: RequestHandler = async (req, res, next) => {
 		const { email, firstName, lastName, password, role } = req.body;
 		if (!email || !firstName || !lastName || !password) throw createHttpError(400, 'Missing required fields.');
 
+		const pattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+		if (
+			!pattern.test(email) ||
+			typeof firstName !== 'string' ||
+			typeof lastName !== 'string' ||
+			typeof password !== 'string' ||
+			(role && role !== Role.Admin && role !== Role.Guest)
+		)
+			throw createHttpError(400, 'Invalid input fields.');
+
 		const existingUser = await prisma.user.findUnique({
 			where: {
 				email,
@@ -103,7 +113,8 @@ export const loginUser: RequestHandler = async (req, res, next) => {
 		const { email, password, rememberMe } = req.body;
 		if (!email || !password) throw createHttpError(400, 'Missing required fields.');
 
-		if (rememberMe !== true && rememberMe !== false) throw createHttpError(400, 'Invalid input fields.');
+		if (typeof email !== 'string' || typeof password !== 'string' || typeof rememberMe !== 'boolean')
+			throw createHttpError(400, 'Invalid input fields.');
 
 		const user = await prisma.user.findUnique({
 			where: {
@@ -236,6 +247,7 @@ export const resetPassword: RequestHandler = async (req, res, next) => {
 
 		const saltRounds = 10;
 		const hashedPassword = await bcrypt.hash(password, saltRounds);
+
 		await prisma.user.update({
 			where: {
 				id: userId,
