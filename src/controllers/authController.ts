@@ -103,6 +103,8 @@ export const loginUser: RequestHandler = async (req, res, next) => {
 		const { email, password, rememberMe } = req.body;
 		if (!email || !password) throw createHttpError(400, 'Missing required fields.');
 
+		if (rememberMe !== true && rememberMe !== false) throw createHttpError(400, 'Invalid input fields.');
+
 		const user = await prisma.user.findUnique({
 			where: {
 				email,
