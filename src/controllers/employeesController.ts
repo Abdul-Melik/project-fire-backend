@@ -180,7 +180,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 		const { firstName, lastName, department, salary, techStack, isEmployed } = req.body;
 
 		if (
-			salary <= 0 ||
+			(salary && salary <= 0) ||
 			(department &&
 				department !== 'Administration' &&
 				department !== 'Management' &&
