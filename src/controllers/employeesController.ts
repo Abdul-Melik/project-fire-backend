@@ -13,17 +13,17 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 
 		if (
 			(department &&
-				department !== 'Administration' &&
-				department !== 'Management' &&
-				department !== 'Development' &&
-				department !== 'Design') ||
+				department !== Department.Administration &&
+				department !== Department.Management &&
+				department !== Department.Development &&
+				department !== Department.Design) ||
 			(techStack &&
-				techStack !== 'AdminNA' &&
-				techStack !== 'MgmtNA' &&
-				techStack !== 'FullStack' &&
-				techStack !== 'Backend' &&
-				techStack !== 'Frontend' &&
-				techStack !== 'UXUI') ||
+				techStack !== TechStack.AdminNA &&
+				techStack !== TechStack.MgmtNA &&
+				techStack !== TechStack.FullStack &&
+				techStack !== TechStack.Backend &&
+				techStack !== TechStack.Frontend &&
+				techStack !== TechStack.UXUI) ||
 			(isEmployed && isEmployed !== 'true' && isEmployed !== 'false') ||
 			(orderByField &&
 				orderByField !== 'firstName' &&
@@ -118,25 +118,27 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 			throw createHttpError(400, 'Missing required fields.');
 
 		if (
+			typeof firstName !== 'string' ||
+			typeof lastName !== 'string' ||
 			isNaN(salary) ||
 			salary <= 0 ||
-			(department !== 'Administration' &&
-				department !== 'Management' &&
-				department !== 'Development' &&
-				department !== 'Design') ||
-			(techStack !== 'AdminNA' &&
-				techStack !== 'MgmtNA' &&
-				techStack !== 'FullStack' &&
-				techStack !== 'Backend' &&
-				techStack !== 'Frontend' &&
-				techStack !== 'UXUI') ||
-			(department === 'Administration' && techStack !== 'AdminNA') ||
-			(department === 'Management' && techStack !== 'MgmtNA') ||
-			(department === 'Development' &&
-				techStack !== 'FullStack' &&
-				techStack !== 'Backend' &&
-				techStack !== 'Frontend') ||
-			(department === 'Design' && techStack !== 'UXUI')
+			(department !== Department.Administration &&
+				department !== Department.Management &&
+				department !== Department.Development &&
+				department !== Department.Design) ||
+			(techStack !== TechStack.AdminNA &&
+				techStack !== TechStack.MgmtNA &&
+				techStack !== TechStack.FullStack &&
+				techStack !== TechStack.Backend &&
+				techStack !== TechStack.Frontend &&
+				techStack !== TechStack.UXUI) ||
+			(department === Department.Administration && techStack !== TechStack.AdminNA) ||
+			(department === Department.Management && techStack !== TechStack.MgmtNA) ||
+			(department === Department.Development &&
+				techStack !== TechStack.FullStack &&
+				techStack !== TechStack.Backend &&
+				techStack !== TechStack.Frontend) ||
+			(department === Department.Design && techStack !== TechStack.UXUI)
 		)
 			throw createHttpError(400, 'Invalid input fields.');
 
@@ -181,44 +183,52 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 		const { firstName, lastName, department, salary, techStack, isEmployed } = req.body;
 
 		if (
-			(salary && (isNaN(salary) || salary <= 0)) ||
+			(firstName && typeof firstName !== 'string') ||
+			(lastName && typeof lastName !== 'string') ||
+			(salary &&
+				((typeof salary !== 'number' && typeof salary !== 'string') ||
+					(typeof salary === 'number' && (isNaN(salary) || salary <= 0)) ||
+					(typeof salary === 'string' && isNaN(parseFloat(salary))))) ||
+			(isEmployed &&
+				((typeof isEmployed !== 'boolean' && typeof isEmployed !== 'string') ||
+					(typeof isEmployed === 'string' && isEmployed !== 'true' && isEmployed !== 'false'))) ||
 			(department &&
-				department !== 'Administration' &&
-				department !== 'Management' &&
-				department !== 'Development' &&
-				department !== 'Design') ||
+				department !== Department.Administration &&
+				department !== Department.Management &&
+				department !== Department.Development &&
+				department !== Department.Design) ||
 			(techStack &&
-				techStack !== 'AdminNA' &&
-				techStack !== 'MgmtNA' &&
-				techStack !== 'FullStack' &&
-				techStack !== 'Backend' &&
-				techStack !== 'Frontend' &&
-				techStack !== 'UXUI') ||
+				techStack !== TechStack.AdminNA &&
+				techStack !== TechStack.MgmtNA &&
+				techStack !== TechStack.FullStack &&
+				techStack !== TechStack.Backend &&
+				techStack !== TechStack.Frontend &&
+				techStack !== TechStack.UXUI) ||
 			(department &&
 				!techStack &&
-				((department === 'Administration' && employee.techStack !== 'AdminNA') ||
-					(department === 'Management' && employee.techStack !== 'MgmtNA') ||
-					(department === 'Development' &&
-						employee.techStack !== 'FullStack' &&
-						employee.techStack !== 'Backend' &&
-						employee.techStack !== 'Frontend') ||
-					(department === 'Design' && employee.techStack !== 'UXUI'))) ||
+				((department === Department.Administration && employee.techStack !== TechStack.AdminNA) ||
+					(department === Department.Management && employee.techStack !== TechStack.MgmtNA) ||
+					(department === Department.Development &&
+						employee.techStack !== TechStack.FullStack &&
+						employee.techStack !== TechStack.Backend &&
+						employee.techStack !== TechStack.Frontend) ||
+					(department === Department.Design && employee.techStack !== TechStack.UXUI))) ||
 			(techStack &&
 				!department &&
-				((techStack === 'AdminNA' && employee.department !== 'Administration') ||
-					(techStack === 'MgmtNA' && employee.department !== 'Management') ||
-					((techStack === 'FullStack' || techStack === 'Backend' || techStack === 'Frontend') &&
-						employee.department !== 'Development') ||
-					(techStack === 'UXUI' && employee.department !== 'Design'))) ||
+				((techStack === TechStack.AdminNA && employee.department !== Department.Administration) ||
+					(techStack === TechStack.MgmtNA && employee.department !== Department.Management) ||
+					((techStack === TechStack.FullStack || techStack === TechStack.Backend || techStack === TechStack.Frontend) &&
+						employee.department !== Department.Development) ||
+					(techStack === TechStack.UXUI && employee.department !== Department.Design))) ||
 			(department &&
 				techStack &&
-				((department === 'Administration' && techStack !== 'AdminNA') ||
-					(department === 'Management' && techStack !== 'MgmtNA') ||
-					(department === 'Development' &&
-						techStack !== 'FullStack' &&
-						techStack !== 'Backend' &&
-						techStack !== 'Frontend') ||
-					(department === 'Design' && techStack !== 'UXUI')))
+				((department === Department.Administration && techStack !== TechStack.AdminNA) ||
+					(department === Department.Management && techStack !== TechStack.MgmtNA) ||
+					(department === Department.Development &&
+						techStack !== TechStack.FullStack &&
+						techStack !== TechStack.Backend &&
+						techStack !== TechStack.Frontend) ||
+					(department === Department.Design && techStack !== TechStack.UXUI)))
 		)
 			throw createHttpError(400, 'Invalid input fields.');
 
@@ -238,7 +248,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 				department,
 				salary: salary ? parseFloat(salary) : undefined,
 				techStack,
-				isEmployed: isEmployed ? JSON.parse(isEmployed as string) : undefined,
+				isEmployed: typeof isEmployed === 'boolean' ? isEmployed : isEmployed ? isEmployed === 'true' : undefined,
 			},
 		});
 
