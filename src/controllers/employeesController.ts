@@ -136,6 +136,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 		if (!employee) throw createHttpError(404, 'Employee not found.');
 
 		const { firstName, lastName, department, salary, techStack } = req.body;
+		if (salary <= 0) throw createHttpError(400, 'Invalid input fields.');
 
 		let imageData: string | undefined;
 		if (req.file) {
