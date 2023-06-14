@@ -60,6 +60,15 @@ export const updateUser: RequestHandler = async (req, res, next) => {
 
 		const { email, firstName, lastName, password, role } = req.body;
 
+		const pattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+		if (
+			(email && !pattern.test(email)) ||
+			typeof firstName !== 'string' ||
+			typeof lastName !== 'string' ||
+			(role && role !== Role.Admin && role !== Role.Guest)
+		)
+			throw createHttpError(400, 'Invalid input fields.');
+
 		if (email) {
 			const existingUser = await prisma.user.findUnique({
 				where: {
