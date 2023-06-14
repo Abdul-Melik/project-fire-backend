@@ -167,13 +167,43 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 
 		if (
 			salary <= 0 ||
-			(department === 'Administration' && techStack !== 'AdminNA') ||
-			(department === 'Management' && techStack !== 'MgmtNA') ||
-			(department === 'Development' &&
+			(department &&
+				department !== 'Administration' &&
+				department !== 'Management' &&
+				department !== 'Development' &&
+				department !== 'Design') ||
+			(techStack &&
+				techStack !== 'AdminNA' &&
+				techStack !== 'MgmtNA' &&
 				techStack !== 'FullStack' &&
 				techStack !== 'Backend' &&
-				techStack !== 'Frontend') ||
-			(department === 'Design' && techStack !== 'UXUI')
+				techStack !== 'Frontend' &&
+				techStack !== 'UXUI') ||
+			(department &&
+				!techStack &&
+				((department === 'Administration' && employee.techStack !== 'AdminNA') ||
+					(department === 'Management' && employee.techStack !== 'MgmtNA') ||
+					(department === 'Development' &&
+						employee.techStack !== 'FullStack' &&
+						employee.techStack !== 'Backend' &&
+						employee.techStack !== 'Frontend') ||
+					(department === 'Design' && employee.techStack !== 'UXUI'))) ||
+			(techStack &&
+				!department &&
+				((techStack === 'AdminNA' && employee.department !== 'Administration') ||
+					(techStack === 'MgmtNA' && employee.department !== 'Management') ||
+					((techStack === 'FullStack' || techStack === 'Backend' || techStack === 'Frontend') &&
+						employee.department !== 'Development') ||
+					(techStack === 'UXUI' && employee.department !== 'Design'))) ||
+			(department &&
+				techStack &&
+				((department === 'Administration' && techStack !== 'AdminNA') ||
+					(department === 'Management' && techStack !== 'MgmtNA') ||
+					(department === 'Development' &&
+						techStack !== 'FullStack' &&
+						techStack !== 'Backend' &&
+						techStack !== 'Frontend') ||
+					(department === 'Design' && techStack !== 'UXUI')))
 		)
 			throw createHttpError(400, 'Invalid input fields.');
 
