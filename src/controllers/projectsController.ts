@@ -196,18 +196,17 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 				},
 			});
 
-			projects = projectsData.map(project => {
-				const revenue = project.projectValueBAM;
-				const cost = project.employees.reduce((sum, obj) => {
-					const partTime = obj.partTime;
-					const salary = obj.employee.salary ?? 0;
+			projects = projectsData.map(({ name, hourlyRate, projectValueBAM, _count, employees }) => {
+				const revenue = projectValueBAM;
+				const cost = employees.reduce((sum, { partTime, employee }) => {
+					const salary = employee.salary ?? 0;
 					return sum + salary * (partTime ? 0.5 : 1);
 				}, 0);
 				const profit = revenue - cost;
 				return {
-					name: project.name,
-					hourlyRate: project.hourlyRate,
-					numberOfEmployees: project._count.employees,
+					name: name,
+					hourlyRate: hourlyRate,
+					numberOfEmployees: _count.employees,
 					revenue,
 					cost,
 					profit,
@@ -369,11 +368,11 @@ export const createProject: RequestHandler = async (req, res, next) => {
 				salesChannel,
 				projectStatus,
 				employees: {
-					create: employeesOnProject.map(employee => ({
-						partTime: employee.partTime,
+					create: employeesOnProject.map(({ partTime, employeeId }) => ({
+						partTime,
 						employee: {
 							connect: {
-								id: employee.employeeId,
+								id: employeeId,
 							},
 						},
 					})),
@@ -462,11 +461,6 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 			if (existingEmployees.length !== employeeIds.length) throw createHttpError(400, 'Some employees do not exist.');
 		}
 
-		type Employee = {
-			employeeId: string;
-			partTime: boolean;
-		};
-
 		const updatedProject = await prisma.project.update({
 			where: {
 				id: projectId,
@@ -485,11 +479,11 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 				employees: employeesOnProject
 					? {
 							deleteMany: {},
-							create: employeesOnProject.map((employee: Employee) => ({
-								partTime: employee.partTime,
+							create: employeesOnProject.map(({ partTime, employeeId }: { partTime: boolean; employeeId: string }) => ({
+								partTime,
 								employee: {
 									connect: {
-										id: employee.employeeId,
+										id: employeeId,
 									},
 								},
 							})),
