@@ -108,6 +108,18 @@ export const getEmployeeById: RequestHandler = async (req, res, next) => {
 			where: {
 				id: employeeId,
 			},
+			include: {
+				projects: {
+					select: {
+						project: {
+							select: {
+								name: true,
+							},
+						},
+						partTime: true,
+					},
+				},
+			},
 		});
 		if (!employee) throw createHttpError(404, 'Employee not found.');
 
