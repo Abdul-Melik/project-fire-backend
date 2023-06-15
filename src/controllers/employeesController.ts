@@ -78,6 +78,18 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 				isEmployed: isEmployed ? JSON.parse(isEmployed as string) : undefined,
 			},
 			orderBy,
+			include: {
+				projects: {
+					select: {
+						project: {
+							select: {
+								name: true,
+							},
+						},
+						partTime: true,
+					},
+				},
+			},
 		});
 
 		return res.status(200).json(employees);
