@@ -83,6 +83,7 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 					select: {
 						project: {
 							select: {
+								id: true,
 								name: true,
 							},
 						},
@@ -113,6 +114,7 @@ export const getEmployeeById: RequestHandler = async (req, res, next) => {
 					select: {
 						project: {
 							select: {
+								id: true,
 								name: true,
 							},
 						},
