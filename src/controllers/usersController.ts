@@ -84,7 +84,8 @@ export const updateUser: RequestHandler = async (req, res, next) => {
 
 		let imageData: string | undefined;
 		if (req.file) {
-			imageData = 'https://www.dmarge.com/wp-content/uploads/2021/01/dwayne-the-rock-.jpg';
+			imageData =
+				'https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg';
 		}
 
 		const updatedUser = await prisma.user.update({
