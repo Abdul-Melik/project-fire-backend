@@ -132,6 +132,7 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 export const getProjectById: RequestHandler = async (req, res, next) => {
 	try {
 		const projectId = req.params.projectId;
+
 		const project = await prisma.project.findUnique({
 			where: {
 				id: projectId,
@@ -159,6 +160,9 @@ export const getProjectById: RequestHandler = async (req, res, next) => {
 export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 	try {
 		const { year } = req.query;
+
+		if (isNaN(Number(year)) || isNaN(parseFloat(year as string)) || Number(year) < 1990 || Number(year) > 2100)
+			throw createHttpError(400, 'Invalid input fields.');
 
 		const startDate = new Date(`${year}-01-01`);
 		const endDate = new Date(`${year}-12-31`);
