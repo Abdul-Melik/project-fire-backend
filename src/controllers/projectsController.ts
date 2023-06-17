@@ -15,73 +15,88 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 			endDate,
 			projectType,
 			salesChannel,
-			projectStatus = 'Active',
-			orderByField = 'startDate',
-			orderDirection = 'desc',
-			take = 10,
-			page = 1,
+			projectStatus,
+			orderByField,
+			orderDirection,
+			take,
+			page,
 		} = req.query;
 
-		const orderByFields = [
-			'name',
-			'description',
-			'startDate',
-			'endDate',
-			'actualEndDate',
-			'projectType',
-			'hourlyRate',
-			'projectValueBAM',
-			'salesChannel',
-			'projectStatus',
-			'employeesCount',
-		];
-		const orderDirections = ['asc', 'desc'];
-		if (!orderByFields.includes(orderByField as string) || !orderDirections.includes(orderDirection as string))
-			throw createHttpError(400, 'Invalid sort option.');
+		if (
+			(startDate && isNaN(Date.parse(startDate as string))) ||
+			(endDate && isNaN(Date.parse(endDate as string))) ||
+			(projectType && projectType !== ProjectType.Fixed && projectType !== ProjectType.OnGoing) ||
+			(salesChannel &&
+				salesChannel !== SalesChannel.Online &&
+				salesChannel !== SalesChannel.InPerson &&
+				salesChannel !== SalesChannel.Referral &&
+				salesChannel !== SalesChannel.Other) ||
+			(projectStatus &&
+				projectStatus !== ProjectStatus.Active &&
+				projectStatus !== ProjectStatus.OnHold &&
+				projectStatus !== ProjectStatus.Inactive &&
+				projectStatus !== ProjectStatus.Completed) ||
+			(orderByField &&
+				orderByField !== 'name' &&
+				orderByField !== 'description' &&
+				orderByField !== 'startDate' &&
+				orderByField !== 'endDate' &&
+				orderByField !== 'actualEndDate' &&
+				orderByField !== 'projectType' &&
+				orderByField !== 'hourlyRate' &&
+				orderByField !== 'projectValueBAM' &&
+				orderByField !== 'salesChannel' &&
+				orderByField !== 'projectStatus' &&
+				orderByField !== 'employeesCount') ||
+			(orderDirection && orderDirection !== 'asc' && orderDirection !== 'desc') ||
+			(take && Number(take) < 1) ||
+			(page && Number(page) < 1)
+		)
+			throw createHttpError(400, 'Invalid input fields.');
 
-		const count = await prisma.project.count();
-		const lastPage = Math.ceil(count / Number(take));
-		const skip = (Number(page) - 1) * Number(take);
+		const skip = page && take ? (Number(page) - 1) * Number(take) : 0;
 
-		if (Number(take) < 1 || Number(page) < 1 || Number(page) > lastPage)
-			throw createHttpError(400, 'Invalid pagination options.');
-
-		let orderBy = {
-			[orderByField as string]: orderDirection,
-		};
-
-		if (orderByField === 'employeesCount') {
-			const employeesOrder = {
-				employees: {
-					_count: orderDirection,
-				},
-			};
-			orderBy = employeesOrder;
+		let orderBy;
+		if (orderByField && orderDirection) {
+			if (orderByField === 'employeesCount')
+				orderBy = {
+					employees: {
+						_count: orderDirection,
+					},
+				} as any;
+			else
+				orderBy = {
+					[orderByField as string]: orderDirection,
+				};
 		}
 
-		const projects = await prisma.project.findMany({
-			where: {
-				name: {
-					contains: name && name.toString(),
-					mode: 'insensitive',
-				},
-				...(startDate && {
-					startDate: {
-						gte: new Date(startDate as string),
-					},
-				}),
-				...(endDate && {
-					endDate: {
-						lte: new Date(endDate as string),
-					},
-				}),
-				projectType: projectType ? (projectType as ProjectType) : undefined,
-				salesChannel: salesChannel ? (salesChannel as SalesChannel) : undefined,
-				projectStatus: projectStatus ? (projectStatus as ProjectStatus) : undefined,
+		const where = {
+			name: {
+				contains: name && name.toString(),
+				mode: 'insensitive' as const,
 			},
+			...(startDate && {
+				startDate: {
+					gte: new Date(startDate as string),
+				},
+			}),
+			...(endDate && {
+				endDate: {
+					lte: new Date(endDate as string),
+				},
+			}),
+			projectType: projectType ? (projectType as ProjectType) : undefined,
+			salesChannel: salesChannel ? (salesChannel as SalesChannel) : undefined,
+			projectStatus: projectStatus ? (projectStatus as ProjectStatus) : undefined,
+		};
+
+		const count = await prisma.project.count({ where });
+
+		const projects = await prisma.project.findMany({
+			where,
 			orderBy,
-			skip,
-			take: Number(take),
+			skip: skip < count ? skip : undefined,
+			take: take ? Number(take) : undefined,
 			include: {
 				employees: {
 					select: {
@@ -92,12 +107,17 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 			},
 		});
 
+		const total = projects.length > 0 ? count : 0;
+		const lastPage = take ? Math.ceil(total / Number(take)) : total > 0 ? 1 : 0;
+		const currentPage = page ? Number(page) : total > 0 ? 1 : 0;
+		const perPage = take ? Number(take) : total;
+
 		return res.status(200).json({
 			pageInfo: {
-				total: count,
-				currentPage: Number(page),
+				total,
+				currentPage,
 				lastPage,
-				perPage: Number(take),
+				perPage,
 			},
 			projects,
 		});
