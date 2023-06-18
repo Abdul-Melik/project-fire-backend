@@ -109,7 +109,7 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 
 		const total = projects.length > 0 ? count : 0;
 		const lastPage = take ? Math.ceil(total / Number(take)) : total > 0 ? 1 : 0;
-		const currentPage = page ? Number(page) : total > 0 ? 1 : 0;
+		const currentPage = page ? (Number(page) > lastPage ? 1 : Number(page)) : total > 0 ? 1 : 0;
 		const perPage = take ? Number(take) : total;
 
 		return res.status(200).json({
