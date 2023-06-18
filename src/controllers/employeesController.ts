@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // @access  Private
 export const getEmployees: RequestHandler = async (req, res, next) => {
 	try {
-		const { searchTerm = '', department, techStack, isEmployed, orderByField, orderDirection } = req.query;
+		const { searchTerm = '', department, techStack, isEmployed, orderByField, orderDirection, take, page } = req.query;
 
 		if (
 			(department &&
@@ -31,9 +31,13 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 				orderByField !== 'department' &&
 				orderByField !== 'salary' &&
 				orderByField !== 'techStack') ||
-			(orderDirection && orderDirection !== 'asc' && orderDirection !== 'desc')
+			(orderDirection && orderDirection !== 'asc' && orderDirection !== 'desc') ||
+			(take && Number(take) < 1) ||
+			(page && Number(page) < 1)
 		)
 			throw createHttpError(400, 'Invalid input fields.');
+
+		const skip = page && take ? (Number(page) - 1) * Number(take) : 0;
 
 		let orderBy;
 		if (orderByField && orderDirection)
@@ -41,43 +45,49 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 				[orderByField as string]: orderDirection,
 			};
 
+		const where = {
+			OR: [
+				{
+					AND: [
+						{
+							firstName: {
+								contains: searchTerm && searchTerm.toString().split(' ')[0],
+								mode: 'insensitive' as const,
+							},
+						},
+						{
+							lastName: {
+								contains: searchTerm && searchTerm.toString().split(' ')[1],
+								mode: 'insensitive' as const,
+							},
+						},
+					],
+				},
+				{
+					firstName: {
+						contains: searchTerm && searchTerm.toString(),
+						mode: 'insensitive' as const,
+					},
+				},
+				{
+					lastName: {
+						contains: searchTerm && searchTerm.toString(),
+						mode: 'insensitive' as const,
+					},
+				},
+			],
+			department: department ? (department as Department) : undefined,
+			techStack: techStack ? (techStack as TechStack) : undefined,
+			isEmployed: isEmployed ? JSON.parse(isEmployed as string) : undefined,
+		};
+
+		const count = await prisma.employee.count({ where });
+
 		const employees = await prisma.employee.findMany({
-			where: {
-				OR: [
-					{
-						AND: [
-							{
-								firstName: {
-									contains: searchTerm && searchTerm.toString().split(' ')[0],
-									mode: 'insensitive',
-								},
-							},
-							{
-								lastName: {
-									contains: searchTerm && searchTerm.toString().split(' ')[1],
-									mode: 'insensitive',
-								},
-							},
-						],
-					},
-					{
-						firstName: {
-							contains: searchTerm && searchTerm.toString(),
-							mode: 'insensitive',
-						},
-					},
-					{
-						lastName: {
-							contains: searchTerm && searchTerm.toString(),
-							mode: 'insensitive',
-						},
-					},
-				],
-				department: department ? (department as Department) : undefined,
-				techStack: techStack ? (techStack as TechStack) : undefined,
-				isEmployed: isEmployed ? JSON.parse(isEmployed as string) : undefined,
-			},
+			where,
 			orderBy,
+			skip: skip < count ? skip : undefined,
+			take: take ? Number(take) : undefined,
 			include: {
 				projects: {
 					select: {
@@ -93,7 +103,20 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 			},
 		});
 
-		return res.status(200).json(employees);
+		const total = employees.length > 0 ? count : 0;
+		const lastPage = take ? Math.ceil(total / Number(take)) : total > 0 ? 1 : 0;
+		const currentPage = page ? Number(page) : total > 0 ? 1 : 0;
+		const perPage = take ? Number(take) : total;
+
+		return res.status(200).json({
+			pageInfo: {
+				total,
+				currentPage,
+				lastPage,
+				perPage,
+			},
+			employees,
+		});
 	} catch (error) {
 		next(error);
 	}
