@@ -9,9 +9,47 @@ const prisma = new PrismaClient();
 // @access  Private
 export const getInvoices: RequestHandler = async (req, res, next) => {
 	try {
-		const invoices = await prisma.invoice.findMany();
+		const { client = '', invoiceStatus, orderByField, orderDirection, take, page } = req.query;
 
-		return res.status(200).json(invoices);
+		const skip = page && take ? (Number(page) - 1) * Number(take) : 0;
+
+		let orderBy;
+		if (orderByField && orderDirection)
+			orderBy = {
+				[orderByField as string]: orderDirection,
+			};
+
+		const where = {
+			client: {
+				contains: client && client.toString(),
+				mode: 'insensitive' as const,
+			},
+			invoiceStatus: invoiceStatus ? (invoiceStatus as InvoiceStatus) : undefined,
+		};
+
+		const count = await prisma.invoice.count({ where });
+
+		const invoices = await prisma.invoice.findMany({
+			where,
+			orderBy,
+			skip: skip < count ? skip : undefined,
+			take: take ? Number(take) : undefined,
+		});
+
+		const total = invoices.length > 0 ? count : 0;
+		const lastPage = take ? Math.ceil(total / Number(take)) : total > 0 ? 1 : 0;
+		const currentPage = page ? (Number(page) > lastPage ? 1 : Number(page)) : total > 0 ? 1 : 0;
+		const perPage = take ? Number(take) : total;
+
+		return res.status(200).json({
+			pageInfo: {
+				total,
+				currentPage,
+				lastPage,
+				perPage,
+			},
+			invoices,
+		});
 	} catch (error) {
 		next(error);
 	}
