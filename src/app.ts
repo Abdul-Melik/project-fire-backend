@@ -14,6 +14,7 @@ import employeeRoutes from './routes/employeeRoutes';
 import projectRoutes from './routes/projectRoutes';
 import expenseCategoryRoutes from './routes/expenseCategoryRoutes';
 import expenseRoutes from './routes/expenseRoutes';
+import invoiceRoutes from './routes/invoiceRoutes';
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/expense-categories', expenseCategoryRoutes);
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 app.use((req, res, next) => {
 	next(createHttpError(404, 'Endpoint not found.'));

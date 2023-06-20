@@ -91,13 +91,13 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 			include: {
 				projects: {
 					select: {
+						partTime: true,
 						project: {
 							select: {
 								id: true,
 								name: true,
 							},
 						},
-						partTime: true,
 					},
 				},
 			},
@@ -135,13 +135,13 @@ export const getEmployeeById: RequestHandler = async (req, res, next) => {
 			include: {
 				projects: {
 					select: {
+						partTime: true,
 						project: {
 							select: {
 								id: true,
 								name: true,
 							},
 						},
-						partTime: true,
 					},
 				},
 			},
