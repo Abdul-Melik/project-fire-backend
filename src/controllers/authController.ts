@@ -9,7 +9,7 @@ import path from 'path';
 import fs from 'fs';
 
 import env from '../utils/validateEnv';
-import { exclude } from '../utils/excludeUserFields';
+import { exclude } from '../helpers';
 
 const prisma = new PrismaClient();
 

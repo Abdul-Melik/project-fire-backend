@@ -3,7 +3,7 @@ import { PrismaClient, Role } from '@prisma/client';
 import createHttpError from 'http-errors';
 import bcrypt from 'bcrypt';
 
-import { exclude } from '../utils/excludeUserFields';
+import { exclude } from '../helpers';
 
 const prisma = new PrismaClient();
 
