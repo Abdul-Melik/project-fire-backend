@@ -9,9 +9,20 @@ const prisma = new PrismaClient();
 // @access  Private
 export const getEmployees: RequestHandler = async (req, res, next) => {
 	try {
-		const { searchTerm = '', department, techStack, isEmployed, orderByField, orderDirection, take, page } = req.query;
+		const {
+			searchTerm = '',
+			currency,
+			department,
+			techStack,
+			isEmployed,
+			orderByField,
+			orderDirection,
+			take,
+			page,
+		} = req.query;
 
 		if (
+			(currency && currency !== Currency.USD && currency !== Currency.EUR && currency !== Currency.BAM) ||
 			(department &&
 				department !== Department.Administration &&
 				department !== Department.Management &&
@@ -76,6 +87,7 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 					},
 				},
 			],
+			currency: currency ? (currency as Currency) : undefined,
 			department: department ? (department as Department) : undefined,
 			techStack: techStack ? (techStack as TechStack) : undefined,
 			isEmployed: isEmployed ? JSON.parse(isEmployed as string) : undefined,
