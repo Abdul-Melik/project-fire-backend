@@ -164,16 +164,58 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 		if (isNaN(Number(year)) || isNaN(parseFloat(year as string)) || Number(year) < 1990 || Number(year) > 2100)
 			throw createHttpError(400, 'Invalid input fields.');
 
-		const startDate = new Date(`${year}-01-01`);
-		const endDate = new Date(`${year}-12-31`);
+		const yearStartDate = new Date(`${year}-01-01`);
+		const yearEndDate = new Date(`${year}-12-31`);
 
 		const yearFilter = {
-			startDate: {
-				gte: startDate,
-			},
-			endDate: {
-				lte: endDate,
-			},
+			AND: [
+				{
+					OR: [
+						{
+							startDate: {
+								lt: yearStartDate,
+							},
+						},
+						{
+							AND: [
+								{
+									startDate: {
+										gte: yearStartDate,
+									},
+								},
+								{
+									startDate: {
+										lte: yearEndDate,
+									},
+								},
+							],
+						},
+					],
+				},
+				{
+					OR: [
+						{
+							endDate: {
+								gt: yearEndDate,
+							},
+						},
+						{
+							AND: [
+								{
+									endDate: {
+										gte: yearStartDate,
+									},
+								},
+								{
+									endDate: {
+										lte: yearEndDate,
+									},
+								},
+							],
+						},
+					],
+				},
+			],
 		};
 
 		const totalProjects = await prisma.project.count({
