@@ -332,7 +332,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
 			projectValueBAM,
 			salesChannel,
 			projectStatus,
-			employeesOnProject = [],
+			employees = [],
 		} = req.body;
 
 		if (
@@ -357,8 +357,8 @@ export const createProject: RequestHandler = async (req, res, next) => {
 		});
 		if (existingProject) throw createHttpError(409, 'Project already exists.');
 
-		if (!Array.isArray(employeesOnProject)) throw createHttpError(400, 'Invalid employees data.');
-		for (const employee of employeesOnProject) {
+		if (!Array.isArray(employees)) throw createHttpError(400, 'Invalid employees data.');
+		for (const employee of employees) {
 			if (
 				!employee ||
 				typeof employee !== 'object' ||
@@ -368,7 +368,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
 				throw createHttpError(400, 'Invalid employees data.');
 		}
 
-		const employeeIds = employeesOnProject.map(employee => employee.employeeId);
+		const employeeIds = employees.map(employee => employee.employeeId);
 		if (new Set(employeeIds).size !== employeeIds.length) throw createHttpError(400, 'Some employees are duplicates.');
 
 		const existingEmployees = await prisma.employee.findMany({
@@ -392,7 +392,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
 				salesChannel,
 				projectStatus,
 				employees: {
-					create: employeesOnProject.map(({ partTime, employeeId }) => ({
+					create: employees.map(({ partTime, employeeId }) => ({
 						partTime,
 						employee: {
 							connect: {
@@ -445,7 +445,7 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 			projectValueBAM,
 			salesChannel,
 			projectStatus,
-			employeesOnProject,
+			employees,
 		} = req.body;
 
 		if (name) {
@@ -460,9 +460,9 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 			if (existingProject && existingProject.id !== projectId) throw createHttpError(409, 'Project already exists.');
 		}
 
-		if (employeesOnProject) {
-			if (!Array.isArray(employeesOnProject)) throw createHttpError(400, 'Invalid employees data.');
-			for (const employee of employeesOnProject) {
+		if (employees) {
+			if (!Array.isArray(employees)) throw createHttpError(400, 'Invalid employees data.');
+			for (const employee of employees) {
 				if (
 					!employee ||
 					typeof employee !== 'object' ||
@@ -472,7 +472,7 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 					throw createHttpError(400, 'Invalid employees data.');
 			}
 
-			const employeeIds = employeesOnProject.map(employee => employee.employeeId);
+			const employeeIds = employees.map(employee => employee.employeeId);
 			if (new Set(employeeIds).size !== employeeIds.length)
 				throw createHttpError(400, 'Some employees are duplicates.');
 
@@ -500,10 +500,10 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 				projectValueBAM,
 				salesChannel,
 				projectStatus,
-				employees: employeesOnProject
+				employees: employees
 					? {
 							deleteMany: {},
-							create: employeesOnProject.map(({ partTime, employeeId }: { partTime: boolean; employeeId: string }) => ({
+							create: employees.map(({ partTime, employeeId }: { partTime: boolean; employeeId: string }) => ({
 								partTime,
 								employee: {
 									connect: {

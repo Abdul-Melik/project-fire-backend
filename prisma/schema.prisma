@@ -47,6 +47,12 @@ enum ProjectStatus {
   Completed @map("4")
 }
 
+enum Currency {
+  USD @map("1")
+  EUR @map("2")
+  BAM @map("3")
+}
+
 enum Month {
   January   @map("1")
   February  @map("2")
@@ -99,6 +105,7 @@ model Employee {
   image      String?
   department Department
   salary     Float
+  currency   Currency
   techStack  TechStack
   isEmployed Boolean           @default(true)
   projects   ProjectEmployee[]

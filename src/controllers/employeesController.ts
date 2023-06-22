@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { PrismaClient, Role, Department, TechStack } from '@prisma/client';
+import { PrismaClient, Role, Currency, Department, TechStack } from '@prisma/client';
 import createHttpError from 'http-errors';
 
 const prisma = new PrismaClient();
@@ -162,8 +162,8 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 		const loggedInUser = req.user;
 		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to create employees.');
 
-		const { firstName, lastName, department, salary, techStack } = req.body;
-		if (!firstName || !lastName || !department || !salary || !techStack)
+		const { firstName, lastName, department, salary, currency, techStack } = req.body;
+		if (!firstName || !lastName || !department || !salary || !currency || !techStack)
 			throw createHttpError(400, 'Missing required fields.');
 
 		if (
@@ -171,6 +171,7 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 			typeof lastName !== 'string' ||
 			isNaN(salary) ||
 			salary <= 0 ||
+			(currency !== Currency.USD && currency !== Currency.EUR && currency !== Currency.BAM) ||
 			(department !== Department.Administration &&
 				department !== Department.Management &&
 				department !== Department.Development &&
@@ -204,6 +205,7 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 				image: imageData,
 				department,
 				salary: parseFloat(salary),
+				currency,
 				techStack,
 			},
 		});
@@ -230,7 +232,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 		});
 		if (!employee) throw createHttpError(404, 'Employee not found.');
 
-		const { firstName, lastName, department, salary, techStack, isEmployed } = req.body;
+		const { firstName, lastName, department, salary, currency, techStack, isEmployed } = req.body;
 
 		if (
 			(firstName && typeof firstName !== 'string') ||
@@ -239,6 +241,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 				((typeof salary !== 'number' && typeof salary !== 'string') ||
 					(typeof salary === 'number' && (isNaN(salary) || salary <= 0)) ||
 					(typeof salary === 'string' && isNaN(parseFloat(salary))))) ||
+			(currency && currency !== Currency.USD && currency !== Currency.EUR && currency !== Currency.BAM) ||
 			(isEmployed &&
 				((typeof isEmployed !== 'boolean' && typeof isEmployed !== 'string') ||
 					(typeof isEmployed === 'string' && isEmployed !== 'true' && isEmployed !== 'false'))) ||
@@ -298,6 +301,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 				image: imageData,
 				department,
 				salary: salary ? parseFloat(salary) : undefined,
+				currency: currency ? currency : undefined,
 				techStack,
 				isEmployed: typeof isEmployed === 'boolean' ? isEmployed : isEmployed ? isEmployed === 'true' : undefined,
 			},
