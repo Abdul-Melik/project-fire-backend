@@ -2,6 +2,8 @@ import { RequestHandler } from 'express';
 import { PrismaClient, Role, Month } from '@prisma/client';
 import createHttpError from 'http-errors';
 
+import { getEmployeeSalaryInBAM } from '../helpers';
+
 const prisma = new PrismaClient();
 
 const months = [
@@ -162,6 +164,7 @@ export const createExpense: RequestHandler = async (req, res, next) => {
 							employee: {
 								select: {
 									salary: true,
+									currency: true,
 								},
 							},
 						},
@@ -172,7 +175,8 @@ export const createExpense: RequestHandler = async (req, res, next) => {
 			calculatedPlannedExpense = projects.reduce((total, { employees }) => {
 				const cost = employees.reduce((sum, { partTime, employee }) => {
 					const salary = employee.salary ?? 0;
-					return sum + salary * (partTime ? 0.5 : 1);
+					const currency = employee.currency ?? 'BAM';
+					return sum + getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1);
 				}, 0);
 				return total + cost;
 			}, 0);
@@ -264,6 +268,7 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
 							employee: {
 								select: {
 									salary: true,
+									currency: true,
 								},
 							},
 						},
@@ -274,7 +279,8 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
 			calculatedPlannedExpense = projects.reduce((total, { employees }) => {
 				const cost = employees.reduce((sum, { partTime, employee }) => {
 					const salary = employee.salary ?? 0;
-					return sum + salary * (partTime ? 0.5 : 1);
+					const currency = employee.currency ?? 'BAM';
+					return sum + getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1);
 				}, 0);
 				return total + cost;
 			}, 0);
