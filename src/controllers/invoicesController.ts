@@ -11,6 +11,23 @@ export const getInvoices: RequestHandler = async (req, res, next) => {
 	try {
 		const { client = '', invoiceStatus, orderByField, orderDirection, take, page } = req.query;
 
+		if (
+			(invoiceStatus &&
+				invoiceStatus !== InvoiceStatus.Paid &&
+				invoiceStatus !== InvoiceStatus.Sent &&
+				invoiceStatus !== InvoiceStatus.NotSent) ||
+			(orderByField &&
+				orderByField !== 'client' &&
+				orderByField !== 'industry' &&
+				orderByField !== 'totalHoursBilled' &&
+				orderByField !== 'amountBilledBAM' &&
+				orderByField !== 'invoiceStatus') ||
+			(orderDirection && orderDirection !== 'asc' && orderDirection !== 'desc') ||
+			(take && (isNaN(Number(take)) || Number(take) < 1)) ||
+			(page && (isNaN(Number(page)) || Number(page) < 1))
+		)
+			throw createHttpError(400, 'Invalid input fields.');
+
 		const skip = page && take ? (Number(page) - 1) * Number(take) : 0;
 
 		let orderBy;
