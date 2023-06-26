@@ -86,6 +86,17 @@ export const createInvoice: RequestHandler = async (req, res, next) => {
 		if (!client || !industry || !totalHoursBilled || !amountBilledBAM || !invoiceStatus)
 			throw createHttpError(400, 'Missing required fields.');
 
+		if (
+			typeof client !== 'string' ||
+			typeof industry !== 'string' ||
+			typeof totalHoursBilled !== 'number' ||
+			typeof amountBilledBAM !== 'number' ||
+			(invoiceStatus !== InvoiceStatus.Paid &&
+				invoiceStatus !== InvoiceStatus.Sent &&
+				invoiceStatus !== InvoiceStatus.NotSent)
+		)
+			throw createHttpError(400, 'Invalid input fields.');
+
 		const invoice = await prisma.invoice.create({
 			data: {
 				client,
