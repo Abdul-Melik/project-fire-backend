@@ -59,7 +59,7 @@ export const registerUser: RequestHandler = async (req, res, next) => {
 			typeof firstName !== 'string' ||
 			typeof lastName !== 'string' ||
 			typeof password !== 'string' ||
-			(role && role !== Role.Admin && role !== Role.Guest)
+			(role !== undefined && role !== Role.Admin && role !== Role.Guest)
 		)
 			throw createHttpError(400, 'Invalid input fields.');
 
