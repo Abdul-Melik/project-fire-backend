@@ -63,9 +63,9 @@ export const updateUser: RequestHandler = async (req, res, next) => {
 		const pattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 		if (
 			(email !== undefined && (typeof email !== 'string' || !pattern.test(email))) ||
-			(firstName !== undefined && typeof firstName !== 'string') ||
-			(lastName !== undefined && typeof lastName !== 'string') ||
-			(password !== undefined && typeof password !== 'string') ||
+			(firstName !== undefined && (typeof firstName !== 'string' || firstName.length === 0)) ||
+			(lastName !== undefined && (typeof lastName !== 'string' || lastName.length === 0)) ||
+			(password !== undefined && (typeof password !== 'string' || password.length === 0)) ||
 			(role !== undefined && role !== Role.Admin && role !== Role.Guest)
 		)
 			throw createHttpError(400, 'Invalid input fields.');

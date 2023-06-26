@@ -93,7 +93,10 @@ export const updateExpenseCategory: RequestHandler = async (req, res, next) => {
 
 		const { name, description } = req.body;
 
-		if ((name && typeof name !== 'string') || (description && typeof description !== 'string'))
+		if (
+			(name !== undefined && (typeof name !== 'string' || name.length === 0)) ||
+			(description !== undefined && (typeof description !== 'string' || description.length === 0))
+		)
 			throw createHttpError(400, 'Invalid input fields.');
 
 		if (name) {
