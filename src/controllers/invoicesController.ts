@@ -131,6 +131,18 @@ export const updateInvoice: RequestHandler = async (req, res, next) => {
 
 		const { client, industry, totalHoursBilled, amountBilledBAM, invoiceStatus } = req.body;
 
+		if (
+			(client !== undefined && (typeof client !== 'string' || client.length === 0)) ||
+			(industry !== undefined && (typeof industry !== 'string' || industry.length === 0)) ||
+			(totalHoursBilled !== undefined && typeof totalHoursBilled !== 'number') ||
+			(amountBilledBAM !== undefined && typeof amountBilledBAM !== 'number') ||
+			(invoiceStatus !== undefined &&
+				invoiceStatus !== InvoiceStatus.Paid &&
+				invoiceStatus !== InvoiceStatus.Sent &&
+				invoiceStatus !== InvoiceStatus.NotSent)
+		)
+			throw createHttpError(400, 'Invalid input fields.');
+
 		const updatedInvoice = await prisma.invoice.update({
 			where: {
 				id: invoiceId,
