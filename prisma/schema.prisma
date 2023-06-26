@@ -81,7 +81,7 @@ model User {
   lastName  String
   password  String
   image     String?
-  role      Role?   @default(Guest)
+  role      Role    @default(Guest)
   token     Token[]
 
   @@map("Users")

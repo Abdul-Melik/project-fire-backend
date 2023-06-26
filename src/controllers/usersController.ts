@@ -62,10 +62,11 @@ export const updateUser: RequestHandler = async (req, res, next) => {
 
 		const pattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 		if (
-			(email && !pattern.test(email)) ||
-			typeof firstName !== 'string' ||
-			typeof lastName !== 'string' ||
-			(role && role !== Role.Admin && role !== Role.Guest)
+			(email !== undefined && (typeof email !== 'string' || !pattern.test(email))) ||
+			(firstName !== undefined && typeof firstName !== 'string') ||
+			(lastName !== undefined && typeof lastName !== 'string') ||
+			(password !== undefined && typeof password !== 'string') ||
+			(role !== undefined && role !== Role.Admin && role !== Role.Guest)
 		)
 			throw createHttpError(400, 'Invalid input fields.');
 
@@ -75,7 +76,7 @@ export const updateUser: RequestHandler = async (req, res, next) => {
 					email,
 				},
 			});
-			if (existingUser) throw createHttpError(409, 'User already exists.');
+			if (existingUser && existingUser.id !== userId) throw createHttpError(409, 'User already exists.');
 		}
 
 		const saltRounds = 10;
@@ -98,7 +99,7 @@ export const updateUser: RequestHandler = async (req, res, next) => {
 				lastName,
 				password: hashedPassword,
 				image: imageData,
-				role: loggedInUser?.role === Role.Admin ? role : undefined,
+				role,
 			},
 		});
 
