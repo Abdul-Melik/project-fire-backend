@@ -297,11 +297,11 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 		)
 			throw createHttpError(400, 'Invalid input fields.');
 
-		let imageData: string | undefined;
-		if (req.file) {
-			imageData =
-				'https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg';
-		}
+		// let imageData: string | undefined;
+		// if (req.file) {
+		// 	imageData =
+		// 		'https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg';
+		// }
 
 		const updatedEmployee = await prisma.employee.update({
 			where: {
@@ -310,7 +310,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 			data: {
 				firstName,
 				lastName,
-				image: imageData,
+				// image: imageData,
 				department,
 				salary: salary ? parseFloat(salary) : undefined,
 				currency: currency ? currency : undefined,
