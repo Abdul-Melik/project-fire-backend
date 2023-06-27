@@ -43,8 +43,8 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 				orderByField !== 'salary' &&
 				orderByField !== 'techStack') ||
 			(orderDirection && orderDirection !== 'asc' && orderDirection !== 'desc') ||
-			(take && Number(take) < 1) ||
-			(page && Number(page) < 1)
+			(take && (isNaN(Number(take)) || Number(take) < 1)) ||
+			(page && (isNaN(Number(page)) || Number(page) < 1))
 		)
 			throw createHttpError(400, 'Invalid input fields.');
 
