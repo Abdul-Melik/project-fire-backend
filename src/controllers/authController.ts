@@ -9,7 +9,7 @@ import path from 'path';
 import fs from 'fs';
 
 import env from '../utils/validateEnv';
-import { exclude } from '../helpers';
+import { excludeUserInfo } from '../helpers';
 
 const prisma = new PrismaClient();
 
@@ -39,7 +39,7 @@ export const refreshToken: RequestHandler = async (req, res, next) => {
 
 		const accessToken = jwt.sign({ userId: user.id }, env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
 
-		return res.status(200).json({ user: exclude(user, ['password']), accessToken });
+		return res.status(200).json({ user: excludeUserInfo(user, ['password']), accessToken });
 	} catch (error) {
 		next(createHttpError(403, 'Failed to refresh token.'));
 	}
@@ -100,7 +100,7 @@ export const registerUser: RequestHandler = async (req, res, next) => {
 			maxAge: 1 * 24 * 60 * 60 * 1000,
 		});
 
-		return res.status(201).json({ user: exclude(user, ['password']), accessToken });
+		return res.status(201).json({ user: excludeUserInfo(user, ['password']), accessToken });
 	} catch (error) {
 		next(error);
 	}
@@ -152,7 +152,7 @@ export const loginUser: RequestHandler = async (req, res, next) => {
 					: 1 * 24 * 60 * 60 * 1000,
 		});
 
-		return res.status(200).json({ user: exclude(user, ['password']), accessToken });
+		return res.status(200).json({ user: excludeUserInfo(user, ['password']), accessToken });
 	} catch (error) {
 		next(error);
 	}

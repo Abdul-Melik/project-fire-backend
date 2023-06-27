@@ -1,12 +1,25 @@
 import { Currency } from '@prisma/client';
 
-export const exclude = <User, Key extends keyof User>(user: User, keys: Key[]): Omit<User, Key> => {
+export const excludeUserInfo = <User, Key extends keyof User>(user: User, keys: Key[]): Omit<User, Key> => {
 	return keys.reduce(
 		(result, key) => {
 			delete result[key];
 			return result;
 		},
 		{ ...user }
+	);
+};
+
+export const excludeExpenseInfo = <Expense, Key extends keyof Expense>(
+	expense: Expense,
+	keys: Key[]
+): Omit<Expense, Key> => {
+	return keys.reduce(
+		(result, key) => {
+			delete result[key];
+			return result;
+		},
+		{ ...expense }
 	);
 };
 

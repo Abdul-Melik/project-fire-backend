@@ -2,7 +2,7 @@ import { RequestHandler } from 'express';
 import { PrismaClient, Role, Month } from '@prisma/client';
 import createHttpError from 'http-errors';
 
-import { getEmployeeSalaryInBAM } from '../helpers';
+import { excludeExpenseInfo, getEmployeeSalaryInBAM } from '../helpers';
 
 const prisma = new PrismaClient();
 
@@ -21,16 +21,6 @@ const months = [
 	'December',
 ];
 
-const exclude = <Expense, Key extends keyof Expense>(expense: Expense, keys: Key[]): Omit<Expense, Key> => {
-	return keys.reduce(
-		(result, key) => {
-			delete result[key];
-			return result;
-		},
-		{ ...expense }
-	);
-};
-
 // @desc    Get Expenses
 // @route   GET /api/expenses
 // @access  Private
@@ -42,7 +32,7 @@ export const getExpenses: RequestHandler = async (req, res, next) => {
 					expenseCategory: true,
 				},
 			})
-		).map(expense => exclude(expense, ['expenseCategoryId']));
+		).map(expense => excludeExpenseInfo(expense, ['expenseCategoryId']));
 
 		return res.status(200).json(expenses);
 	} catch (error) {
@@ -66,7 +56,7 @@ export const getExpenseById: RequestHandler = async (req, res, next) => {
 		});
 		if (!expense) throw createHttpError(404, 'Expense not found.');
 
-		return res.status(200).json(exclude(expense, ['expenseCategoryId']));
+		return res.status(200).json(excludeExpenseInfo(expense, ['expenseCategoryId']));
 	} catch (error) {
 		next(error);
 	}
@@ -197,7 +187,7 @@ export const createExpense: RequestHandler = async (req, res, next) => {
 			},
 		});
 
-		return res.status(201).json(exclude(expense, ['expenseCategoryId']));
+		return res.status(201).json(excludeExpenseInfo(expense, ['expenseCategoryId']));
 	} catch (error) {
 		next(error);
 	}
@@ -304,7 +294,7 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
 			},
 		});
 
-		return res.status(200).json(exclude(updatedExpense, ['expenseCategoryId']));
+		return res.status(200).json(excludeExpenseInfo(updatedExpense, ['expenseCategoryId']));
 	} catch (error) {
 		next(error);
 	}

@@ -3,7 +3,7 @@ import { PrismaClient, Role } from '@prisma/client';
 import createHttpError from 'http-errors';
 import bcrypt from 'bcrypt';
 
-import { exclude } from '../helpers';
+import { excludeUserInfo } from '../helpers';
 
 const prisma = new PrismaClient();
 
@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 // @access  Private
 export const getUsers: RequestHandler = async (req, res, next) => {
 	try {
-		const users = (await prisma.user.findMany()).map(user => exclude(user, ['password']));
+		const users = (await prisma.user.findMany()).map(user => excludeUserInfo(user, ['password']));
 
 		return res.status(200).json(users);
 	} catch (error) {
@@ -33,7 +33,7 @@ export const getUserById: RequestHandler = async (req, res, next) => {
 		});
 		if (!user) throw createHttpError(404, 'User not found.');
 
-		return res.status(200).json(exclude(user, ['password']));
+		return res.status(200).json(excludeUserInfo(user, ['password']));
 	} catch (error) {
 		next(error);
 	}
@@ -103,7 +103,7 @@ export const updateUser: RequestHandler = async (req, res, next) => {
 			},
 		});
 
-		return res.status(200).json(exclude(updatedUser, ['password']));
+		return res.status(200).json(excludeUserInfo(updatedUser, ['password']));
 	} catch (error) {
 		next(error);
 	}
