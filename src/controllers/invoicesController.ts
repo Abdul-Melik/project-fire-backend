@@ -106,8 +106,12 @@ export const createInvoice: RequestHandler = async (req, res, next) => {
 		if (
 			typeof client !== 'string' ||
 			typeof industry !== 'string' ||
-			typeof totalHoursBilled !== 'number' ||
-			typeof amountBilledBAM !== 'number' ||
+			(typeof totalHoursBilled !== 'number' && typeof totalHoursBilled !== 'string') ||
+			(typeof totalHoursBilled === 'number' && totalHoursBilled <= 0) ||
+			(typeof totalHoursBilled === 'string' && (isNaN(Number(totalHoursBilled)) || Number(totalHoursBilled) <= 0)) ||
+			(typeof amountBilledBAM !== 'number' && typeof amountBilledBAM !== 'string') ||
+			(typeof amountBilledBAM === 'number' && amountBilledBAM <= 0) ||
+			(typeof amountBilledBAM === 'string' && (isNaN(Number(amountBilledBAM)) || Number(amountBilledBAM) <= 0)) ||
 			(invoiceStatus !== InvoiceStatus.Paid &&
 				invoiceStatus !== InvoiceStatus.Sent &&
 				invoiceStatus !== InvoiceStatus.NotSent)
@@ -118,8 +122,8 @@ export const createInvoice: RequestHandler = async (req, res, next) => {
 			data: {
 				client,
 				industry,
-				totalHoursBilled,
-				amountBilledBAM,
+				totalHoursBilled: typeof totalHoursBilled === 'string' ? Number(totalHoursBilled) : totalHoursBilled,
+				amountBilledBAM: typeof amountBilledBAM === 'string' ? Number(amountBilledBAM) : amountBilledBAM,
 				invoiceStatus,
 			},
 		});
@@ -151,8 +155,15 @@ export const updateInvoice: RequestHandler = async (req, res, next) => {
 		if (
 			(client !== undefined && (typeof client !== 'string' || client.length === 0)) ||
 			(industry !== undefined && (typeof industry !== 'string' || industry.length === 0)) ||
-			(totalHoursBilled !== undefined && typeof totalHoursBilled !== 'number') ||
-			(amountBilledBAM !== undefined && typeof amountBilledBAM !== 'number') ||
+			(totalHoursBilled !== undefined &&
+				((typeof totalHoursBilled !== 'number' && typeof totalHoursBilled !== 'string') ||
+					(typeof totalHoursBilled === 'number' && totalHoursBilled <= 0) ||
+					(typeof totalHoursBilled === 'string' &&
+						(isNaN(Number(totalHoursBilled)) || Number(totalHoursBilled) <= 0)))) ||
+			(amountBilledBAM !== undefined &&
+				((typeof amountBilledBAM !== 'number' && typeof amountBilledBAM !== 'string') ||
+					(typeof amountBilledBAM === 'number' && amountBilledBAM <= 0) ||
+					(typeof amountBilledBAM === 'string' && (isNaN(Number(amountBilledBAM)) || Number(amountBilledBAM) <= 0)))) ||
 			(invoiceStatus !== undefined &&
 				invoiceStatus !== InvoiceStatus.Paid &&
 				invoiceStatus !== InvoiceStatus.Sent &&
@@ -167,8 +178,8 @@ export const updateInvoice: RequestHandler = async (req, res, next) => {
 			data: {
 				client,
 				industry,
-				totalHoursBilled,
-				amountBilledBAM,
+				totalHoursBilled: typeof totalHoursBilled === 'string' ? Number(totalHoursBilled) : totalHoursBilled,
+				amountBilledBAM: typeof amountBilledBAM === 'string' ? Number(amountBilledBAM) : amountBilledBAM,
 				invoiceStatus,
 			},
 		});
