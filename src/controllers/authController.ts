@@ -115,7 +115,13 @@ export const loginUser: RequestHandler = async (req, res, next) => {
 		if (!email || !password) throw createHttpError(400, 'Missing required fields.');
 
 		const pattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-		if (!pattern.test(email) || typeof password !== 'string' || typeof rememberMe !== 'boolean')
+		if (
+			!pattern.test(email) ||
+			typeof password !== 'string' ||
+			(rememberMe !== undefined &&
+				((typeof rememberMe !== 'string' && typeof rememberMe !== 'boolean') ||
+					(typeof rememberMe === 'string' && rememberMe !== 'true' && rememberMe !== 'false')))
+		)
 			throw createHttpError(400, 'Invalid input fields.');
 
 		const user = await prisma.user.findUnique({
@@ -130,14 +136,20 @@ export const loginUser: RequestHandler = async (req, res, next) => {
 
 		const accessToken = jwt.sign({ userId: user.id }, env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
 		const refreshToken = jwt.sign({ userId: user.id }, env.REFRESH_TOKEN_SECRET, {
-			expiresIn: rememberMe ? '7d' : '1d',
+			expiresIn:
+				(typeof rememberMe === 'string' && rememberMe === 'true') || (typeof rememberMe === 'boolean' && rememberMe)
+					? '7d'
+					: '1d',
 		});
 
 		res.cookie('jwt', refreshToken, {
 			httpOnly: true,
 			secure: true,
 			sameSite: 'none',
-			maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 1 * 24 * 60 * 60 * 1000,
+			maxAge:
+				(typeof rememberMe === 'string' && rememberMe === 'true') || (typeof rememberMe === 'boolean' && rememberMe)
+					? 7 * 24 * 60 * 60 * 1000
+					: 1 * 24 * 60 * 60 * 1000,
 		});
 
 		return res.status(200).json({ user: exclude(user, ['password']), accessToken });
