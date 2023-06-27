@@ -217,7 +217,7 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 				lastName,
 				image: imageData,
 				department,
-				salary: typeof salary === 'string' ? parseFloat(salary) : salary,
+				salary: typeof salary === 'string' ? Number(salary) : salary,
 				currency,
 				techStack,
 			},
@@ -248,22 +248,22 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 		const { firstName, lastName, department, salary, currency, techStack, isEmployed } = req.body;
 
 		if (
-			(firstName && typeof firstName !== 'string') ||
-			(lastName && typeof lastName !== 'string') ||
-			(salary &&
+			(firstName !== undefined && (typeof firstName !== 'string' || firstName.length === 0)) ||
+			(lastName !== undefined && (typeof lastName !== 'string' || lastName.length === 0)) ||
+			(salary !== undefined &&
 				((typeof salary !== 'number' && typeof salary !== 'string') ||
-					(typeof salary === 'number' && (isNaN(salary) || salary <= 0)) ||
-					(typeof salary === 'string' && isNaN(parseFloat(salary))))) ||
-			(currency && currency !== Currency.USD && currency !== Currency.EUR && currency !== Currency.BAM) ||
-			(isEmployed &&
+					(typeof salary === 'number' && salary <= 0) ||
+					(typeof salary === 'string' && (isNaN(Number(salary)) || Number(salary) <= 0)))) ||
+			(currency !== undefined && currency !== Currency.USD && currency !== Currency.EUR && currency !== Currency.BAM) ||
+			(isEmployed !== undefined &&
 				((typeof isEmployed !== 'boolean' && typeof isEmployed !== 'string') ||
 					(typeof isEmployed === 'string' && isEmployed !== 'true' && isEmployed !== 'false'))) ||
-			(department &&
+			(department !== undefined &&
 				department !== Department.Administration &&
 				department !== Department.Management &&
 				department !== Department.Development &&
 				department !== Department.Design) ||
-			(techStack &&
+			(techStack !== undefined &&
 				techStack !== TechStack.AdminNA &&
 				techStack !== TechStack.MgmtNA &&
 				techStack !== TechStack.FullStack &&
@@ -313,10 +313,15 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 				lastName,
 				// image: imageData,
 				department,
-				salary: salary ? parseFloat(salary) : undefined,
-				currency: currency ? currency : undefined,
+				salary: typeof salary === 'string' ? Number(salary) : salary,
+				currency,
 				techStack,
-				isEmployed: typeof isEmployed === 'boolean' ? isEmployed : isEmployed ? isEmployed === 'true' : undefined,
+				isEmployed:
+					(typeof isEmployed === 'string' && isEmployed === 'true') || (typeof isEmployed === 'boolean' && isEmployed)
+						? true
+						: isEmployed !== undefined
+						? false
+						: undefined,
 			},
 		});
 
