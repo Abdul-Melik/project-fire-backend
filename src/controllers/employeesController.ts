@@ -181,8 +181,9 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 		if (
 			typeof firstName !== 'string' ||
 			typeof lastName !== 'string' ||
-			isNaN(salary) ||
-			salary <= 0 ||
+			(typeof salary !== 'number' && typeof salary !== 'string') ||
+			(typeof salary === 'number' && salary <= 0) ||
+			(typeof salary === 'string' && (isNaN(Number(salary)) || Number(salary) <= 0)) ||
 			(currency !== Currency.USD && currency !== Currency.EUR && currency !== Currency.BAM) ||
 			(department !== Department.Administration &&
 				department !== Department.Management &&
@@ -216,7 +217,7 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 				lastName,
 				image: imageData,
 				department,
-				salary: parseFloat(salary),
+				salary: typeof salary === 'string' ? parseFloat(salary) : salary,
 				currency,
 				techStack,
 			},
