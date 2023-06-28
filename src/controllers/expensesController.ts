@@ -236,6 +236,19 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
 
 		const { year, month, plannedExpense, actualExpense, expenseCategory } = req.body;
 
+		if (
+			(year !== undefined && (typeof year !== 'number' || year < 1990 || year > 2100)) ||
+			(month !== undefined && !months.includes(month)) ||
+			(plannedExpense !== undefined &&
+				plannedExpense !== null &&
+				(typeof plannedExpense !== 'number' || plannedExpense < 0)) ||
+			(actualExpense !== undefined &&
+				actualExpense !== null &&
+				(typeof actualExpense !== 'number' || actualExpense < 0)) ||
+			(expenseCategory !== undefined && (typeof expenseCategory !== 'string' || expenseCategory.length === 0))
+		)
+			throw createHttpError(400, 'Invalid input fields.');
+
 		const searchYear = year || expense.year;
 		const searchMonth = month || expense.month;
 		const searchName = expenseCategory || expense.expenseCategory.name;
