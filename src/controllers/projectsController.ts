@@ -163,7 +163,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 	try {
 		const { year } = req.query;
 
-		if (isNaN(Number(year)) || isNaN(parseFloat(year as string)) || Number(year) < 1990 || Number(year) > 2100)
+		if (isNaN(Number(year)) || Number(year) < 1990 || Number(year) > 2100)
 			throw createHttpError(400, 'Invalid input fields.');
 
 		const yearStartDate = new Date(`${year}-01-01`);
