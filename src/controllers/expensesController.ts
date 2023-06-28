@@ -125,6 +125,21 @@ export const createExpense: RequestHandler = async (req, res, next) => {
 		const { year, month, plannedExpense, actualExpense, expenseCategory } = req.body;
 		if (!year || !month || !expenseCategory) throw createHttpError(400, 'Missing required fields.');
 
+		if (
+			typeof year !== 'number' ||
+			year < 1990 ||
+			year > 2100 ||
+			!months.includes(month) ||
+			(plannedExpense !== undefined &&
+				plannedExpense !== null &&
+				(typeof plannedExpense !== 'number' || plannedExpense < 0)) ||
+			(actualExpense !== undefined &&
+				actualExpense !== null &&
+				(typeof actualExpense !== 'number' || actualExpense < 0)) ||
+			typeof expenseCategory !== 'string'
+		)
+			throw createHttpError(400, 'Invalid input fields.');
+
 		const existingExpenseCategory = await prisma.expenseCategory.findFirst({
 			where: {
 				name: {
