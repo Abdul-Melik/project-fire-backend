@@ -69,6 +69,9 @@ export const getExpensesInfo: RequestHandler = async (req, res, next) => {
 	try {
 		const { startDate, endDate } = req.query;
 
+		if ((startDate && isNaN(Date.parse(startDate as string))) || (endDate && isNaN(Date.parse(endDate as string))))
+			throw createHttpError(400, 'Invalid input fields.');
+
 		let expenses;
 
 		expenses = await prisma.expense.groupBy({
