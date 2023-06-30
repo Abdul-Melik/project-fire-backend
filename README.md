@@ -19,7 +19,8 @@ dependencies
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.2",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^4.6.3"
+    "swagger-ui-express": "^4.6.3",
+    "zod": "^3.21.4"
 
 devDependencies:
 
