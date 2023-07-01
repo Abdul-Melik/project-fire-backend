@@ -2,7 +2,7 @@ import express from 'express';
 
 import verifyTokenMiddleware from '../middleware/verifyTokenMiddleware';
 import imageUploadMiddleware from '../middleware/imageUploadMiddleware';
-import validateResource from '../middleware/validateResource';
+import validateResourceMiddleware from '../middleware/validateResourceMiddleware';
 import { updateUserSchema } from '../schema/userSchemas';
 import * as usersController from '../controllers/usersController';
 
@@ -12,7 +12,12 @@ router.use(verifyTokenMiddleware);
 
 router.get('/', usersController.getUsers);
 router.get('/:userId', usersController.getUserById);
-router.patch('/:userId', imageUploadMiddleware, validateResource(updateUserSchema), usersController.updateUser);
+router.patch(
+	'/:userId',
+	imageUploadMiddleware,
+	validateResourceMiddleware(updateUserSchema),
+	usersController.updateUser
+);
 router.delete('/:userId', usersController.deleteUser);
 
 export default router;
