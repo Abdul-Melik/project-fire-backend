@@ -7,20 +7,6 @@ export const emailSchema = string({
 	invalid_type_error: 'Email must be a string.',
 }).email('Email is not valid.');
 
-export const firstNameSchema = string({
-	required_error: 'First name is required.',
-	invalid_type_error: 'First name must be a string.',
-})
-	.min(3, 'First name must be at least 3 characters long.')
-	.max(10, "First name can't be more than 10 characters long.");
-
-export const lastNameSchema = string({
-	required_error: 'Last name is required.',
-	invalid_type_error: 'Last name must be a string.',
-})
-	.min(3, 'Last name must be at least 3 characters long.')
-	.max(10, "Last name can't be more than 10 characters long.");
-
 export const passwordSchema = string({
 	required_error: 'Password is required.',
 	invalid_type_error: 'Password must be a string.',
@@ -38,4 +24,17 @@ export const passwordSchema = string({
 
 export const roleSchema = nativeEnum(Role, {
 	errorMap: () => ({ message: 'Role is not valid.' }),
-}).optional();
+});
+
+export const descriptionSchema = string({
+	required_error: 'Description is required.',
+	invalid_type_error: 'Description must be a string.',
+}).nonempty('Description can not be empty.');
+
+export const generateNameSchema = (key: string, min: number, max: number) =>
+	string({
+		required_error: `${key} is required.`,
+		invalid_type_error: `${key} must be a string.`,
+	})
+		.min(min, `${key} must be at least ${min} characters long.`)
+		.max(max, `${key} can't be more than ${max} characters long.`);

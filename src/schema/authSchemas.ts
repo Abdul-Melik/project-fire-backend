@@ -1,6 +1,9 @@
 import { object, boolean } from 'zod';
 
-import { emailSchema, firstNameSchema, lastNameSchema, passwordSchema, roleSchema } from './commonSchemas';
+import { emailSchema, passwordSchema, roleSchema, generateNameSchema } from './commonSchemas';
+
+const firstNameSchema = generateNameSchema('First name', 3, 10);
+const lastNameSchema = generateNameSchema('Last name', 3, 10);
 
 export const registerUserSchema = object({
 	body: object({
@@ -8,7 +11,7 @@ export const registerUserSchema = object({
 		firstName: firstNameSchema,
 		lastName: lastNameSchema,
 		password: passwordSchema,
-		role: roleSchema,
+		role: roleSchema.optional(),
 	}),
 });
 

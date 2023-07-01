@@ -46,10 +46,6 @@ export const createExpenseCategory: RequestHandler = async (req, res, next) => {
 			throw createHttpError(403, 'This user is not allowed to create expense categories.');
 
 		const { name, description } = req.body;
-		if (!name || !description) throw createHttpError(400, 'Missing required fields.');
-
-		if (typeof name !== 'string' || typeof description !== 'string')
-			throw createHttpError(400, 'Invalid input fields.');
 
 		const existingExpenseCategory = await prisma.expenseCategory.findFirst({
 			where: {
@@ -92,12 +88,6 @@ export const updateExpenseCategory: RequestHandler = async (req, res, next) => {
 		if (!expenseCategory) throw createHttpError(404, 'Expense category not found.');
 
 		const { name, description } = req.body;
-
-		if (
-			(name !== undefined && (typeof name !== 'string' || name.length === 0)) ||
-			(description !== undefined && (typeof description !== 'string' || description.length === 0))
-		)
-			throw createHttpError(400, 'Invalid input fields.');
 
 		if (name) {
 			const existingExpenseCategory = await prisma.expenseCategory.findFirst({
