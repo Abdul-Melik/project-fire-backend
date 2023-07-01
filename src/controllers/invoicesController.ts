@@ -11,23 +11,6 @@ export const getInvoices: RequestHandler = async (req, res, next) => {
 	try {
 		const { client = '', invoiceStatus, orderByField, orderDirection, take, page } = req.query;
 
-		if (
-			(invoiceStatus &&
-				invoiceStatus !== InvoiceStatus.Paid &&
-				invoiceStatus !== InvoiceStatus.Sent &&
-				invoiceStatus !== InvoiceStatus.NotSent) ||
-			(orderByField &&
-				orderByField !== 'client' &&
-				orderByField !== 'industry' &&
-				orderByField !== 'totalHoursBilled' &&
-				orderByField !== 'amountBilledBAM' &&
-				orderByField !== 'invoiceStatus') ||
-			(orderDirection && orderDirection !== 'asc' && orderDirection !== 'desc') ||
-			(take && (isNaN(Number(take)) || Number(take) < 1)) ||
-			(page && (isNaN(Number(page)) || Number(page) < 1))
-		)
-			throw createHttpError(400, 'Invalid input fields.');
-
 		const skip = page && take ? (Number(page) - 1) * Number(take) : 0;
 
 		let orderBy;
@@ -100,30 +83,13 @@ export const createInvoice: RequestHandler = async (req, res, next) => {
 		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to create invoices.');
 
 		const { client, industry, totalHoursBilled, amountBilledBAM, invoiceStatus } = req.body;
-		if (!client || !industry || !totalHoursBilled || !amountBilledBAM || !invoiceStatus)
-			throw createHttpError(400, 'Missing required fields.');
-
-		if (
-			typeof client !== 'string' ||
-			typeof industry !== 'string' ||
-			(typeof totalHoursBilled !== 'number' && typeof totalHoursBilled !== 'string') ||
-			(typeof totalHoursBilled === 'number' && totalHoursBilled <= 0) ||
-			(typeof totalHoursBilled === 'string' && (isNaN(Number(totalHoursBilled)) || Number(totalHoursBilled) <= 0)) ||
-			(typeof amountBilledBAM !== 'number' && typeof amountBilledBAM !== 'string') ||
-			(typeof amountBilledBAM === 'number' && amountBilledBAM <= 0) ||
-			(typeof amountBilledBAM === 'string' && (isNaN(Number(amountBilledBAM)) || Number(amountBilledBAM) <= 0)) ||
-			(invoiceStatus !== InvoiceStatus.Paid &&
-				invoiceStatus !== InvoiceStatus.Sent &&
-				invoiceStatus !== InvoiceStatus.NotSent)
-		)
-			throw createHttpError(400, 'Invalid input fields.');
 
 		const invoice = await prisma.invoice.create({
 			data: {
 				client,
 				industry,
-				totalHoursBilled: typeof totalHoursBilled === 'string' ? Number(totalHoursBilled) : totalHoursBilled,
-				amountBilledBAM: typeof amountBilledBAM === 'string' ? Number(amountBilledBAM) : amountBilledBAM,
+				totalHoursBilled,
+				amountBilledBAM,
 				invoiceStatus,
 			},
 		});
@@ -152,25 +118,6 @@ export const updateInvoice: RequestHandler = async (req, res, next) => {
 
 		const { client, industry, totalHoursBilled, amountBilledBAM, invoiceStatus } = req.body;
 
-		if (
-			(client !== undefined && (typeof client !== 'string' || client.length === 0)) ||
-			(industry !== undefined && (typeof industry !== 'string' || industry.length === 0)) ||
-			(totalHoursBilled !== undefined &&
-				((typeof totalHoursBilled !== 'number' && typeof totalHoursBilled !== 'string') ||
-					(typeof totalHoursBilled === 'number' && totalHoursBilled <= 0) ||
-					(typeof totalHoursBilled === 'string' &&
-						(isNaN(Number(totalHoursBilled)) || Number(totalHoursBilled) <= 0)))) ||
-			(amountBilledBAM !== undefined &&
-				((typeof amountBilledBAM !== 'number' && typeof amountBilledBAM !== 'string') ||
-					(typeof amountBilledBAM === 'number' && amountBilledBAM <= 0) ||
-					(typeof amountBilledBAM === 'string' && (isNaN(Number(amountBilledBAM)) || Number(amountBilledBAM) <= 0)))) ||
-			(invoiceStatus !== undefined &&
-				invoiceStatus !== InvoiceStatus.Paid &&
-				invoiceStatus !== InvoiceStatus.Sent &&
-				invoiceStatus !== InvoiceStatus.NotSent)
-		)
-			throw createHttpError(400, 'Invalid input fields.');
-
 		const updatedInvoice = await prisma.invoice.update({
 			where: {
 				id: invoiceId,
@@ -178,8 +125,8 @@ export const updateInvoice: RequestHandler = async (req, res, next) => {
 			data: {
 				client,
 				industry,
-				totalHoursBilled: typeof totalHoursBilled === 'string' ? Number(totalHoursBilled) : totalHoursBilled,
-				amountBilledBAM: typeof amountBilledBAM === 'string' ? Number(amountBilledBAM) : amountBilledBAM,
+				totalHoursBilled,
+				amountBilledBAM,
 				invoiceStatus,
 			},
 		});

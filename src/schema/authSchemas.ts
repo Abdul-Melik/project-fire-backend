@@ -1,32 +1,32 @@
-import { object, boolean } from 'zod';
+import { z } from 'zod';
 
-import { emailSchema, passwordSchema, roleSchema, generateNameSchema } from './commonSchemas';
+import { userSchema } from './commonSchemas';
 
-const firstNameSchema = generateNameSchema('First name', 3, 10);
-const lastNameSchema = generateNameSchema('Last name', 3, 10);
+const rememberMeSchema = z
+	.boolean({
+		invalid_type_error: 'Remember me must be a boolean.',
+	})
+	.optional();
 
-export const registerUserSchema = object({
-	body: object({
-		email: emailSchema,
-		firstName: firstNameSchema,
-		lastName: lastNameSchema,
-		password: passwordSchema,
-		role: roleSchema.optional(),
+export const registerUserSchema = z.object({
+	body: userSchema.partial({
+		role: true,
 	}),
 });
 
-export const loginUserSchema = object({
-	body: object({
-		email: emailSchema,
-		password: passwordSchema,
-		rememberMe: boolean({
-			invalid_type_error: 'Remember me must be a boolean.',
-		}).optional(),
-	}),
+export const loginUserSchema = z.object({
+	body: userSchema
+		.pick({
+			email: true,
+			password: true,
+		})
+		.extend({
+			rememberMe: rememberMeSchema,
+		}),
 });
 
-export const sendResetPasswordEmailSchema = object({
-	body: object({
-		email: emailSchema,
+export const sendResetPasswordEmailSchema = z.object({
+	body: userSchema.pick({
+		email: true,
 	}),
 });
