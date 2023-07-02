@@ -5,6 +5,17 @@ import { generateDateSchema } from './helpers';
 import { OrderByFieldProjectEnum } from './enums';
 import { orderDirectionSchema, takeSchema, pageSchema, nameSchema, descriptionSchema } from './commonSchemas';
 
+const yearSchema = z.string().superRefine((year, ctx) => {
+	const parsedValue = Number(year);
+	const isIntegerString = Number.isInteger(parsedValue);
+	if (!isIntegerString) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Year must have an integer value.',
+		});
+	}
+});
+
 const startDateSchema = generateDateSchema('Start date');
 
 const endDateSchema = generateDateSchema('End date');
@@ -109,6 +120,14 @@ export const getProjectSchema = z.object({
 			orderDirection: orderDirectionSchema,
 			take: takeSchema,
 			page: pageSchema,
+		})
+		.partial(),
+});
+
+export const getProjectsInfoSchema = z.object({
+	query: z
+		.object({
+			year: yearSchema,
 		})
 		.partial(),
 });
