@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
+import { generateBooleanSchema } from './schemaGenerators';
 import { userSchema } from './commonSchemas';
-import { generateBooleanSchema } from './helpers';
 
 const rememberMeSchema = generateBooleanSchema('Remember me').optional();
 

@@ -1,8 +1,8 @@
 import { RefinementCtx, z } from 'zod';
 
 import { ProjectType, SalesChannel, ProjectStatus } from '@prisma/client';
-import { generateDateSchema, generateDateRangeSchema, generatePositiveNumberSchemas } from './helpers';
-import { OrderByFieldProjectEnum } from './enums';
+import { generateDateSchema, generateDateRangeSchema, generatePositiveNumberSchemas } from './schemaGenerators';
+import { OrderByFieldProjectEnum } from './schemaEnums';
 import { orderDirectionSchema, takeSchema, pageSchema, nameSchema, descriptionSchema } from './commonSchemas';
 
 const yearSchema = z.string().superRefine((year, ctx) => {

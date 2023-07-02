@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 import { Department, Currency, TechStack } from '@prisma/client';
-import { generatePositiveNumberSchemas, generateBooleanSchema } from './helpers';
-import { OrderByFieldEmployeeEnum } from './enums';
+import { generatePositiveNumberSchemas, generateBooleanSchema } from './schemaGenerators';
+import { OrderByFieldEmployeeEnum } from './schemaEnums';
 import { orderDirectionSchema, takeSchema, pageSchema, firstNameSchema, lastNameSchema } from './commonSchemas';
 
 const departmentSchema = z.nativeEnum(Department, {

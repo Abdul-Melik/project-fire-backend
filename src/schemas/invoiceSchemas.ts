@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
 import { InvoiceStatus } from '@prisma/client';
-import { OrderByFieldInvoiceEnum } from './enums';
 import {
 	generatePositiveNumberSchemas,
 	generatePositiveIntegerNumberSchemas,
 	generateNonEmptyStringSchema,
-} from './helpers';
+} from './schemaGenerators';
+import { OrderByFieldInvoiceEnum } from './schemaEnums';
 import { orderDirectionSchema, takeSchema, pageSchema } from './commonSchemas';
 
 const clientSchema = generateNonEmptyStringSchema('Client');

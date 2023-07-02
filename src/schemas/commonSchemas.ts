@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 import { Role } from '@prisma/client';
-import { generatePaginationSchema, generateNameSchema, generateNonEmptyStringSchema } from './helpers';
-import { OrderDirectionEnum } from './enums';
+import { generatePaginationSchema, generateNameSchema, generateNonEmptyStringSchema } from './schemaGenerators';
+import { OrderDirectionEnum } from './schemaEnums';
 
 // Schemas for sorting and pagination
 export const orderDirectionSchema = z.union([z.literal(''), OrderDirectionEnum], {
