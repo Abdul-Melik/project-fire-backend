@@ -35,9 +35,12 @@ const dateLike = z.union([z.string(), z.date()], {
 });
 
 export const generateDateSchema = (key: string) =>
+	dateLike.pipe(z.coerce.date({ errorMap: () => ({ message: 'This is not a valid date.' }) }));
+
+export const generateDateRangeSchema = (key: string, min: Date, max: Date) =>
 	dateLike.pipe(
 		z.coerce
 			.date({ errorMap: () => ({ message: 'This is not a valid date.' }) })
-			.min(new Date('2000-01-01'), `${key} can't be before year 2000.`)
-			.max(new Date('2050-12-31'), `${key} can't be after year 2050.`)
+			.min(min, `${key} can't be before year ${min.getFullYear()}.`)
+			.max(max, `${key} can't be after year ${max.getFullYear()}.`)
 	);

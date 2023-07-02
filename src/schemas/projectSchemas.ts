@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { ProjectType, SalesChannel, ProjectStatus } from '@prisma/client';
-import { generateDateSchema } from './helpers';
+import { generateDateSchema, generateDateRangeSchema } from './helpers';
 import { OrderByFieldProjectEnum } from './enums';
 import { orderDirectionSchema, takeSchema, pageSchema, nameSchema, descriptionSchema } from './commonSchemas';
 
@@ -16,11 +16,23 @@ const yearSchema = z.string().superRefine((year, ctx) => {
 	}
 });
 
-const startDateSchema = generateDateSchema('Start date');
+const minDate = new Date('2000-01-01');
 
-const endDateSchema = generateDateSchema('End date');
+const maxDate = new Date('2050-12-31');
 
-const actualEndDateSchema = generateDateSchema('Actual end date');
+const startDateSchema = z.union([z.literal(''), generateDateSchema('Start date')], {
+	errorMap: () => ({ message: 'Start date is not valid.' }),
+});
+
+const endDateSchema = z.union([z.literal(''), generateDateSchema('End date')], {
+	errorMap: () => ({ message: 'End date is not valid.' }),
+});
+
+const startDateRangeSchema = generateDateRangeSchema('Start date', minDate, maxDate);
+
+const endDateRangeSchema = generateDateRangeSchema('End date', minDate, maxDate);
+
+const actualEndDateRangeSchema = generateDateRangeSchema('Actual end date', minDate, maxDate);
 
 const projectTypeSchema = z.nativeEnum(ProjectType, {
 	errorMap: () => ({ message: 'Project type is not valid.' }),
@@ -95,9 +107,9 @@ const orderByFieldProjectSchema = z.union([z.literal(''), OrderByFieldProjectEnu
 const projectSchema = z.object({
 	name: nameSchema,
 	description: descriptionSchema,
-	startDate: startDateSchema,
-	endDate: endDateSchema,
-	actualEndDate: actualEndDateSchema,
+	startDate: startDateRangeSchema,
+	endDate: endDateRangeSchema,
+	actualEndDate: actualEndDateRangeSchema,
 	projectType: projectTypeSchema,
 	hourlyRate: hourlyRateSchema,
 	projectValueBAM: projectValueBAMSchema,
@@ -107,12 +119,10 @@ const projectSchema = z.object({
 });
 
 export const getProjectSchema = z.object({
-	query: projectSchema
-		.pick({
-			startDate: true,
-			endDate: true,
-		})
-		.extend({
+	query: z
+		.object({
+			startDate: startDateSchema,
+			endDate: endDateSchema,
 			projectType: extendedProjectTypeSchema,
 			salesChannel: extendedSalesChannelSchema,
 			projectStatus: extendedProjectStatusSchema,
@@ -133,13 +143,41 @@ export const getProjectsInfoSchema = z.object({
 });
 
 export const createProjectSchema = z.object({
-	body: projectSchema.partial({
-		actualEndDate: true,
-		projectStatus: true,
-		employees: true,
-	}),
+	body: projectSchema
+		.partial({
+			actualEndDate: true,
+			projectStatus: true,
+			employees: true,
+		})
+		.superRefine((project, ctx) => {
+			if (project.startDate && project.endDate && project.endDate < project.startDate) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: 'End date must be after start date.',
+				});
+			}
+			if (project.startDate && project.actualEndDate && project.actualEndDate < project.startDate) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: 'Actual end date must be after start date.',
+				});
+			}
+		}),
 });
 
 export const updateProjectSchema = z.object({
-	body: projectSchema.partial(),
+	body: projectSchema.partial().superRefine((project, ctx) => {
+		if (project.startDate && project.endDate && project.endDate < project.startDate) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: 'End date must be after start date.',
+			});
+		}
+		if (project.startDate && project.actualEndDate && project.actualEndDate < project.startDate) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: 'Actual end date must be after start date.',
+			});
+		}
+	}),
 });
