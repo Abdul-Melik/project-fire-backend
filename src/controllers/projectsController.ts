@@ -392,66 +392,6 @@ export const createProject: RequestHandler = async (req, res, next) => {
 		)
 			throw createHttpError(400, 'Missing required fields.');
 
-		if (
-			typeof name !== 'string' ||
-			typeof description !== 'string' ||
-			typeof startDate !== 'string' ||
-			isNaN(Date.parse(startDate)) ||
-			new Date(startDate).getFullYear() < 1990 ||
-			new Date(startDate).getFullYear() > 2100 ||
-			typeof endDate !== 'string' ||
-			isNaN(Date.parse(endDate)) ||
-			new Date(endDate).getFullYear() < 1990 ||
-			new Date(endDate).getFullYear() > 2100 ||
-			new Date(startDate).getTime() >= new Date(endDate).getTime() ||
-			(actualEndDate !== undefined &&
-				actualEndDate !== null &&
-				(typeof actualEndDate !== 'string' ||
-					isNaN(Date.parse(actualEndDate)) ||
-					new Date(actualEndDate).getFullYear() < 1990 ||
-					new Date(actualEndDate).getFullYear() > 2100 ||
-					new Date(startDate).getTime() >= new Date(actualEndDate).getTime())) ||
-			(projectType !== ProjectType.Fixed && projectType !== ProjectType.OnGoing) ||
-			(typeof hourlyRate !== 'number' && typeof hourlyRate !== 'string') ||
-			(typeof hourlyRate === 'number' && hourlyRate <= 0) ||
-			(typeof hourlyRate === 'string' && (isNaN(Number(hourlyRate)) || Number(hourlyRate) <= 0)) ||
-			(typeof projectValueBAM !== 'number' && typeof projectValueBAM !== 'string') ||
-			(typeof projectValueBAM === 'number' && projectValueBAM <= 0) ||
-			(typeof projectValueBAM === 'string' && (isNaN(Number(projectValueBAM)) || Number(projectValueBAM) <= 0)) ||
-			(salesChannel !== SalesChannel.Online &&
-				salesChannel !== SalesChannel.InPerson &&
-				salesChannel !== SalesChannel.Referral &&
-				salesChannel !== SalesChannel.Other) ||
-			(projectStatus !== undefined &&
-				projectStatus !== ProjectStatus.Active &&
-				projectStatus !== ProjectStatus.OnHold &&
-				projectStatus !== ProjectStatus.Inactive &&
-				projectStatus !== ProjectStatus.Completed)
-		)
-			throw createHttpError(400, 'Invalid input fields.');
-
-		if (!Array.isArray(employees)) throw createHttpError(400, 'Invalid input fields.');
-		for (const employee of employees) {
-			if (
-				!employee ||
-				typeof employee !== 'object' ||
-				typeof employee.employeeId !== 'string' ||
-				typeof employee.partTime !== 'boolean'
-			)
-				throw createHttpError(400, 'Invalid input fields.');
-		}
-
-		const employeeIds = employees.map(employee => employee.employeeId);
-		if (new Set(employeeIds).size !== employeeIds.length) throw createHttpError(400, 'Invalid input fields.');
-
-		const existingEmployees = await prisma.employee.findMany({
-			where: {
-				id: { in: employeeIds },
-			},
-			select: { id: true },
-		});
-		if (existingEmployees.length !== employeeIds.length) throw createHttpError(400, 'Invalid input fields.');
-
 		const existingProject = await prisma.project.findFirst({
 			where: {
 				name: {
@@ -470,12 +410,12 @@ export const createProject: RequestHandler = async (req, res, next) => {
 				endDate: new Date(endDate),
 				actualEndDate: actualEndDate ? new Date(actualEndDate) : undefined,
 				projectType,
-				hourlyRate: typeof hourlyRate === 'string' ? Number(hourlyRate) : hourlyRate,
-				projectValueBAM: typeof projectValueBAM === 'string' ? Number(projectValueBAM) : projectValueBAM,
+				hourlyRate,
+				projectValueBAM,
 				salesChannel,
 				projectStatus,
 				employees: {
-					create: employees.map(({ partTime, employeeId }) => ({
+					create: employees.map(({ partTime, employeeId }: { partTime: boolean; employeeId: string }) => ({
 						partTime,
 						employee: {
 							connect: {
@@ -531,75 +471,6 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 			employees,
 		} = req.body;
 
-		if (
-			(name !== undefined && (typeof name !== 'string' || name.length === 0)) ||
-			(description !== undefined && (typeof description !== 'string' || description.length === 0)) ||
-			(startDate !== undefined &&
-				(typeof startDate !== 'string' ||
-					isNaN(Date.parse(startDate)) ||
-					new Date(startDate).getFullYear() < 1990 ||
-					new Date(startDate).getFullYear() > 2100)) ||
-			(endDate !== undefined &&
-				(typeof endDate !== 'string' ||
-					isNaN(Date.parse(endDate)) ||
-					new Date(endDate).getFullYear() < 1990 ||
-					new Date(endDate).getFullYear() > 2100)) ||
-			(startDate !== undefined &&
-				endDate !== undefined &&
-				new Date(startDate).getTime() >= new Date(endDate).getTime()) ||
-			(actualEndDate !== undefined &&
-				actualEndDate !== null &&
-				(typeof actualEndDate !== 'string' ||
-					isNaN(Date.parse(actualEndDate)) ||
-					new Date(actualEndDate).getFullYear() < 1990 ||
-					new Date(actualEndDate).getFullYear() > 2100 ||
-					new Date(startDate).getTime() >= new Date(actualEndDate).getTime())) ||
-			(projectType !== undefined && projectType !== ProjectType.Fixed && projectType !== ProjectType.OnGoing) ||
-			(hourlyRate !== undefined &&
-				((typeof hourlyRate !== 'number' && typeof hourlyRate !== 'string') ||
-					(typeof hourlyRate === 'number' && hourlyRate <= 0) ||
-					(typeof hourlyRate === 'string' && (isNaN(Number(hourlyRate)) || Number(hourlyRate) <= 0)))) ||
-			(projectValueBAM !== undefined &&
-				((typeof projectValueBAM !== 'number' && typeof projectValueBAM !== 'string') ||
-					(typeof projectValueBAM === 'number' && projectValueBAM <= 0) ||
-					(typeof projectValueBAM === 'string' && (isNaN(Number(projectValueBAM)) || Number(projectValueBAM) <= 0)))) ||
-			(salesChannel !== undefined &&
-				salesChannel !== SalesChannel.Online &&
-				salesChannel !== SalesChannel.InPerson &&
-				salesChannel !== SalesChannel.Referral &&
-				salesChannel !== SalesChannel.Other) ||
-			(projectStatus !== undefined &&
-				projectStatus !== ProjectStatus.Active &&
-				projectStatus !== ProjectStatus.OnHold &&
-				projectStatus !== ProjectStatus.Inactive &&
-				projectStatus !== ProjectStatus.Completed)
-		)
-			throw createHttpError(400, 'Invalid input fields.');
-
-		if (employees !== undefined) {
-			if (!Array.isArray(employees)) throw createHttpError(400, 'Invalid input fields.');
-			for (const employee of employees) {
-				if (
-					!employee ||
-					typeof employee !== 'object' ||
-					typeof employee.employeeId !== 'string' ||
-					typeof employee.partTime !== 'boolean'
-				)
-					throw createHttpError(400, 'Invalid input fields.');
-			}
-
-			const employeeIds = employees.map(employee => employee.employeeId);
-			if (new Set(employeeIds).size !== employeeIds.length) throw createHttpError(400, 'Invalid input fields.');
-
-			const existingEmployees = await prisma.employee.findMany({
-				where: {
-					id: { in: employeeIds },
-				},
-				select: { id: true },
-			});
-			if (existingEmployees.length !== employeeIds.length) throw createHttpError(400, 'Invalid input fields.');
-		}
-
 		if (name) {
 			const existingProject = await prisma.project.findFirst({
 				where: {
@@ -623,8 +494,8 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 				endDate: endDate ? new Date(endDate) : undefined,
 				actualEndDate: actualEndDate ? new Date(actualEndDate) : actualEndDate === null ? null : undefined,
 				projectType,
-				hourlyRate: typeof hourlyRate === 'string' ? Number(hourlyRate) : hourlyRate,
-				projectValueBAM: typeof projectValueBAM === 'string' ? Number(projectValueBAM) : projectValueBAM,
+				hourlyRate,
+				projectValueBAM,
 				salesChannel,
 				projectStatus,
 				employees: employees

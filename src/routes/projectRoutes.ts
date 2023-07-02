@@ -1,6 +1,8 @@
 import express from 'express';
 
 import verifyTokenMiddleware from '../middleware/verifyTokenMiddleware';
+import validateResourceMiddleware from '../middleware/validateResourceMiddleware';
+import { createProjectSchema, updateProjectSchema } from '../schemas/projectSchemas';
 import * as projectsController from '../controllers/projectsController';
 
 const router = express.Router();
@@ -10,8 +12,8 @@ router.use(verifyTokenMiddleware);
 router.get('/', projectsController.getProjects);
 router.get('/info', projectsController.getProjectsInfo);
 router.get('/:projectId', projectsController.getProjectById);
-router.post('/', projectsController.createProject);
-router.patch('/:projectId', projectsController.updateProject);
+router.post('/', validateResourceMiddleware(createProjectSchema), projectsController.createProject);
+router.patch('/:projectId', validateResourceMiddleware(updateProjectSchema), projectsController.updateProject);
 router.delete('/:projectId', projectsController.deleteProject);
 
 export default router;

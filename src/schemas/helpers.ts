@@ -29,3 +29,15 @@ export const generatePaginationSchema = (key: string) =>
 				});
 			}
 		});
+
+const dateLike = z.union([z.string(), z.date()], {
+	errorMap: () => ({ message: 'This is not a valid date.' }),
+});
+
+export const generateDateSchema = (key: string) =>
+	dateLike.pipe(
+		z.coerce
+			.date({ errorMap: () => ({ message: 'This is not a valid date.' }) })
+			.min(new Date('2000-01-01'), `${key} can't be before year 2000.`)
+			.max(new Date('2050-12-31'), `${key} can't be after year 2050.`)
+	);
