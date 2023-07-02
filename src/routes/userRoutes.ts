@@ -3,7 +3,7 @@ import express from 'express';
 import verifyTokenMiddleware from '../middleware/verifyTokenMiddleware';
 import imageUploadMiddleware from '../middleware/imageUploadMiddleware';
 import validateResourceMiddleware from '../middleware/validateResourceMiddleware';
-import { updateUserSchema } from '../schema/userSchemas';
+import { updateUserSchema } from '../schemas/userSchemas';
 import * as usersController from '../controllers/usersController';
 
 const router = express.Router();

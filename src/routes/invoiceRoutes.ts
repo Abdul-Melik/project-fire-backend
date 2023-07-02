@@ -2,7 +2,7 @@ import express from 'express';
 
 import verifyTokenMiddleware from '../middleware/verifyTokenMiddleware';
 import validateResourceMiddleware from '../middleware/validateResourceMiddleware';
-import { getInvoicesSchema, createInvoiceSchema, updateInvoiceSchema } from '../schema/invoiceSchemas';
+import { getInvoicesSchema, createInvoiceSchema, updateInvoiceSchema } from '../schemas/invoiceSchemas';
 import * as invoicesController from '../controllers/invoicesController';
 
 const router = express.Router();

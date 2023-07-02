@@ -2,7 +2,7 @@ import express from 'express';
 
 import verifyTokenMiddleware from '../middleware/verifyTokenMiddleware';
 import validateResourceMiddleware from '../middleware/validateResourceMiddleware';
-import { createExpenseCategorySchema, updateExpenseCategorySchema } from '../schema/expenseCategorySchemas';
+import { createExpenseCategorySchema, updateExpenseCategorySchema } from '../schemas/expenseCategorySchemas';
 import * as expenseCategoriesController from '../controllers/expenseCategoriesController';
 
 const router = express.Router();

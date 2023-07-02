@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 import { InvoiceStatus } from '@prisma/client';
-import { orderByFieldSchema, orderDirectionSchema, takeSchema, pageSchema } from './commonSchemas';
+import { orderDirectionSchema, takeSchema, pageSchema } from './commonSchemas';
+import { OrderByFieldInvoiceEnum } from './enums';
 
 const clientSchema = z
 	.string({
@@ -40,6 +41,10 @@ const extendedInvoiceStatusSchema = z.union([z.literal(''), z.nativeEnum(Invoice
 	errorMap: () => ({ message: 'Invoice status is not valid.' }),
 });
 
+const orderByFieldInvoiceSchema = z.union([z.literal(''), OrderByFieldInvoiceEnum], {
+	errorMap: () => ({ message: 'Order by field is not valid.' }),
+});
+
 const invoiceSchema = z.object({
 	client: clientSchema,
 	industry: industrySchema,
@@ -52,7 +57,7 @@ export const getInvoicesSchema = z.object({
 	query: z
 		.object({ invoiceStatus: extendedInvoiceStatusSchema })
 		.extend({
-			orderByField: orderByFieldSchema,
+			orderByField: orderByFieldInvoiceSchema,
 			orderDirection: orderDirectionSchema,
 			take: takeSchema,
 			page: pageSchema,

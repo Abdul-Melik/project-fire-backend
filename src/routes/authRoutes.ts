@@ -2,7 +2,7 @@ import express from 'express';
 
 import imageUploadMiddleware from '../middleware/imageUploadMiddleware';
 import validateResourceMiddleware from '../middleware/validateResourceMiddleware';
-import { registerUserSchema, loginUserSchema, sendResetPasswordEmailSchema } from '../schema/authSchemas';
+import { registerUserSchema, loginUserSchema, sendResetPasswordEmailSchema } from '../schemas/authSchemas';
 import * as authController from '../controllers/authController';
 
 const router = express.Router();

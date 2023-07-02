@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { Role } from '@prisma/client';
+import { OrderDirectionEnum } from './enums';
 
 // Helper functions to generate schemas with common properties
 const generateNameSchema = (key: string, min: number, max: number) =>
@@ -18,43 +19,31 @@ const generatePaginationSchema = (key: string) =>
 			invalid_type_error: `${key} must be a string.`,
 		})
 		.superRefine((value, ctx) => {
-			const parsedValue = parseInt(value);
-			if (isNaN(parsedValue)) {
+			const parsedValue = Number(value);
+			const isIntegerString = Number.isInteger(parsedValue);
+			if (!isIntegerString) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
-					message: `${key} can't be parsed to an integer.`,
+					message: `${key} must have an integer value.`,
 				});
-				return z.NEVER;
-			}
-			if (parsedValue < 1) {
+			} else if (parsedValue < 1) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
 					message: `${key} must be greater than 0.`,
 				});
-				return z.NEVER;
 			}
-			return parsedValue;
 		});
 
-// Zod enums
-const OrderByFieldEnum = z.enum(['client', 'industry', 'totalHoursBilled', 'amountBilledBAM', 'invoiceStatus']);
-
-const OrderDirectionEnum = z.enum(['asc', 'desc']);
-
 // Schemas for sorting and pagination
-export const orderByFieldSchema = z.union([z.literal(''), OrderByFieldEnum], {
-	errorMap: () => ({ message: 'Order by field is not valid.' }),
-});
-
 export const orderDirectionSchema = z.union([z.literal(''), OrderDirectionEnum], {
 	errorMap: () => ({ message: 'Order direction is not valid.' }),
 });
 
-export const takeSchema = generatePaginationSchema('Take');
+export const takeSchema = z.union([z.literal(''), generatePaginationSchema('Take')]);
 
-export const pageSchema = generatePaginationSchema('Page');
+export const pageSchema = z.union([z.literal(''), generatePaginationSchema('Page')]);
 
-// Schemas for authentication and users
+// Schemas for auth, users and employees
 const emailSchema = z
 	.string({
 		required_error: 'Email is required.',
@@ -62,9 +51,9 @@ const emailSchema = z
 	})
 	.email('Email is not valid.');
 
-const firstNameSchema = generateNameSchema('First name', 3, 10);
+export const firstNameSchema = generateNameSchema('First name', 3, 10);
 
-const lastNameSchema = generateNameSchema('Last name', 3, 10);
+export const lastNameSchema = generateNameSchema('Last name', 3, 10);
 
 const passwordSchema = z
 	.string({
@@ -102,4 +91,4 @@ export const descriptionSchema = z
 		required_error: 'Description is required.',
 		invalid_type_error: 'Description must be a string.',
 	})
-	.nonempty('Description can not be empty.');
+	.nonempty("Description can't be empty.");
