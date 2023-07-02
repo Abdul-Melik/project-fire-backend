@@ -5,13 +5,6 @@ import { generatePositiveNumberSchemas, generateBooleanSchema } from './helpers'
 import { OrderByFieldEmployeeEnum } from './enums';
 import { orderDirectionSchema, takeSchema, pageSchema, firstNameSchema, lastNameSchema } from './commonSchemas';
 
-const allowedTechStacks: Record<Department, TechStack[]> = {
-	[Department.Administration]: [TechStack.AdminNA],
-	[Department.Management]: [TechStack.MgmtNA],
-	[Department.Development]: [TechStack.FullStack, TechStack.Backend, TechStack.Frontend],
-	[Department.Design]: [TechStack.UXUI],
-};
-
 const departmentSchema = z.nativeEnum(Department, {
 	errorMap: () => ({ message: 'Department is not valid.' }),
 });
@@ -81,24 +74,34 @@ export const getEmployeesSchema = z.object({
 		.partial(),
 });
 
+const allowedDepartmentTechStackCombination: Record<Department, TechStack[]> = {
+	[Department.Administration]: [TechStack.AdminNA],
+	[Department.Management]: [TechStack.MgmtNA],
+	[Department.Development]: [TechStack.FullStack, TechStack.Backend, TechStack.Frontend],
+	[Department.Design]: [TechStack.UXUI],
+};
+
+const checkDepartmentTechStackCombination = (
+	department: Department | undefined,
+	techStack: TechStack | undefined,
+	ctx: z.RefinementCtx
+) => {
+	if (department && techStack && !allowedDepartmentTechStackCombination[department].includes(techStack)) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'This combination of department and tech stack is not allowed.',
+		});
+	}
+};
+
 export const createEmployeeSchema = z.object({
-	body: employeeSchema.omit({ isEmployed: true }).superRefine(({ department, techStack }, ctx) => {
-		if (!allowedTechStacks[department].includes(techStack)) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'This combination of department and tech stack is not allowed.',
-			});
-		}
-	}),
+	body: employeeSchema
+		.omit({ isEmployed: true })
+		.superRefine(({ department, techStack }, ctx) => checkDepartmentTechStackCombination(department, techStack, ctx)),
 });
 
 export const updateEmployeeSchema = z.object({
-	body: employeeSchema.partial().superRefine(({ department, techStack }, ctx) => {
-		if (department && techStack && !allowedTechStacks[department].includes(techStack)) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'This combination of department and tech stack is not allowed.',
-			});
-		}
-	}),
+	body: employeeSchema
+		.partial()
+		.superRefine(({ department, techStack }, ctx) => checkDepartmentTechStackCombination(department, techStack, ctx)),
 });

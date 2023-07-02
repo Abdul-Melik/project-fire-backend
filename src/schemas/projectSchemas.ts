@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { RefinementCtx, z } from 'zod';
 
 import { ProjectType, SalesChannel, ProjectStatus } from '@prisma/client';
 import { generateDateSchema, generateDateRangeSchema, generatePositiveNumberSchemas } from './helpers';
@@ -132,6 +132,26 @@ export const getProjectsInfoSchema = z.object({
 		.partial(),
 });
 
+const checkProjectDatesCombination = (
+	startDate: Date | undefined,
+	endDate: Date | undefined,
+	actualEndDate: Date | undefined,
+	ctx: RefinementCtx
+) => {
+	if (startDate && endDate && endDate < startDate) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'End date must be after start date.',
+		});
+	}
+	if (startDate && actualEndDate && actualEndDate < startDate) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Actual end date must be after start date.',
+		});
+	}
+};
+
 export const createProjectSchema = z.object({
 	body: projectSchema
 		.partial({
@@ -139,35 +159,15 @@ export const createProjectSchema = z.object({
 			projectStatus: true,
 			employees: true,
 		})
-		.superRefine(({ startDate, endDate, actualEndDate }, ctx) => {
-			if (startDate && endDate && endDate < startDate) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: 'End date must be after start date.',
-				});
-			}
-			if (startDate && actualEndDate && actualEndDate < startDate) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: 'Actual end date must be after start date.',
-				});
-			}
-		}),
+		.superRefine(({ startDate, endDate, actualEndDate }, ctx) =>
+			checkProjectDatesCombination(startDate, endDate, actualEndDate, ctx)
+		),
 });
 
 export const updateProjectSchema = z.object({
-	body: projectSchema.partial().superRefine(({ startDate, endDate, actualEndDate }, ctx) => {
-		if (startDate && endDate && endDate < startDate) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'End date must be after start date.',
-			});
-		}
-		if (startDate && actualEndDate && actualEndDate < startDate) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'Actual end date must be after start date.',
-			});
-		}
-	}),
+	body: projectSchema
+		.partial()
+		.superRefine(({ startDate, endDate, actualEndDate }, ctx) =>
+			checkProjectDatesCombination(startDate, endDate, actualEndDate, ctx)
+		),
 });
