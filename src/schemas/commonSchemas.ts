@@ -1,38 +1,8 @@
 import { z } from 'zod';
 
 import { Role } from '@prisma/client';
+import { generateNameSchema, generatePaginationSchema } from './helpers';
 import { OrderDirectionEnum } from './enums';
-
-// Helper functions to generate schemas with common properties
-const generateNameSchema = (key: string, min: number, max: number) =>
-	z
-		.string({
-			required_error: `${key} is required.`,
-			invalid_type_error: `${key} must be a string.`,
-		})
-		.min(min, `${key} must be at least ${min} characters long.`)
-		.max(max, `${key} can't be more than ${max} characters long.`);
-
-const generatePaginationSchema = (key: string) =>
-	z
-		.string({
-			invalid_type_error: `${key} must be a string.`,
-		})
-		.superRefine((value, ctx) => {
-			const parsedValue = Number(value);
-			const isIntegerString = Number.isInteger(parsedValue);
-			if (!isIntegerString) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: `${key} must have an integer value.`,
-				});
-			} else if (parsedValue < 1) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: `${key} must be greater than 0.`,
-				});
-			}
-		});
 
 // Schemas for sorting and pagination
 export const orderDirectionSchema = z.union([z.literal(''), OrderDirectionEnum], {
@@ -83,7 +53,7 @@ export const userSchema = z.object({
 	role: roleSchema,
 });
 
-// Schemas for expense categories
+// Schemas for projects and expense categories
 export const nameSchema = generateNameSchema('Name', 3, 15);
 
 export const descriptionSchema = z

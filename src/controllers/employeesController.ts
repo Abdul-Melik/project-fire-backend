@@ -21,33 +21,6 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 			page,
 		} = req.query;
 
-		// if (
-		// 	(currency && currency !== Currency.USD && currency !== Currency.EUR && currency !== Currency.BAM) ||
-		// 	(department &&
-		// 		department !== Department.Administration &&
-		// 		department !== Department.Management &&
-		// 		department !== Department.Development &&
-		// 		department !== Department.Design) ||
-		// 	(techStack &&
-		// 		techStack !== TechStack.AdminNA &&
-		// 		techStack !== TechStack.MgmtNA &&
-		// 		techStack !== TechStack.FullStack &&
-		// 		techStack !== TechStack.Backend &&
-		// 		techStack !== TechStack.Frontend &&
-		// 		techStack !== TechStack.UXUI) ||
-		// 	(isEmployed && isEmployed !== 'true' && isEmployed !== 'false') ||
-		// 	(orderByField &&
-		// 		orderByField !== 'firstName' &&
-		// 		orderByField !== 'lastName' &&
-		// 		orderByField !== 'department' &&
-		// 		orderByField !== 'salary' &&
-		// 		orderByField !== 'techStack') ||
-		// 	(orderDirection && orderDirection !== 'asc' && orderDirection !== 'desc') ||
-		// 	(take && (isNaN(Number(take)) || Number(take) < 1)) ||
-		// 	(page && (isNaN(Number(page)) || Number(page) < 1))
-		// )
-		// 	throw createHttpError(400, 'Invalid input fields.');
-
 		const skip = page && take ? (Number(page) - 1) * Number(take) : 0;
 
 		let orderBy;
