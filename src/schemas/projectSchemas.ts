@@ -2,7 +2,8 @@ import { z } from 'zod';
 
 import { ProjectType, SalesChannel, ProjectStatus } from '@prisma/client';
 import { generateDateSchema } from './helpers';
-import { nameSchema, descriptionSchema } from './commonSchemas';
+import { OrderByFieldProjectEnum } from './enums';
+import { orderDirectionSchema, takeSchema, pageSchema, nameSchema, descriptionSchema } from './commonSchemas';
 
 const startDateSchema = generateDateSchema('Start date');
 
@@ -11,6 +12,10 @@ const endDateSchema = generateDateSchema('End date');
 const actualEndDateSchema = generateDateSchema('Actual end date');
 
 const projectTypeSchema = z.nativeEnum(ProjectType, {
+	errorMap: () => ({ message: 'Project type is not valid.' }),
+});
+
+const extendedProjectTypeSchema = z.union([z.literal(''), z.nativeEnum(ProjectType)], {
 	errorMap: () => ({ message: 'Project type is not valid.' }),
 });
 
@@ -32,7 +37,15 @@ const salesChannelSchema = z.nativeEnum(SalesChannel, {
 	errorMap: () => ({ message: 'Sales channel is not valid.' }),
 });
 
+const extendedSalesChannelSchema = z.union([z.literal(''), z.nativeEnum(SalesChannel)], {
+	errorMap: () => ({ message: 'Sales channel is not valid.' }),
+});
+
 const projectStatusSchema = z.nativeEnum(ProjectStatus, {
+	errorMap: () => ({ message: 'Project status is not valid.' }),
+});
+
+const extendedProjectStatusSchema = z.union([z.literal(''), z.nativeEnum(ProjectStatus)], {
 	errorMap: () => ({ message: 'Project status is not valid.' }),
 });
 
@@ -64,6 +77,10 @@ const employeesSchema = z
 		}
 	});
 
+const orderByFieldProjectSchema = z.union([z.literal(''), OrderByFieldProjectEnum], {
+	errorMap: () => ({ message: 'Order by field is not valid.' }),
+});
+
 const projectSchema = z.object({
 	name: nameSchema,
 	description: descriptionSchema,
@@ -76,6 +93,24 @@ const projectSchema = z.object({
 	salesChannel: salesChannelSchema,
 	projectStatus: projectStatusSchema,
 	employees: employeesSchema,
+});
+
+export const getProjectSchema = z.object({
+	query: projectSchema
+		.pick({
+			startDate: true,
+			endDate: true,
+		})
+		.extend({
+			projectType: extendedProjectTypeSchema,
+			salesChannel: extendedSalesChannelSchema,
+			projectStatus: extendedProjectStatusSchema,
+			orderByField: orderByFieldProjectSchema,
+			orderDirection: orderDirectionSchema,
+			take: takeSchema,
+			page: pageSchema,
+		})
+		.partial(),
 });
 
 export const createProjectSchema = z.object({

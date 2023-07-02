@@ -24,38 +24,6 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 			page,
 		} = req.query;
 
-		if (
-			(startDate && isNaN(Date.parse(startDate as string))) ||
-			(endDate && isNaN(Date.parse(endDate as string))) ||
-			(projectType && projectType !== ProjectType.Fixed && projectType !== ProjectType.OnGoing) ||
-			(salesChannel &&
-				salesChannel !== SalesChannel.Online &&
-				salesChannel !== SalesChannel.InPerson &&
-				salesChannel !== SalesChannel.Referral &&
-				salesChannel !== SalesChannel.Other) ||
-			(projectStatus &&
-				projectStatus !== ProjectStatus.Active &&
-				projectStatus !== ProjectStatus.OnHold &&
-				projectStatus !== ProjectStatus.Inactive &&
-				projectStatus !== ProjectStatus.Completed) ||
-			(orderByField &&
-				orderByField !== 'name' &&
-				orderByField !== 'description' &&
-				orderByField !== 'startDate' &&
-				orderByField !== 'endDate' &&
-				orderByField !== 'actualEndDate' &&
-				orderByField !== 'projectType' &&
-				orderByField !== 'hourlyRate' &&
-				orderByField !== 'projectValueBAM' &&
-				orderByField !== 'salesChannel' &&
-				orderByField !== 'projectStatus' &&
-				orderByField !== 'employeesCount') ||
-			(orderDirection && orderDirection !== 'asc' && orderDirection !== 'desc') ||
-			(take && (isNaN(Number(take)) || Number(take) < 1)) ||
-			(page && (isNaN(Number(page)) || Number(page) < 1))
-		)
-			throw createHttpError(400, 'Invalid input fields.');
-
 		const skip = page && take ? (Number(page) - 1) * Number(take) : 0;
 
 		let orderBy;
