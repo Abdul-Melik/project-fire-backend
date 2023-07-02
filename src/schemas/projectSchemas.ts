@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { ProjectType, SalesChannel, ProjectStatus } from '@prisma/client';
-import { generateDateSchema, generateDateRangeSchema } from './helpers';
+import { generateDateSchema, generateDateRangeSchema, generatePositiveNumberSchemas } from './helpers';
 import { OrderByFieldProjectEnum } from './enums';
 import { orderDirectionSchema, takeSchema, pageSchema, nameSchema, descriptionSchema } from './commonSchemas';
 
@@ -42,19 +42,9 @@ const extendedProjectTypeSchema = z.union([z.literal(''), z.nativeEnum(ProjectTy
 	errorMap: () => ({ message: 'Project type is not valid.' }),
 });
 
-const hourlyRateSchema = z
-	.number({
-		required_error: 'Hourly rate is required.',
-		invalid_type_error: 'Hourly rate must be a number.',
-	})
-	.positive('Hourly rate must be a positive number.');
+const hourlyRateSchema = generatePositiveNumberSchemas('Hourly rate');
 
-const projectValueBAMSchema = z
-	.number({
-		required_error: 'Project value in BAM is required.',
-		invalid_type_error: 'Project value in BAM must be a number.',
-	})
-	.positive('Project value in BAM must be a positive number.');
+const projectValueBAMSchema = generatePositiveNumberSchemas('Project value');
 
 const salesChannelSchema = z.nativeEnum(SalesChannel, {
 	errorMap: () => ({ message: 'Sales channel is not valid.' }),
@@ -149,14 +139,14 @@ export const createProjectSchema = z.object({
 			projectStatus: true,
 			employees: true,
 		})
-		.superRefine((project, ctx) => {
-			if (project.startDate && project.endDate && project.endDate < project.startDate) {
+		.superRefine(({ startDate, endDate, actualEndDate }, ctx) => {
+			if (startDate && endDate && endDate < startDate) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
 					message: 'End date must be after start date.',
 				});
 			}
-			if (project.startDate && project.actualEndDate && project.actualEndDate < project.startDate) {
+			if (startDate && actualEndDate && actualEndDate < startDate) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
 					message: 'Actual end date must be after start date.',
@@ -166,14 +156,14 @@ export const createProjectSchema = z.object({
 });
 
 export const updateProjectSchema = z.object({
-	body: projectSchema.partial().superRefine((project, ctx) => {
-		if (project.startDate && project.endDate && project.endDate < project.startDate) {
+	body: projectSchema.partial().superRefine(({ startDate, endDate, actualEndDate }, ctx) => {
+		if (startDate && endDate && endDate < startDate) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
 				message: 'End date must be after start date.',
 			});
 		}
-		if (project.startDate && project.actualEndDate && project.actualEndDate < project.startDate) {
+		if (startDate && actualEndDate && actualEndDate < startDate) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
 				message: 'Actual end date must be after start date.',

@@ -1,12 +1,9 @@
 import { z } from 'zod';
 
 import { userSchema } from './commonSchemas';
+import { generateBooleanSchema } from './helpers';
 
-const rememberMeSchema = z
-	.boolean({
-		invalid_type_error: 'Remember me must be a boolean.',
-	})
-	.optional();
+const rememberMeSchema = generateBooleanSchema('Remember me').optional();
 
 export const registerUserSchema = z.object({
 	body: userSchema.partial({

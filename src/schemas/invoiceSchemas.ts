@@ -1,37 +1,21 @@
 import { z } from 'zod';
 
 import { InvoiceStatus } from '@prisma/client';
-import { orderDirectionSchema, takeSchema, pageSchema } from './commonSchemas';
 import { OrderByFieldInvoiceEnum } from './enums';
+import {
+	generatePositiveNumberSchemas,
+	generatePositiveIntegerNumberSchemas,
+	generateNonEmptyStringSchema,
+} from './helpers';
+import { orderDirectionSchema, takeSchema, pageSchema } from './commonSchemas';
 
-const clientSchema = z
-	.string({
-		required_error: 'Client is required.',
-		invalid_type_error: 'Client must be a string.',
-	})
-	.nonempty("Client can't be empty.");
+const clientSchema = generateNonEmptyStringSchema('Client');
 
-const industrySchema = z
-	.string({
-		required_error: 'Industry is required.',
-		invalid_type_error: 'Industry must be a string.',
-	})
-	.nonempty("Industry can't be empty.");
+const industrySchema = generateNonEmptyStringSchema('Industry');
 
-const totalHoursBilledSchema = z
-	.number({
-		required_error: 'Total hours billed is required.',
-		invalid_type_error: 'Total hours billed must be a number.',
-	})
-	.int('Total hours billed must be an integer.')
-	.positive('Total hours billed must be a positive number.');
+const totalHoursBilledSchema = generatePositiveIntegerNumberSchemas('Total hours billed');
 
-const amountBilledBAMSchema = z
-	.number({
-		required_error: 'Amount billed is required.',
-		invalid_type_error: 'Amount billed must be a number.',
-	})
-	.positive('Amount billed must be a positive number.');
+const amountBilledBAMSchema = generatePositiveNumberSchemas('Amount billed');
 
 const invoiceStatusSchema = z.nativeEnum(InvoiceStatus, {
 	errorMap: () => ({ message: 'Invoice status is not valid.' }),

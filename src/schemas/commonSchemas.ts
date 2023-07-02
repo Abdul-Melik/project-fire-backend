@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { Role } from '@prisma/client';
-import { generateNameSchema, generatePaginationSchema } from './helpers';
+import { generatePaginationSchema, generateNameSchema, generateNonEmptyStringSchema } from './helpers';
 import { OrderDirectionEnum } from './enums';
 
 // Schemas for sorting and pagination
@@ -56,9 +56,4 @@ export const userSchema = z.object({
 // Schemas for projects and expense categories
 export const nameSchema = generateNameSchema('Name', 3, 15);
 
-export const descriptionSchema = z
-	.string({
-		required_error: 'Description is required.',
-		invalid_type_error: 'Description must be a string.',
-	})
-	.nonempty("Description can't be empty.");
+export const descriptionSchema = generateNonEmptyStringSchema('Description');

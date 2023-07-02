@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
 import { Department, Currency, TechStack } from '@prisma/client';
-import { orderDirectionSchema, takeSchema, pageSchema, firstNameSchema, lastNameSchema } from './commonSchemas';
+import { generatePositiveNumberSchemas, generateBooleanSchema } from './helpers';
 import { OrderByFieldEmployeeEnum } from './enums';
+import { orderDirectionSchema, takeSchema, pageSchema, firstNameSchema, lastNameSchema } from './commonSchemas';
 
 const allowedTechStacks: Record<Department, TechStack[]> = {
 	[Department.Administration]: [TechStack.AdminNA],
@@ -19,12 +20,7 @@ const extendedDepartmentSchema = z.union([z.literal(''), z.nativeEnum(Department
 	errorMap: () => ({ message: 'Department is not valid.' }),
 });
 
-const salarySchema = z
-	.number({
-		required_error: 'Salary is required.',
-		invalid_type_error: 'Salary must be a number.',
-	})
-	.positive('Salary must be a positive number.');
+const salarySchema = generatePositiveNumberSchemas('Salary');
 
 const currencySchema = z.nativeEnum(Currency, {
 	errorMap: () => ({ message: 'Currency is not valid.' }),
@@ -42,9 +38,7 @@ const extendedTechStackSchema = z.union([z.literal(''), z.nativeEnum(TechStack)]
 	errorMap: () => ({ message: 'Tech stack is not valid.' }),
 });
 
-const isEmployedSchema = z.boolean({
-	invalid_type_error: 'Is employed must be a boolean.',
-});
+const isEmployedSchema = generateBooleanSchema('Is employed');
 
 const extendedIsEmployedSchema = z.union([z.literal(''), z.string()]).superRefine((value, ctx) => {
 	const isEmployedValue = value === '' || value === 'true' || value === 'false';
