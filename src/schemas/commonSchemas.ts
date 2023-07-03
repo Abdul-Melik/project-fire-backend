@@ -9,7 +9,6 @@ import {
 } from './schemaGenerators';
 import { OrderDirectionEnum } from './schemaEnums';
 
-// Schemas for sorting and pagination
 export const orderDirectionSchema = z.union([z.literal(''), OrderDirectionEnum], {
 	errorMap: () => ({ message: 'Order direction is not valid.' }),
 });
@@ -18,7 +17,6 @@ export const takeSchema = z.union([z.literal(''), generatePaginationSchema('Take
 
 export const pageSchema = z.union([z.literal(''), generatePaginationSchema('Page')]);
 
-// Schemas for auth, users and employees
 const emailSchema = z
 	.string({
 		required_error: 'Email is required.',
@@ -58,12 +56,10 @@ export const userSchema = z.object({
 	role: roleSchema,
 });
 
-// Schemas for projects and expense categories
 export const nameSchema = generateNameSchema('Name', 3, 15);
 
 export const descriptionSchema = generateNonEmptyStringSchema('Description');
 
-// Schemas for projects and expenses
 export const startDateSchema = z.union([z.literal(''), generateDateSchema('Start date')], {
 	errorMap: () => ({ message: 'Start date is not valid.' }),
 });

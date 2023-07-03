@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// Used to generate schemas for take and page which are used during pagination
 export const generatePaginationSchema = (key: string) =>
 	z
 		.string({
@@ -22,7 +21,6 @@ export const generatePaginationSchema = (key: string) =>
 			}
 		});
 
-// Used to generate schemas for firstName, lastName and name
 export const generateNameSchema = (key: string, min: number, max: number) =>
 	z
 		.string({
@@ -32,7 +30,6 @@ export const generateNameSchema = (key: string, min: number, max: number) =>
 		.min(min, `${key} must be at least ${min} characters long.`)
 		.max(max, `${key} can't be more than ${max} characters long.`);
 
-// Used to generate schemas for description, client and industry
 export const generateNonEmptyStringSchema = (key: string) =>
 	z
 		.string({
@@ -41,7 +38,6 @@ export const generateNonEmptyStringSchema = (key: string) =>
 		})
 		.nonempty(`${key} can't be empty.`);
 
-// Used to generate schemas for salary, hourlyRate, projectValueBAM, totalHoursBilled and amountBilledBAM
 export const generateNumberSchemas = (key: string) =>
 	z.number({
 		required_error: `${key} is required.`,
@@ -65,14 +61,12 @@ export const generateIntegerNumberRangeSchemas = (key: string, min: number, max:
 		.min(min, `${key} must be at least ${min}.`)
 		.max(max, `${key} can't be more than ${max}.`);
 
-// Used to generate schemas for rememberMe and isEmployed
 export const generateBooleanSchema = (key: string) =>
 	z.boolean({
 		required_error: `${key} is required.`,
 		invalid_type_error: `${key} must be a boolean.`,
 	});
 
-// Used to generate schemas for startDate, endDate and actualEndDate
 const dateLike = z.union([z.string(), z.date()], {
 	errorMap: () => ({ message: 'This is not a valid date.' }),
 });

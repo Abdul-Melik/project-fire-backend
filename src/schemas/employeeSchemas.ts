@@ -13,7 +13,20 @@ const extendedDepartmentSchema = z.union([z.literal(''), z.nativeEnum(Department
 	errorMap: () => ({ message: 'Department is not valid.' }),
 });
 
-const salarySchema = generatePositiveNumberSchemas('Salary');
+const salarySchema = z.string().superRefine((salary, ctx) => {
+	const parsedValue = Number(salary);
+	if (isNaN(parsedValue)) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Salary must have a number value.',
+		});
+	} else if (parsedValue <= 0) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Salary must be greater than 0.',
+		});
+	}
+});
 
 const currencySchema = z.nativeEnum(Currency, {
 	errorMap: () => ({ message: 'Currency is not valid.' }),
