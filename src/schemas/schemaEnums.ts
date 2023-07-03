@@ -24,3 +24,21 @@ export const OrderByFieldInvoiceEnum = z.enum([
 ]);
 
 export const OrderDirectionEnum = z.enum(['asc', 'desc']);
+
+export const MonthEnum = z.enum(
+	[
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December',
+	],
+	{ required_error: 'Month is required', invalid_type_error: 'Month is not valid.' }
+);

@@ -69,9 +69,6 @@ export const getExpensesInfo: RequestHandler = async (req, res, next) => {
 	try {
 		const { startDate, endDate } = req.query;
 
-		if ((startDate && isNaN(Date.parse(startDate as string))) || (endDate && isNaN(Date.parse(endDate as string))))
-			throw createHttpError(400, 'Invalid input fields.');
-
 		let expenses;
 
 		expenses = await prisma.expense.groupBy({
@@ -124,21 +121,6 @@ export const createExpense: RequestHandler = async (req, res, next) => {
 
 		const { year, month, plannedExpense, actualExpense, expenseCategory } = req.body;
 		if (!year || !month || !expenseCategory) throw createHttpError(400, 'Missing required fields.');
-
-		if (
-			typeof year !== 'number' ||
-			year < 1990 ||
-			year > 2100 ||
-			!months.includes(month) ||
-			(plannedExpense !== undefined &&
-				plannedExpense !== null &&
-				(typeof plannedExpense !== 'number' || plannedExpense < 0)) ||
-			(actualExpense !== undefined &&
-				actualExpense !== null &&
-				(typeof actualExpense !== 'number' || actualExpense < 0)) ||
-			typeof expenseCategory !== 'string'
-		)
-			throw createHttpError(400, 'Invalid input fields.');
 
 		const existingExpenseCategory = await prisma.expenseCategory.findFirst({
 			where: {
@@ -235,19 +217,6 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
 		if (!expense) throw createHttpError(404, 'Expense not found.');
 
 		const { year, month, plannedExpense, actualExpense, expenseCategory } = req.body;
-
-		if (
-			(year !== undefined && (typeof year !== 'number' || year < 1990 || year > 2100)) ||
-			(month !== undefined && !months.includes(month)) ||
-			(plannedExpense !== undefined &&
-				plannedExpense !== null &&
-				(typeof plannedExpense !== 'number' || plannedExpense < 0)) ||
-			(actualExpense !== undefined &&
-				actualExpense !== null &&
-				(typeof actualExpense !== 'number' || actualExpense < 0)) ||
-			(expenseCategory !== undefined && (typeof expenseCategory !== 'string' || expenseCategory.length === 0))
-		)
-			throw createHttpError(400, 'Invalid input fields.');
 
 		const searchYear = year || expense.year;
 		const searchMonth = month || expense.month;

@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
 import { Role } from '@prisma/client';
-import { generatePaginationSchema, generateNameSchema, generateNonEmptyStringSchema } from './schemaGenerators';
+import {
+	generatePaginationSchema,
+	generateNameSchema,
+	generateNonEmptyStringSchema,
+	generateDateSchema,
+} from './schemaGenerators';
 import { OrderDirectionEnum } from './schemaEnums';
 
 // Schemas for sorting and pagination
@@ -57,3 +62,12 @@ export const userSchema = z.object({
 export const nameSchema = generateNameSchema('Name', 3, 15);
 
 export const descriptionSchema = generateNonEmptyStringSchema('Description');
+
+// Schemas for projects and expenses
+export const startDateSchema = z.union([z.literal(''), generateDateSchema('Start date')], {
+	errorMap: () => ({ message: 'Start date is not valid.' }),
+});
+
+export const endDateSchema = z.union([z.literal(''), generateDateSchema('End date')], {
+	errorMap: () => ({ message: 'End date is not valid.' }),
+});

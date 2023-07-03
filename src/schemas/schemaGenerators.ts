@@ -57,6 +57,14 @@ export const generateIntegerNumberSchemas = (key: string) =>
 export const generatePositiveIntegerNumberSchemas = (key: string) =>
 	generateIntegerNumberSchemas(key).positive(`${key} must be a positive integer.`);
 
+export const generateNumberRangeSchemas = (key: string, min: number, max: number) =>
+	generateNumberSchemas(key).min(min, `${key} must be at least ${min}.`).max(max, `${key} can't be more than ${max}.`);
+
+export const generateIntegerNumberRangeSchemas = (key: string, min: number, max: number) =>
+	generateIntegerNumberSchemas(key)
+		.min(min, `${key} must be at least ${min}.`)
+		.max(max, `${key} can't be more than ${max}.`);
+
 // Used to generate schemas for rememberMe and isEmployed
 export const generateBooleanSchema = (key: string) =>
 	z.boolean({

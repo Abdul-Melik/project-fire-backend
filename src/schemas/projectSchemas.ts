@@ -1,9 +1,17 @@
 import { RefinementCtx, z } from 'zod';
 
 import { ProjectType, SalesChannel, ProjectStatus } from '@prisma/client';
-import { generateDateSchema, generateDateRangeSchema, generatePositiveNumberSchemas } from './schemaGenerators';
+import { generateDateRangeSchema, generatePositiveNumberSchemas } from './schemaGenerators';
 import { OrderByFieldProjectEnum } from './schemaEnums';
-import { orderDirectionSchema, takeSchema, pageSchema, nameSchema, descriptionSchema } from './commonSchemas';
+import {
+	orderDirectionSchema,
+	takeSchema,
+	pageSchema,
+	nameSchema,
+	descriptionSchema,
+	startDateSchema,
+	endDateSchema,
+} from './commonSchemas';
 
 const yearSchema = z.string().superRefine((year, ctx) => {
 	const parsedValue = Number(year);
@@ -19,14 +27,6 @@ const yearSchema = z.string().superRefine((year, ctx) => {
 const minDate = new Date('2000-01-01');
 
 const maxDate = new Date('2050-12-31');
-
-const startDateSchema = z.union([z.literal(''), generateDateSchema('Start date')], {
-	errorMap: () => ({ message: 'Start date is not valid.' }),
-});
-
-const endDateSchema = z.union([z.literal(''), generateDateSchema('End date')], {
-	errorMap: () => ({ message: 'End date is not valid.' }),
-});
 
 const startDateRangeSchema = generateDateRangeSchema('Start date', minDate, maxDate);
 
