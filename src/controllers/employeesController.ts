@@ -1,6 +1,7 @@
 import { RequestHandler } from 'express';
 import { PrismaClient, Role, Currency, Department, TechStack } from '@prisma/client';
 import createHttpError from 'http-errors';
+import deleteImage from '../utils/spacesDelete';
 
 const prisma = new PrismaClient();
 
@@ -234,7 +235,10 @@ export const deleteEmployee: RequestHandler = async (req, res, next) => {
 			},
 		});
 		if (!employee) throw createHttpError(404, 'Employee not found.');
-
+		if (employee.image) {
+			const key = employee.image.split('/').slice(-1)[0];
+			deleteImage(key);
+		}
 		await prisma.employee.delete({
 			where: {
 				id: employeeId,

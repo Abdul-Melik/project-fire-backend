@@ -4,6 +4,7 @@ import createHttpError from 'http-errors';
 import bcrypt from 'bcrypt';
 
 import { excludeUserInfo } from '../helpers';
+import deleteImage from '../utils/spacesDelete';
 
 const prisma = new PrismaClient();
 
@@ -117,7 +118,10 @@ export const deleteUser: RequestHandler = async (req, res, next) => {
 		if (!user) throw createHttpError(404, 'User not found.');
 		if (user.role === Role.Admin && user.id !== loggedInUser?.id)
 			throw createHttpError(403, 'Cannot delete an admin user.');
-
+		if (user.image) {
+			const key = user.image.split('/').slice(-1)[0];
+			deleteImage(key);
+		}
 		await prisma.user.delete({
 			where: {
 				id: userId,

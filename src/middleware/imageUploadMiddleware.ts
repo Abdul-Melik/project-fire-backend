@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import upload from '../utils/spaces';
+import upload from '../utils/spacesUpload';
 
 const imageUploadMiddleware = (req: Request, res: any, next: any) => {
 	upload.single('image')(req, res, (err: any) => {
