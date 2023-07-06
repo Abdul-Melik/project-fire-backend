@@ -62,10 +62,10 @@ export const registerUser: RequestHandler = async (req, res, next) => {
 		const saltRounds = 10;
 		const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-		let imageData: string | undefined;
+		let imageData: any;
 		if (req.file) {
-			imageData =
-				'https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg';
+			imageData = req.file as unknown as { location: string };
+			imageData = imageData.location;
 		}
 
 		const user = await prisma.user.create({

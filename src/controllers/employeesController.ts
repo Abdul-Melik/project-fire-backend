@@ -149,10 +149,10 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 
 		const { firstName, lastName, department, salary, currency, techStack } = req.body;
 
-		let imageData: string | undefined;
+		let imageData: any;
 		if (req.file) {
-			imageData =
-				'https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg';
+			imageData = req.file as unknown as { location: string };
+			imageData = imageData.location;
 		}
 
 		const employee = await prisma.employee.create({
@@ -191,11 +191,11 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 
 		const { firstName, lastName, department, salary, currency, techStack, isEmployed } = req.body;
 
-		// let imageData: string | undefined;
-		// if (req.file) {
-		// 	imageData =
-		// 		'https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg';
-		// }
+		let imageData: any;
+		if (req.file) {
+			imageData = req.file as unknown as { location: string };
+			imageData = imageData.location;
+		}
 
 		const updatedEmployee = await prisma.employee.update({
 			where: {
@@ -204,7 +204,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 			data: {
 				firstName,
 				lastName,
-				// image: imageData,
+				image: imageData,
 				department,
 				salary: Number(salary),
 				currency,
