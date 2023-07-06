@@ -243,7 +243,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
         salary: salary ? Number(salary) : undefined,
         currency,
         techStack,
-        isEmployed,
+        isEmployed: isEmployed ? JSON.parse(isEmployed as string) : undefined,
         isEmployedDate,
       },
     });

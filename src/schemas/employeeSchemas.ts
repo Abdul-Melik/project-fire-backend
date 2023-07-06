@@ -1,10 +1,6 @@
 import { z } from "zod";
 
 import { Department, Currency, TechStack } from "@prisma/client";
-import {
-  generatePositiveNumberSchemas,
-  generateBooleanSchema,
-} from "./schemaGenerators";
 import { OrderByFieldEmployeeEnum } from "./schemaEnums";
 import {
   orderDirectionSchema,
@@ -25,20 +21,24 @@ const extendedDepartmentSchema = z.union(
   }
 );
 
-const salarySchema = z.string().superRefine((salary, ctx) => {
-  const parsedValue = Number(salary);
-  if (isNaN(parsedValue)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Salary must have a number value.",
-    });
-  } else if (parsedValue <= 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Salary must be greater than 0.",
-    });
-  }
-});
+const salarySchema = z
+  .string({
+    invalid_type_error: "Salary must be a string.",
+  })
+  .superRefine((salary, ctx) => {
+    const parsedValue = Number(salary);
+    if (isNaN(parsedValue)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Salary must have a number value.",
+      });
+    } else if (parsedValue <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Salary must be greater than 0.",
+      });
+    }
+  });
 
 const currencySchema = z.nativeEnum(Currency, {
   errorMap: () => ({ message: "Currency is not valid." }),
@@ -62,7 +62,19 @@ const extendedTechStackSchema = z.union(
   }
 );
 
-const isEmployedSchema = generateBooleanSchema("Is employed");
+const isEmployedSchema = z
+  .string({
+    invalid_type_error: "Is employed must be a string.",
+  })
+  .superRefine((value, ctx) => {
+    const isEmployedValue = value === "true" || value === "false";
+    if (!isEmployedValue) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Is employed must have a boolean value.",
+      });
+    }
+  });
 
 const extendedIsEmployedSchema = z
   .union([z.literal(""), z.string()])
