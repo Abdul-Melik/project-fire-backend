@@ -1,16 +1,16 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-import { nameSchema, descriptionSchema } from './commonSchemas';
+import { nameSchema, descriptionSchema } from "./commonSchemas";
 
 const expenseCategorySchema = z.object({
-	name: nameSchema,
-	description: descriptionSchema,
+  name: nameSchema,
+  description: descriptionSchema,
 });
 
 export const createExpenseCategorySchema = z.object({
-	body: expenseCategorySchema,
+  body: expenseCategorySchema,
 });
 
 export const updateExpenseCategorySchema = z.object({
-	body: expenseCategorySchema.partial(),
+  body: expenseCategorySchema.partial(),
 });

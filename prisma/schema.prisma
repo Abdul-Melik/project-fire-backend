@@ -99,16 +99,17 @@ model Token {
 }
 
 model Employee {
-  id         String            @id @default(auto()) @map("_id") @db.ObjectId
-  firstName  String
-  lastName   String
-  image      String?
-  department Department
-  salary     Float
-  currency   Currency
-  techStack  TechStack
-  isEmployed Boolean           @default(true)
-  projects   ProjectEmployee[]
+  id             String            @id @default(auto()) @map("_id") @db.ObjectId
+  firstName      String
+  lastName       String
+  image          String?
+  department     Department
+  salary         Float
+  currency       Currency
+  techStack      TechStack
+  isEmployed     Boolean           @default(true)
+  isEmployedDate DateTime
+  projects       ProjectEmployee[]
 
   @@map("Employees")
 }

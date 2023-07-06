@@ -1,329 +1,387 @@
-import { RequestHandler } from 'express';
-import { PrismaClient, Role, Month } from '@prisma/client';
-import createHttpError from 'http-errors';
+import { RequestHandler } from "express";
+import { PrismaClient, Role, Month } from "@prisma/client";
+import createHttpError from "http-errors";
 
-import { excludeExpenseInfo, getEmployeeSalaryInBAM } from '../helpers';
+import { excludeExpenseInfo, getEmployeeSalaryInBAM } from "../helpers";
 
 const prisma = new PrismaClient();
 
 const months = [
-	'January',
-	'February',
-	'March',
-	'April',
-	'May',
-	'June',
-	'July',
-	'August',
-	'September',
-	'October',
-	'November',
-	'December',
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 // @desc    Get Expenses
 // @route   GET /api/expenses
 // @access  Private
 export const getExpenses: RequestHandler = async (req, res, next) => {
-	try {
-		const expenses = (
-			await prisma.expense.findMany({
-				include: {
-					expenseCategory: true,
-				},
-			})
-		).map(expense => excludeExpenseInfo(expense, ['expenseCategoryId']));
+  try {
+    const expenses = (
+      await prisma.expense.findMany({
+        include: {
+          expenseCategory: true,
+        },
+      })
+    ).map((expense) => excludeExpenseInfo(expense, ["expenseCategoryId"]));
 
-		return res.status(200).json(expenses);
-	} catch (error) {
-		next(error);
-	}
+    return res.status(200).json(expenses);
+  } catch (error) {
+    next(error);
+  }
 };
 
 // @desc    Get Expense By Id
 // @route   GET /api/expenses/:expenseId
 // @access  Private
 export const getExpenseById: RequestHandler = async (req, res, next) => {
-	try {
-		const expenseId = req.params.expenseId;
-		const expense = await prisma.expense.findUnique({
-			where: {
-				id: expenseId,
-			},
-			include: {
-				expenseCategory: true,
-			},
-		});
-		if (!expense) throw createHttpError(404, 'Expense not found.');
+  try {
+    const expenseId = req.params.expenseId;
+    const expense = await prisma.expense.findUnique({
+      where: {
+        id: expenseId,
+      },
+      include: {
+        expenseCategory: true,
+      },
+    });
+    if (!expense) throw createHttpError(404, "Expense not found.");
 
-		return res.status(200).json(excludeExpenseInfo(expense, ['expenseCategoryId']));
-	} catch (error) {
-		next(error);
-	}
+    return res
+      .status(200)
+      .json(excludeExpenseInfo(expense, ["expenseCategoryId"]));
+  } catch (error) {
+    next(error);
+  }
 };
 
 // @desc    Get Expenses Info
 // @route   GET /api/expenses/info
 // @access  Private
 export const getExpensesInfo: RequestHandler = async (req, res, next) => {
-	try {
-		const { startDate, endDate } = req.query;
+  try {
+    const { startDate, endDate } = req.query;
 
-		let expenses;
+    let expenses;
 
-		expenses = await prisma.expense.groupBy({
-			by: ['year', 'month'],
-			where: {
-				year: {
-					gte: startDate ? new Date(startDate as string).getFullYear() : undefined,
-					lte: endDate ? new Date(endDate as string).getFullYear() : undefined,
-				},
-				month: {
-					in: months
-						.filter((_, index) => {
-							const startMonth = startDate ? new Date(startDate as string).getMonth() : 0;
-							const endMonth = endDate ? new Date(endDate as string).getMonth() : months.length - 1;
-							return index >= startMonth && index <= endMonth;
-						})
-						.map(month => month as Month),
-				},
-			},
-			_sum: {
-				plannedExpense: true,
-				actualExpense: true,
-			},
-		});
+    expenses = await prisma.expense.groupBy({
+      by: ["year", "month"],
+      where: {
+        year: {
+          gte: startDate
+            ? new Date(startDate as string).getFullYear()
+            : undefined,
+          lte: endDate ? new Date(endDate as string).getFullYear() : undefined,
+        },
+        month: {
+          in: months
+            .filter((_, index) => {
+              const startMonth = startDate
+                ? new Date(startDate as string).getMonth()
+                : 0;
+              const endMonth = endDate
+                ? new Date(endDate as string).getMonth()
+                : months.length - 1;
+              return index >= startMonth && index <= endMonth;
+            })
+            .map((month) => month as Month),
+        },
+      },
+      _sum: {
+        plannedExpense: true,
+        actualExpense: true,
+      },
+    });
 
-		expenses = expenses.map(expense => ({
-			year: expense.year,
-			month: expense.month,
-			plannedExpense: expense._sum.plannedExpense ?? 0,
-			actualExpense: expense._sum.actualExpense ?? 0,
-		}));
+    expenses = expenses.map((expense) => ({
+      year: expense.year,
+      month: expense.month,
+      plannedExpense: expense._sum.plannedExpense ?? 0,
+      actualExpense: expense._sum.actualExpense ?? 0,
+    }));
 
-		const totalPlannedExpense = expenses.reduce((total, expense) => total + expense.plannedExpense, 0);
-		const totalActualExpense = expenses.reduce((total, expense) => total + expense.actualExpense, 0);
-		const netProfit = totalPlannedExpense - totalActualExpense;
+    const totalPlannedExpense = expenses.reduce(
+      (total, expense) => total + expense.plannedExpense,
+      0
+    );
+    const totalActualExpense = expenses.reduce(
+      (total, expense) => total + expense.actualExpense,
+      0
+    );
+    const netProfit = totalPlannedExpense - totalActualExpense;
 
-		return res.status(200).json({ totalPlannedExpense, totalActualExpense, netProfit, expenses });
-	} catch (error) {
-		next(error);
-	}
+    return res
+      .status(200)
+      .json({ totalPlannedExpense, totalActualExpense, netProfit, expenses });
+  } catch (error) {
+    next(error);
+  }
 };
 
 // @desc    Create Expense
 // @route   POST /api/expenses
 // @access  Private
 export const createExpense: RequestHandler = async (req, res, next) => {
-	try {
-		const loggedInUser = req.user;
-		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to create expenses.');
+  try {
+    const loggedInUser = req.user;
+    if (loggedInUser?.role !== Role.Admin)
+      throw createHttpError(
+        403,
+        "This user is not allowed to create expenses."
+      );
 
-		const { year, month, plannedExpense, actualExpense, expenseCategory } = req.body;
-		if (!year || !month || !expenseCategory) throw createHttpError(400, 'Missing required fields.');
+    const { year, month, plannedExpense, actualExpense, expenseCategory } =
+      req.body;
+    if (!year || !month || !expenseCategory)
+      throw createHttpError(400, "Missing required fields.");
 
-		const existingExpenseCategory = await prisma.expenseCategory.findFirst({
-			where: {
-				name: {
-					equals: expenseCategory,
-					mode: 'insensitive',
-				},
-			},
-		});
-		if (!existingExpenseCategory) throw createHttpError(404, 'Expense category not found.');
+    const existingExpenseCategory = await prisma.expenseCategory.findFirst({
+      where: {
+        name: {
+          equals: expenseCategory,
+          mode: "insensitive",
+        },
+      },
+    });
+    if (!existingExpenseCategory)
+      throw createHttpError(404, "Expense category not found.");
 
-		const existingExpense = await prisma.expense.findUnique({
-			where: {
-				year_month_expenseCategoryId: { year, month, expenseCategoryId: existingExpenseCategory.id },
-			},
-		});
-		if (existingExpense) throw createHttpError(409, 'Expense already exists.');
+    const existingExpense = await prisma.expense.findUnique({
+      where: {
+        year_month_expenseCategoryId: {
+          year,
+          month,
+          expenseCategoryId: existingExpenseCategory.id,
+        },
+      },
+    });
+    if (existingExpense) throw createHttpError(409, "Expense already exists.");
 
-		let calculatedPlannedExpense = 0;
+    let calculatedPlannedExpense = 0;
 
-		if (expenseCategory.toLowerCase() === 'direct') {
-			const projects = await prisma.project.findMany({
-				where: {
-					startDate: { lte: new Date(year, months.indexOf(month) + 1, 0) },
-					endDate: { gte: new Date(year, months.indexOf(month), 1) },
-				},
-				select: {
-					employees: {
-						select: {
-							partTime: true,
-							employee: {
-								select: {
-									salary: true,
-									currency: true,
-								},
-							},
-						},
-					},
-				},
-			});
+    if (expenseCategory.toLowerCase() === "direct") {
+      const projects = await prisma.project.findMany({
+        where: {
+          startDate: { lte: new Date(year, months.indexOf(month) + 1, 0) },
+          endDate: { gte: new Date(year, months.indexOf(month), 1) },
+        },
+        select: {
+          employees: {
+            select: {
+              partTime: true,
+              employee: {
+                select: {
+                  salary: true,
+                  currency: true,
+                },
+              },
+            },
+          },
+        },
+      });
 
-			calculatedPlannedExpense = projects.reduce((total, { employees }) => {
-				const cost = employees.reduce((sum, { partTime, employee }) => {
-					const salary = employee.salary ?? 0;
-					const currency = employee.currency ?? 'BAM';
-					return sum + getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1);
-				}, 0);
-				return total + cost;
-			}, 0);
-		}
+      calculatedPlannedExpense = projects.reduce((total, { employees }) => {
+        const cost = employees.reduce((sum, { partTime, employee }) => {
+          const salary = employee.salary ?? 0;
+          const currency = employee.currency ?? "BAM";
+          return (
+            sum +
+            getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1)
+          );
+        }, 0);
+        return total + cost;
+      }, 0);
+    }
 
-		const finalPlannedExpense = expenseCategory.toLowerCase() === 'direct' ? calculatedPlannedExpense : plannedExpense;
+    const finalPlannedExpense =
+      expenseCategory.toLowerCase() === "direct"
+        ? calculatedPlannedExpense
+        : plannedExpense;
 
-		const expense = await prisma.expense.create({
-			data: {
-				year,
-				month,
-				plannedExpense: finalPlannedExpense ?? actualExpense,
-				actualExpense: actualExpense ?? finalPlannedExpense,
-				expenseCategoryId: existingExpenseCategory.id,
-			},
-			include: {
-				expenseCategory: true,
-			},
-		});
+    const expense = await prisma.expense.create({
+      data: {
+        year,
+        month,
+        plannedExpense: finalPlannedExpense ?? actualExpense,
+        actualExpense: actualExpense ?? finalPlannedExpense,
+        expenseCategoryId: existingExpenseCategory.id,
+      },
+      include: {
+        expenseCategory: true,
+      },
+    });
 
-		return res.status(201).json(excludeExpenseInfo(expense, ['expenseCategoryId']));
-	} catch (error) {
-		next(error);
-	}
+    return res
+      .status(201)
+      .json(excludeExpenseInfo(expense, ["expenseCategoryId"]));
+  } catch (error) {
+    next(error);
+  }
 };
 
 // @desc    Update Expense
 // @route   PATCH /api/expenses/:expenseId
 // @access  Private
 export const updateExpense: RequestHandler = async (req, res, next) => {
-	try {
-		const loggedInUser = req.user;
-		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to update expenses.');
+  try {
+    const loggedInUser = req.user;
+    if (loggedInUser?.role !== Role.Admin)
+      throw createHttpError(
+        403,
+        "This user is not allowed to update expenses."
+      );
 
-		const expenseId = req.params.expenseId;
-		const expense = await prisma.expense.findUnique({
-			where: {
-				id: expenseId,
-			},
-			include: {
-				expenseCategory: {
-					select: {
-						name: true,
-					},
-				},
-			},
-		});
-		if (!expense) throw createHttpError(404, 'Expense not found.');
+    const expenseId = req.params.expenseId;
+    const expense = await prisma.expense.findUnique({
+      where: {
+        id: expenseId,
+      },
+      include: {
+        expenseCategory: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+    if (!expense) throw createHttpError(404, "Expense not found.");
 
-		const { year, month, plannedExpense, actualExpense, expenseCategory } = req.body;
+    const { year, month, plannedExpense, actualExpense, expenseCategory } =
+      req.body;
 
-		const searchYear = year || expense.year;
-		const searchMonth = month || expense.month;
-		const searchName = expenseCategory || expense.expenseCategory.name;
+    const searchYear = year || expense.year;
+    const searchMonth = month || expense.month;
+    const searchName = expenseCategory || expense.expenseCategory.name;
 
-		const existingExpenseCategory = await prisma.expenseCategory.findFirst({
-			where: {
-				name: {
-					equals: searchName,
-					mode: 'insensitive',
-				},
-			},
-		});
-		if (!existingExpenseCategory) throw createHttpError(404, 'Expense category not found.');
+    const existingExpenseCategory = await prisma.expenseCategory.findFirst({
+      where: {
+        name: {
+          equals: searchName,
+          mode: "insensitive",
+        },
+      },
+    });
+    if (!existingExpenseCategory)
+      throw createHttpError(404, "Expense category not found.");
 
-		const existingExpense = await prisma.expense.findUnique({
-			where: {
-				year_month_expenseCategoryId: {
-					year: searchYear,
-					month: searchMonth,
-					expenseCategoryId: existingExpenseCategory.id,
-				},
-			},
-		});
-		if (existingExpense && existingExpense.id !== expenseId) throw createHttpError(409, 'Expense already exists.');
+    const existingExpense = await prisma.expense.findUnique({
+      where: {
+        year_month_expenseCategoryId: {
+          year: searchYear,
+          month: searchMonth,
+          expenseCategoryId: existingExpenseCategory.id,
+        },
+      },
+    });
+    if (existingExpense && existingExpense.id !== expenseId)
+      throw createHttpError(409, "Expense already exists.");
 
-		let calculatedPlannedExpense = 0;
+    let calculatedPlannedExpense = 0;
 
-		if (searchName.toLowerCase() === 'direct') {
-			const projects = await prisma.project.findMany({
-				where: {
-					startDate: { lte: new Date(searchYear, months.indexOf(searchMonth) + 1, 0) },
-					endDate: { gte: new Date(searchYear, months.indexOf(searchMonth), 1) },
-				},
-				select: {
-					employees: {
-						select: {
-							partTime: true,
-							employee: {
-								select: {
-									salary: true,
-									currency: true,
-								},
-							},
-						},
-					},
-				},
-			});
+    if (searchName.toLowerCase() === "direct") {
+      const projects = await prisma.project.findMany({
+        where: {
+          startDate: {
+            lte: new Date(searchYear, months.indexOf(searchMonth) + 1, 0),
+          },
+          endDate: {
+            gte: new Date(searchYear, months.indexOf(searchMonth), 1),
+          },
+        },
+        select: {
+          employees: {
+            select: {
+              partTime: true,
+              employee: {
+                select: {
+                  salary: true,
+                  currency: true,
+                },
+              },
+            },
+          },
+        },
+      });
 
-			calculatedPlannedExpense = projects.reduce((total, { employees }) => {
-				const cost = employees.reduce((sum, { partTime, employee }) => {
-					const salary = employee.salary ?? 0;
-					const currency = employee.currency ?? 'BAM';
-					return sum + getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1);
-				}, 0);
-				return total + cost;
-			}, 0);
-		}
+      calculatedPlannedExpense = projects.reduce((total, { employees }) => {
+        const cost = employees.reduce((sum, { partTime, employee }) => {
+          const salary = employee.salary ?? 0;
+          const currency = employee.currency ?? "BAM";
+          return (
+            sum +
+            getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1)
+          );
+        }, 0);
+        return total + cost;
+      }, 0);
+    }
 
-		const finalPlannedExpense = searchName.toLowerCase() === 'direct' ? calculatedPlannedExpense : plannedExpense;
+    const finalPlannedExpense =
+      searchName.toLowerCase() === "direct"
+        ? calculatedPlannedExpense
+        : plannedExpense;
 
-		const updatedExpense = await prisma.expense.update({
-			where: {
-				id: expenseId,
-			},
-			data: {
-				year,
-				month,
-				plannedExpense: finalPlannedExpense,
-				actualExpense,
-				expenseCategoryId: existingExpenseCategory.id,
-			},
-			include: {
-				expenseCategory: true,
-			},
-		});
+    const updatedExpense = await prisma.expense.update({
+      where: {
+        id: expenseId,
+      },
+      data: {
+        year,
+        month,
+        plannedExpense: finalPlannedExpense,
+        actualExpense,
+        expenseCategoryId: existingExpenseCategory.id,
+      },
+      include: {
+        expenseCategory: true,
+      },
+    });
 
-		return res.status(200).json(excludeExpenseInfo(updatedExpense, ['expenseCategoryId']));
-	} catch (error) {
-		next(error);
-	}
+    return res
+      .status(200)
+      .json(excludeExpenseInfo(updatedExpense, ["expenseCategoryId"]));
+  } catch (error) {
+    next(error);
+  }
 };
 
 // @desc    Delete Expense
 // @route   DELETE /api/expenses/:expenseId
 // @access  Private
 export const deleteExpense: RequestHandler = async (req, res, next) => {
-	try {
-		const loggedInUser = req.user;
-		if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, 'This user is not allowed to delete expenses.');
+  try {
+    const loggedInUser = req.user;
+    if (loggedInUser?.role !== Role.Admin)
+      throw createHttpError(
+        403,
+        "This user is not allowed to delete expenses."
+      );
 
-		const expenseId = req.params.expenseId;
-		const expense = await prisma.expense.findUnique({
-			where: {
-				id: expenseId,
-			},
-		});
-		if (!expense) throw createHttpError(404, 'Expense not found.');
+    const expenseId = req.params.expenseId;
+    const expense = await prisma.expense.findUnique({
+      where: {
+        id: expenseId,
+      },
+    });
+    if (!expense) throw createHttpError(404, "Expense not found.");
 
-		await prisma.expense.delete({
-			where: {
-				id: expenseId,
-			},
-		});
+    await prisma.expense.delete({
+      where: {
+        id: expenseId,
+      },
+    });
 
-		return res.sendStatus(204);
-	} catch (error) {
-		next(error);
-	}
+    return res.sendStatus(204);
+  } catch (error) {
+    next(error);
+  }
 };
