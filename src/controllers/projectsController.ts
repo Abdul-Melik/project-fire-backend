@@ -370,18 +370,6 @@ export const createProject: RequestHandler = async (req, res, next) => {
       employees = [],
     } = req.body;
 
-    if (
-      !name ||
-      !description ||
-      !startDate ||
-      !endDate ||
-      !projectType ||
-      !hourlyRate ||
-      !projectValueBAM ||
-      !salesChannel
-    )
-      throw createHttpError(400, "Missing required fields.");
-
     const existingProject = await prisma.project.findFirst({
       where: {
         name: {
