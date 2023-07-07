@@ -3,7 +3,7 @@ require('aws-sdk/lib/maintenance_mode_message').suppress = true;
 import { Request } from 'express';
 import { config } from 'dotenv';
 config();
-// delete an image from digital ocean spaces
+// deletes an image from digital ocean spaces
 const spacesEndpoint = new AWS.Endpoint('fra1.digitaloceanspaces.com');
 const s3 = new AWS.S3({
 	endpoint: spacesEndpoint,
