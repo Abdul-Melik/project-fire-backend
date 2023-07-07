@@ -230,6 +230,8 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
       revenue: number;
       cost: number;
       profit: number;
+      endDate: Date | null;
+      actualEndDate: Date | null;
     };
 
     let totalValue = 0;
@@ -238,8 +240,9 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
     let averageValue = 0;
     let averageRate = 0;
     let averageTeamSize = 0;
-    let salesChannelPercentage = {};
-    let projectTypeCount = {};
+    let weeksOverDeadline = 0;
+    let salesChannelPercentage: Record<string, number> = {};
+    let projectTypeCount: Record<string, number> = {};
     let projects: Project[] = [];
 
     if (totalProjects) {
@@ -261,26 +264,32 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
               },
             },
           },
+          endDate: true,
+          actualEndDate: true,
         },
       });
 
-      projects = projectsData.map(({ name, hourlyRate, projectValueBAM, _count, employees }) => {
-        const revenue = projectValueBAM;
-        const cost = employees.reduce((sum, { partTime, employee }) => {
-          const salary = employee.salary ?? 0;
-          const currency = employee.currency ?? Currency.BAM;
-          return sum + getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1);
-        }, 0);
-        const profit = revenue - cost;
-        return {
-          name: name,
-          hourlyRate: hourlyRate,
-          numberOfEmployees: _count.employees,
-          revenue,
-          cost,
-          profit,
-        };
-      });
+      projects = projectsData.map(
+        ({ name, hourlyRate, projectValueBAM, _count, employees, endDate, actualEndDate }) => {
+          const revenue = projectValueBAM;
+          const cost = employees.reduce((sum, { partTime, employee }) => {
+            const salary = employee.salary ?? 0;
+            const currency = employee.currency ?? "BAM";
+            return sum + getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1);
+          }, 0);
+          const profit = revenue - cost;
+          return {
+            name: name,
+            hourlyRate: hourlyRate,
+            numberOfEmployees: _count.employees,
+            revenue,
+            cost,
+            profit,
+            endDate: endDate ? new Date(endDate) : null,
+            actualEndDate: actualEndDate ? new Date(actualEndDate) : null,
+          };
+        }
+      );
 
       totalValue = projects.reduce((sum, project) => {
         return sum + project.revenue;
@@ -304,6 +313,15 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
       averageValue = totalValue / totalProjects;
 
       averageRate = totalHourlyRate / totalProjects;
+
+      weeksOverDeadline = projects.reduce((sum, project) => {
+        const { actualEndDate, endDate } = project;
+        if (actualEndDate && endDate && actualEndDate > endDate) {
+          const weeks = Math.floor((actualEndDate.getTime() - endDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+          return sum + weeks;
+        }
+        return sum;
+      }, 0);
 
       averageTeamSize = totalEmployees / totalProjects;
 
@@ -349,6 +367,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
       averageValue,
       averageRate,
       averageTeamSize,
+      weeksOverDeadline,
       salesChannelPercentage,
       projectTypeCount,
       projects,
