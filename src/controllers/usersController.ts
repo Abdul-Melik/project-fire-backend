@@ -74,11 +74,15 @@ export const updateUser: RequestHandler = async (req, res, next) => {
 		let hashedPassword;
 		if (password) hashedPassword = await bcrypt.hash(password, saltRounds);
 
-		// let imageData: string | undefined;
-		// if (req.file) {
-		// 	imageData =
-		// 		'https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg';
-		// }
+		let imageData = user.image as any;
+		if (req.file) {
+			imageData = req.file as unknown as { location: string };
+			imageData = imageData.location;
+			if (user.image) {
+				const key = user.image.split('/').slice(-1)[0];
+				deleteImage(key);
+			}
+		}
 
 		const updatedUser = await prisma.user.update({
 			where: {
@@ -89,7 +93,7 @@ export const updateUser: RequestHandler = async (req, res, next) => {
 				firstName,
 				lastName,
 				password: hashedPassword,
-				// image: imageData,
+				image: imageData,
 				role,
 			},
 		});
