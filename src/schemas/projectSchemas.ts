@@ -183,7 +183,6 @@ export const createProjectSchema = z.object({
   body: projectSchema
     .partial({
       actualEndDate: true,
-      projectStatus: true,
       employees: true,
     })
     .superRefine(({ startDate, endDate, actualEndDate }, ctx) =>

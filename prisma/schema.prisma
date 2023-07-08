@@ -125,7 +125,7 @@ model Project {
   hourlyRate      Float
   projectValueBAM Float
   salesChannel    SalesChannel
-  projectStatus   ProjectStatus     @default(Active)
+  projectStatus   ProjectStatus
   employees       ProjectEmployee[]
 
   @@map("Projects")
