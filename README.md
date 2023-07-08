@@ -6,7 +6,7 @@ Package versions:
 
 dependencies
 
-    "@prisma/client": "^4.15.0",
+    "@prisma/client": "^4.16.2",
     "bcrypt": "^5.1.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -38,6 +38,6 @@ devDependencies:
     "@types/swagger-ui-express": "^4.1.3",
     "nodemon": "^2.0.22",
     "prettier-plugin-prisma": "^4.13.0",
-    "prisma": "^4.15.0",
+    "prisma": "^4.16.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"

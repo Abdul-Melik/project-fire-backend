@@ -83,7 +83,7 @@ const dateLike = z.union([z.string(), z.date()], {
   errorMap: () => ({ message: "This is not a valid date." }),
 });
 
-export const generateDateSchema = (key: string) =>
+export const generateDateSchema = () =>
   dateLike.pipe(
     z.coerce.date({
       errorMap: () => ({ message: "This is not a valid date." }),

@@ -69,16 +69,10 @@ export const nameSchema = generateNameSchema("Name", 3, 15);
 
 export const descriptionSchema = generateNonEmptyStringSchema("Description");
 
-export const startDateSchema = z.union(
-  [z.literal(""), generateDateSchema("Start date")],
-  {
-    errorMap: () => ({ message: "Start date is not valid." }),
-  }
-);
+export const startDateSchema = z.union([z.literal(""), generateDateSchema()], {
+  errorMap: () => ({ message: "Start date is not valid." }),
+});
 
-export const endDateSchema = z.union(
-  [z.literal(""), generateDateSchema("End date")],
-  {
-    errorMap: () => ({ message: "End date is not valid." }),
-  }
-);
+export const endDateSchema = z.union([z.literal(""), generateDateSchema()], {
+  errorMap: () => ({ message: "End date is not valid." }),
+});

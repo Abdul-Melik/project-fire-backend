@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { Department, Currency, TechStack } from "@prisma/client";
 import { OrderByFieldEmployeeEnum } from "./schemaEnums";
+import { generateDateSchema } from "./schemaGenerators";
 import {
   orderDirectionSchema,
   takeSchema,
@@ -89,6 +90,14 @@ const extendedIsEmployedSchema = z
     }
   });
 
+const hiringDateSchema = z.union([z.literal(""), generateDateSchema()], {
+  errorMap: () => ({ message: "Hiring date is not valid." }),
+});
+
+const terminationDateSchema = z.union([z.literal(""), generateDateSchema()], {
+  errorMap: () => ({ message: "Termination date is not valid." }),
+});
+
 const orderByFieldEmployeeSchema = z.union(
   [z.literal(""), OrderByFieldEmployeeEnum],
   {
@@ -113,6 +122,8 @@ export const getEmployeesSchema = z.object({
       department: extendedDepartmentSchema,
       techStack: extendedTechStackSchema,
       isEmployed: extendedIsEmployedSchema,
+      hiringDate: hiringDateSchema,
+      terminationDate: terminationDateSchema,
     })
     .extend({
       orderByField: orderByFieldEmployeeSchema,

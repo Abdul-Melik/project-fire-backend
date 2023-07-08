@@ -21,6 +21,9 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
       department,
       techStack,
       isEmployed,
+      standardDateFilter,
+      hiringDate,
+      terminationDate,
       orderByField,
       orderDirection,
       take,
@@ -70,6 +73,22 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
       department: department ? (department as Department) : undefined,
       techStack: techStack ? (techStack as TechStack) : undefined,
       isEmployed: isEmployed ? JSON.parse(isEmployed as string) : undefined,
+      ...(hiringDate && {
+        hiringDate:
+          standardDateFilter === "" || standardDateFilter === "true"
+            ? {
+                gte: new Date(hiringDate as string),
+              }
+            : { lt: new Date(hiringDate as string) },
+      }),
+      ...(terminationDate && {
+        terminationDate:
+          standardDateFilter === "" || standardDateFilter === "true"
+            ? {
+                lte: new Date(terminationDate as string),
+              }
+            : { gt: new Date(terminationDate as string) },
+      }),
     };
 
     const count = await prisma.employee.count({ where });
@@ -181,7 +200,7 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
         salary: Number(salary),
         currency,
         techStack,
-        isEmployedDate: new Date(),
+        hiringDate: new Date(),
       },
     });
 
@@ -227,9 +246,17 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
     // 		'https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg';
     // }
 
-    let isEmployedDate;
-    if (isEmployed !== undefined && isEmployed !== employee.isEmployed)
-      isEmployedDate = new Date();
+    let terminationDate;
+    if (isEmployed === "false" && isEmployed !== employee.isEmployed.toString())
+      terminationDate = new Date();
+    else if (
+      isEmployed === "true" &&
+      isEmployed !== employee.isEmployed.toString()
+    )
+      throw createHttpError(
+        400,
+        "We have no interest in rehiring former employees."
+      );
 
     const updatedEmployee = await prisma.employee.update({
       where: {
@@ -244,7 +271,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
         currency,
         techStack,
         isEmployed: isEmployed ? JSON.parse(isEmployed as string) : undefined,
-        isEmployedDate,
+        terminationDate,
       },
     });
 
