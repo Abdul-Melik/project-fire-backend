@@ -21,7 +21,7 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
       department,
       techStack,
       isEmployed,
-      standardDateFilter,
+      isStandardDateFilter,
       hiringDate,
       terminationDate,
       orderByField,
@@ -75,14 +75,14 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
       isEmployed: isEmployed ? JSON.parse(isEmployed as string) : undefined,
       ...(hiringDate && {
         hiringDate:
-          standardDateFilter === "" || standardDateFilter === "true"
+          isStandardDateFilter === "" || isStandardDateFilter === "true"
             ? {
                 gte: new Date(hiringDate as string),
               }
             : { lt: new Date(hiringDate as string) },
       }),
       ...(terminationDate &&
-        (standardDateFilter === "" || standardDateFilter === "true"
+        (isStandardDateFilter === "" || isStandardDateFilter === "true"
           ? {
               terminationDate: {
                 lte: new Date(terminationDate as string),
