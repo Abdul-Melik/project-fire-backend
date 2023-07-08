@@ -81,14 +81,25 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
               }
             : { lt: new Date(hiringDate as string) },
       }),
-      ...(terminationDate && {
-        terminationDate:
-          standardDateFilter === "" || standardDateFilter === "true"
-            ? {
+      ...(terminationDate &&
+        (standardDateFilter === "" || standardDateFilter === "true"
+          ? {
+              terminationDate: {
                 lte: new Date(terminationDate as string),
-              }
-            : { gt: new Date(terminationDate as string) },
-      }),
+              },
+            }
+          : {
+              OR: [
+                {
+                  isEmployed: true,
+                },
+                {
+                  terminationDate: {
+                    gt: new Date(terminationDate as string),
+                  },
+                },
+              ],
+            })),
     };
 
     const count = await prisma.employee.count({ where });
