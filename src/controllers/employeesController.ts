@@ -253,8 +253,12 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
       isEmployed,
     } = req.body;
 
-    let imageData: string | undefined;
+    let imageData = employee.image;
     if (req.file) {
+      if (imageData) {
+        const key = imageData.split("/").slice(-1)[0];
+        deleteImage(key);
+      }
       const file = req.file as unknown as { location: string };
       imageData = file.location;
     }

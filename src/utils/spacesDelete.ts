@@ -19,9 +19,8 @@ const deleteImage = (key: string) => {
     Bucket: imageBucket,
     Key: key,
   };
-  s3.deleteObject(params, function (err: any, data: any) {
+  s3.deleteObject(params, (err: any) => {
     if (err) console.log(err, err.stack);
-    else console.log(data);
   });
 };
 
