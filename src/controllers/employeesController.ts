@@ -8,6 +8,8 @@ import {
 } from "@prisma/client";
 import createHttpError from "http-errors";
 
+import deleteImage from "../utils/spacesDelete";
+
 const prisma = new PrismaClient();
 
 // @desc    Get Employees
@@ -198,8 +200,8 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 
     let imageData: string | undefined;
     if (req.file) {
-      imageData =
-        "https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg";
+      const file = req.file as unknown as { location: string };
+      imageData = file.location;
     }
 
     const employee = await prisma.employee.create({
@@ -251,11 +253,11 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
       isEmployed,
     } = req.body;
 
-    // let imageData: string | undefined;
-    // if (req.file) {
-    // 	imageData =
-    // 		'https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg';
-    // }
+    let imageData: string | undefined;
+    if (req.file) {
+      const file = req.file as unknown as { location: string };
+      imageData = file.location;
+    }
 
     let terminationDate;
     if (isEmployed === "false" && isEmployed !== employee.isEmployed.toString())
@@ -276,7 +278,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
       data: {
         firstName,
         lastName,
-        // image: imageData,
+        image: imageData,
         department,
         salary: salary ? Number(salary) : undefined,
         currency,
@@ -311,6 +313,11 @@ export const deleteEmployee: RequestHandler = async (req, res, next) => {
       },
     });
     if (!employee) throw createHttpError(404, "Employee not found.");
+
+    if (employee.image) {
+      const key = employee.image.split("/").slice(-1)[0];
+      deleteImage(key);
+    }
 
     await prisma.employee.delete({
       where: {

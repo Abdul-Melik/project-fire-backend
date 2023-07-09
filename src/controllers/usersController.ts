@@ -4,6 +4,7 @@ import createHttpError from "http-errors";
 import bcrypt from "bcrypt";
 
 import { excludeUserInfo } from "../helpers";
+import deleteImage from "../utils/spacesDelete";
 
 const prisma = new PrismaClient();
 
@@ -79,11 +80,15 @@ export const updateUser: RequestHandler = async (req, res, next) => {
     let hashedPassword;
     if (password) hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // let imageData: string | undefined;
-    // if (req.file) {
-    // 	imageData =
-    // 		'https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg';
-    // }
+    let imageData = user.image;
+    if (req.file) {
+      if (imageData) {
+        const key = imageData.split("/").slice(-1)[0];
+        deleteImage(key);
+      }
+      const file = req.file as unknown as { location: string };
+      imageData = file.location;
+    }
 
     const updatedUser = await prisma.user.update({
       where: {
@@ -94,7 +99,7 @@ export const updateUser: RequestHandler = async (req, res, next) => {
         firstName,
         lastName,
         password: hashedPassword,
-        // image: imageData,
+        image: imageData,
         role,
       },
     });
@@ -126,6 +131,11 @@ export const deleteUser: RequestHandler = async (req, res, next) => {
     if (!user) throw createHttpError(404, "User not found.");
     if (user.role === Role.Admin && user.id !== loggedInUser?.id)
       throw createHttpError(403, "Cannot delete an admin user.");
+
+    if (user.image) {
+      const key = user.image.split("/").slice(-1)[0];
+      deleteImage(key);
+    }
 
     await prisma.user.delete({
       where: {

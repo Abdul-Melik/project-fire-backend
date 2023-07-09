@@ -1,5 +1,9 @@
 import swaggerJsdoc from "swagger-jsdoc";
 
+import env from "../utils/validateEnv";
+
+const port = env.PORT;
+
 const swaggerOptions = {
   swaggerDefinition: {
     info: {
@@ -9,7 +13,7 @@ const swaggerOptions = {
       contact: {
         name: "Ant Colony",
       },
-      servers: [`http://localhost:${process.env.PORT}`],
+      servers: [`http://localhost:${port}`],
     },
   },
   apis: ["./src/docs/*.ts"],

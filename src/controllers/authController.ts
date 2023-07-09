@@ -71,8 +71,8 @@ export const registerUser: RequestHandler = async (req, res, next) => {
 
     let imageData: string | undefined;
     if (req.file) {
-      imageData =
-        "https://st3.depositphotos.com/1017228/18878/i/450/depositphotos_188781580-stock-photo-handsome-cheerful-young-man-standing.jpg";
+      const file = req.file as unknown as { location: string };
+      imageData = file.location;
     }
 
     const user = await prisma.user.create({

@@ -7,6 +7,7 @@ Package versions:
 dependencies
 
     "@prisma/client": "^4.16.2",
+    "aws-sdk": "^2.1413.0",
     "bcrypt": "^5.1.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -17,6 +18,7 @@ dependencies
     "http-errors": "^2.0.0",
     "jsonwebtoken": "^9.0.0",
     "multer": "^1.4.5-lts.1",
+    "multer-s3": "^2.10.0",
     "nodemailer": "^6.9.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.3",
@@ -32,6 +34,7 @@ devDependencies:
     "@types/http-errors": "^2.0.1",
     "@types/jsonwebtoken": "^9.0.1",
     "@types/multer": "^1.4.7",
+    "@types/multer-s3": "^3.0.0",
     "@types/node": "^20.2.3",
     "@types/nodemailer": "^6.4.7",
     "@types/swagger-jsdoc": "^6.0.1",

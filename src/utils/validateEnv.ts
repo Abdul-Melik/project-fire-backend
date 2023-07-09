@@ -11,4 +11,7 @@ export default cleanEnv(process.env, {
   CLIENT_URL: str(),
   EMAIL_ADDRESS: str(),
   EMAIL_PASSWORD: str(),
+  IMAGE_ACCESS_KEY: str(),
+  IMAGE_SECRET: str(),
+  IMAGE_BUCKET: str(),
 });
