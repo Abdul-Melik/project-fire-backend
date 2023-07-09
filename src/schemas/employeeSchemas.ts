@@ -90,6 +90,20 @@ const extendedIsEmployedSchema = z
     }
   });
 
+const isStandardDateFilterSchema = z
+  .union([z.literal(""), z.string()])
+  .superRefine((value, ctx) => {
+    const isStandardDateFilterValue =
+      value === "" || value === "true" || value === "false";
+    if (!isStandardDateFilterValue) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Is standard date filter must have a boolean value or be an empty string.",
+      });
+    }
+  });
+
 const hiringDateSchema = z.union([z.literal(""), generateDateSchema()], {
   errorMap: () => ({ message: "Hiring date is not valid." }),
 });
@@ -122,6 +136,7 @@ export const getEmployeesSchema = z.object({
       department: extendedDepartmentSchema,
       techStack: extendedTechStackSchema,
       isEmployed: extendedIsEmployedSchema,
+      isStandardDateFilter: isStandardDateFilterSchema,
       hiringDate: hiringDateSchema,
       terminationDate: terminationDateSchema,
     })
