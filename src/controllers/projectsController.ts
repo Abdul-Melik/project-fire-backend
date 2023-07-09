@@ -361,7 +361,6 @@ export const createProject: RequestHandler = async (req, res, next) => {
       description,
       startDate,
       endDate,
-      actualEndDate,
       projectType,
       hourlyRate,
       projectValueBAM,
@@ -386,7 +385,10 @@ export const createProject: RequestHandler = async (req, res, next) => {
         description,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        actualEndDate: actualEndDate ? new Date(actualEndDate) : undefined,
+        actualEndDate:
+          projectStatus === ProjectStatus.Completed
+            ? new Date(endDate)
+            : undefined,
         projectType,
         hourlyRate,
         projectValueBAM,

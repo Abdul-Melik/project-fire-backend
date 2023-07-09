@@ -1,4 +1,4 @@
-import { RefinementCtx, z } from "zod";
+import { z } from "zod";
 
 import { ProjectType, SalesChannel, ProjectStatus } from "@prisma/client";
 import {
@@ -43,10 +43,8 @@ const endDateRangeSchema = generateDateRangeSchema(
   maxDate
 );
 
-const actualEndDateRangeSchema = generateDateRangeSchema(
-  "Actual end date",
-  minDate,
-  maxDate
+const actualEndDateRangeSchema = z.nullable(
+  generateDateRangeSchema("Actual end date", minDate, maxDate)
 );
 
 const projectTypeSchema = z.nativeEnum(ProjectType, {
@@ -162,8 +160,8 @@ export const getProjectsInfoSchema = z.object({
 const checkProjectDatesCombination = (
   startDate: Date | undefined,
   endDate: Date | undefined,
-  actualEndDate: Date | undefined,
-  ctx: RefinementCtx
+  actualEndDate: Date | null | undefined,
+  ctx: z.RefinementCtx
 ) => {
   if (startDate && endDate && endDate < startDate) {
     ctx.addIssue({
@@ -179,21 +177,56 @@ const checkProjectDatesCombination = (
   }
 };
 
+const checkActualEndDateProjectStatusCombination = (
+  actualEndDate: Date | null | undefined,
+  projectStatus: ProjectStatus | undefined,
+  ctx: z.RefinementCtx
+) => {
+  if (
+    projectStatus &&
+    projectStatus !== ProjectStatus.Completed &&
+    actualEndDate !== null
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        "Actual end date must be null when project status is not completed.",
+    });
+  } else if (
+    projectStatus === ProjectStatus.Completed &&
+    actualEndDate === null
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Actual end date must be set when project status is completed.",
+    });
+  }
+};
+
 export const createProjectSchema = z.object({
   body: projectSchema
-    .partial({
+    .omit({
       actualEndDate: true,
+    })
+    .partial({
       employees: true,
     })
-    .superRefine(({ startDate, endDate, actualEndDate }, ctx) =>
-      checkProjectDatesCombination(startDate, endDate, actualEndDate, ctx)
+    .superRefine(({ startDate, endDate }, ctx) =>
+      checkProjectDatesCombination(startDate, endDate, endDate, ctx)
     ),
 });
 
 export const updateProjectSchema = z.object({
   body: projectSchema
     .partial()
-    .superRefine(({ startDate, endDate, actualEndDate }, ctx) =>
-      checkProjectDatesCombination(startDate, endDate, actualEndDate, ctx)
+    .superRefine(
+      ({ startDate, endDate, actualEndDate, projectStatus }, ctx) => {
+        checkProjectDatesCombination(startDate, endDate, actualEndDate, ctx);
+        checkActualEndDateProjectStatusCombination(
+          actualEndDate,
+          projectStatus,
+          ctx
+        );
+      }
     ),
 });
