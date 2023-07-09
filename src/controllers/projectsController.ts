@@ -206,6 +206,9 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 
     type Project = {
       name: string;
+      startDate: Date;
+      endDate: Date;
+      actualEndDate: Date | null;
       hourlyRate: number;
       numberOfEmployees: number;
       revenue: number;
@@ -219,6 +222,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
     let averageValue = 0;
     let averageRate = 0;
     let averageTeamSize = 0;
+    let weeksOverDeadline = 0;
     let salesChannelPercentage = {};
     let projectTypeCount = {};
     let projects: Project[] = [];
@@ -228,6 +232,9 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
         where: yearFilter,
         select: {
           name: true,
+          startDate: true,
+          endDate: true,
+          actualEndDate: true,
           hourlyRate: true,
           projectValueBAM: true,
           _count: true,
@@ -246,7 +253,16 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
       });
 
       projects = projectsData.map(
-        ({ name, hourlyRate, projectValueBAM, _count, employees }) => {
+        ({
+          name,
+          startDate,
+          endDate,
+          actualEndDate,
+          hourlyRate,
+          projectValueBAM,
+          _count,
+          employees,
+        }) => {
           const revenue = projectValueBAM;
           const cost = employees.reduce((sum, { partTime, employee }) => {
             const salary = employee.salary ?? 0;
@@ -258,7 +274,10 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
           }, 0);
           const profit = revenue - cost;
           return {
-            name: name,
+            name,
+            startDate,
+            endDate,
+            actualEndDate,
             hourlyRate: hourlyRate,
             numberOfEmployees: _count.employees,
             revenue,
@@ -268,22 +287,19 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
         }
       );
 
-      totalValue = projects.reduce((sum, project) => {
-        return sum + project.revenue;
-      }, 0);
+      totalValue = projects.reduce((sum, { revenue }) => sum + revenue, 0);
 
-      totalCost = projects.reduce((sum, project) => {
-        return sum + project.cost;
-      }, 0);
+      totalCost = projects.reduce((sum, { cost }) => sum + cost, 0);
 
-      const totalHourlyRate = projects.reduce((sum, project) => {
-        return sum + project.hourlyRate;
-      }, 0);
+      const totalHourlyRate = projects.reduce(
+        (sum, { hourlyRate }) => sum + hourlyRate,
+        0
+      );
 
-      const totalEmployees = projects.reduce((sum, project) => {
-        const numberOfEmployees = project.numberOfEmployees;
-        return sum + numberOfEmployees;
-      }, 0);
+      const totalEmployees = projects.reduce(
+        (sum, { numberOfEmployees }) => sum + numberOfEmployees,
+        0
+      );
 
       grossProfit = totalValue - totalCost;
 
@@ -292,6 +308,16 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
       averageRate = totalHourlyRate / totalProjects;
 
       averageTeamSize = totalEmployees / totalProjects;
+
+      weeksOverDeadline = projects.reduce((sum, { endDate, actualEndDate }) => {
+        if (actualEndDate && actualEndDate >= endDate) {
+          const diff = actualEndDate.getTime() - endDate.getTime();
+          const days = diff / (1000 * 3600 * 24);
+          const weeks = days / 7;
+          return sum + weeks;
+        }
+        return 0;
+      }, 0);
 
       const salesChannelCountData = await prisma.project.groupBy({
         where: yearFilter,
@@ -335,6 +361,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
       averageValue,
       averageRate,
       averageTeamSize,
+      weeksOverDeadline,
       salesChannelPercentage,
       projectTypeCount,
       projects,
