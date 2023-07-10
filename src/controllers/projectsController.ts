@@ -1,5 +1,12 @@
 import { RequestHandler } from "express";
-import { PrismaClient, Role, ProjectType, SalesChannel, ProjectStatus, Currency } from "@prisma/client";
+import {
+  PrismaClient,
+  Role,
+  ProjectType,
+  SalesChannel,
+  ProjectStatus,
+  Currency,
+} from "@prisma/client";
 import createHttpError from "http-errors";
 
 import { getEmployeeSalaryInBAM } from "../helpers";
@@ -57,7 +64,9 @@ export const getProjects: RequestHandler = async (req, res, next) => {
       }),
       projectType: projectType ? (projectType as ProjectType) : undefined,
       salesChannel: salesChannel ? (salesChannel as SalesChannel) : undefined,
-      projectStatus: projectStatus ? (projectStatus as ProjectStatus) : undefined,
+      projectStatus: projectStatus
+        ? (projectStatus as ProjectStatus)
+        : undefined,
     };
 
     const count = await prisma.project.count({ where });
@@ -79,7 +88,13 @@ export const getProjects: RequestHandler = async (req, res, next) => {
 
     const total = projects.length > 0 ? count : 0;
     const lastPage = take ? Math.ceil(total / Number(take)) : total > 0 ? 1 : 0;
-    const currentPage = page ? (Number(page) > lastPage ? 1 : Number(page)) : total > 0 ? 1 : 0;
+    const currentPage = page
+      ? Number(page) > lastPage
+        ? 1
+        : Number(page)
+      : total > 0
+      ? 1
+      : 0;
     const perPage = take ? Number(take) : total;
 
     return res.status(200).json({
@@ -223,8 +238,8 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
           endDate: true,
           actualEndDate: true,
           hourlyRate: true,
-          projectVelocity: true,
           projectValueBAM: true,
+          projectVelocity: true,
           _count: true,
           employees: {
             select: {
@@ -247,8 +262,8 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
           endDate,
           actualEndDate,
           hourlyRate,
-          projectVelocity,
           projectValueBAM,
+          projectVelocity,
           _count,
           employees,
         }) => {
@@ -256,7 +271,10 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
           const cost = employees.reduce((sum, { partTime, employee }) => {
             const salary = employee.salary ?? 0;
             const currency = employee.currency ?? Currency.BAM;
-            return sum + getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1);
+            return (
+              sum +
+              getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1)
+            );
           }, 0);
           const profit = revenue - cost;
           return {
@@ -264,8 +282,8 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
             startDate,
             endDate,
             actualEndDate,
-            hourlyRate: hourlyRate,
-            projectVelocity: projectVelocity,
+            hourlyRate,
+            projectVelocity,
             numberOfEmployees: _count.employees,
             revenue,
             cost,
@@ -278,11 +296,20 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 
       totalCost = projects.reduce((sum, { cost }) => sum + cost, 0);
 
-      const totalHourlyRate = projects.reduce((sum, { hourlyRate }) => sum + hourlyRate, 0);
+      const totalHourlyRate = projects.reduce(
+        (sum, { hourlyRate }) => sum + hourlyRate,
+        0
+      );
 
-      const totalProjectVelocity = projects.reduce((sum, { projectVelocity }) => sum + projectVelocity, 0);
+      const totalProjectVelocity = projects.reduce(
+        (sum, { projectVelocity }) => sum + projectVelocity,
+        0
+      );
 
-      const totalEmployees = projects.reduce((sum, { numberOfEmployees }) => sum + numberOfEmployees, 0);
+      const totalEmployees = projects.reduce(
+        (sum, { numberOfEmployees }) => sum + numberOfEmployees,
+        0
+      );
 
       grossProfit = totalValue - totalCost;
 
@@ -290,9 +317,9 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 
       averageRate = totalHourlyRate / totalProjects;
 
-      averageTeamSize = totalEmployees / totalProjects;
-
       averageVelocity = totalProjectVelocity / totalProjects;
+
+      averageTeamSize = totalEmployees / totalProjects;
 
       weeksOverDeadline = projects.reduce((sum, { endDate, actualEndDate }) => {
         if (actualEndDate && actualEndDate >= endDate) {
@@ -363,7 +390,11 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 export const createProject: RequestHandler = async (req, res, next) => {
   try {
     const loggedInUser = req.user;
-    if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, "This user is not allowed to create projects.");
+    if (loggedInUser?.role !== Role.Admin)
+      throw createHttpError(
+        403,
+        "This user is not allowed to create projects."
+      );
 
     const {
       name,
@@ -372,8 +403,8 @@ export const createProject: RequestHandler = async (req, res, next) => {
       endDate,
       projectType,
       hourlyRate,
-      projectVelocity,
       projectValueBAM,
+      projectVelocity,
       salesChannel,
       projectStatus,
       employees = [],
@@ -395,22 +426,33 @@ export const createProject: RequestHandler = async (req, res, next) => {
         description,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        actualEndDate: projectStatus === ProjectStatus.Completed ? new Date(endDate) : undefined,
+        actualEndDate:
+          projectStatus === ProjectStatus.Completed
+            ? new Date(endDate)
+            : undefined,
         projectType,
         hourlyRate,
-        projectVelocity,
         projectValueBAM,
+        projectVelocity,
         salesChannel,
         projectStatus,
         employees: {
-          create: employees.map(({ partTime, employeeId }: { partTime: boolean; employeeId: string }) => ({
-            partTime,
-            employee: {
-              connect: {
-                id: employeeId,
+          create: employees.map(
+            ({
+              partTime,
+              employeeId,
+            }: {
+              partTime: boolean;
+              employeeId: string;
+            }) => ({
+              partTime,
+              employee: {
+                connect: {
+                  id: employeeId,
+                },
               },
-            },
-          })),
+            })
+          ),
         },
       },
       include: {
@@ -435,7 +477,11 @@ export const createProject: RequestHandler = async (req, res, next) => {
 export const updateProject: RequestHandler = async (req, res, next) => {
   try {
     const loggedInUser = req.user;
-    if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, "This user is not allowed to update projects.");
+    if (loggedInUser?.role !== Role.Admin)
+      throw createHttpError(
+        403,
+        "This user is not allowed to update projects."
+      );
 
     const projectId = req.params.projectId;
     const project = await prisma.project.findUnique({
@@ -453,8 +499,8 @@ export const updateProject: RequestHandler = async (req, res, next) => {
       actualEndDate,
       projectType,
       hourlyRate,
-      projectVelocity,
       projectValueBAM,
+      projectVelocity,
       salesChannel,
       projectStatus,
       employees,
@@ -469,7 +515,8 @@ export const updateProject: RequestHandler = async (req, res, next) => {
           },
         },
       });
-      if (existingProject && existingProject.id !== projectId) throw createHttpError(409, "Project already exists.");
+      if (existingProject && existingProject.id !== projectId)
+        throw createHttpError(409, "Project already exists.");
     }
 
     const updatedProject = await prisma.project.update({
@@ -481,7 +528,11 @@ export const updateProject: RequestHandler = async (req, res, next) => {
         description,
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,
-        actualEndDate: actualEndDate ? new Date(actualEndDate) : actualEndDate === null ? null : undefined,
+        actualEndDate: actualEndDate
+          ? new Date(actualEndDate)
+          : actualEndDate === null
+          ? null
+          : undefined,
         projectType,
         hourlyRate,
         projectVelocity,
@@ -491,14 +542,22 @@ export const updateProject: RequestHandler = async (req, res, next) => {
         employees: employees
           ? {
               deleteMany: {},
-              create: employees.map(({ partTime, employeeId }: { partTime: boolean; employeeId: string }) => ({
-                partTime,
-                employee: {
-                  connect: {
-                    id: employeeId,
+              create: employees.map(
+                ({
+                  partTime,
+                  employeeId,
+                }: {
+                  partTime: boolean;
+                  employeeId: string;
+                }) => ({
+                  partTime,
+                  employee: {
+                    connect: {
+                      id: employeeId,
+                    },
                   },
-                },
-              })),
+                })
+              ),
             }
           : undefined,
       },
@@ -524,7 +583,11 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 export const deleteProject: RequestHandler = async (req, res, next) => {
   try {
     const loggedInUser = req.user;
-    if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, "This user is not allowed to delete projects.");
+    if (loggedInUser?.role !== Role.Admin)
+      throw createHttpError(
+        403,
+        "This user is not allowed to delete projects."
+      );
 
     const projectId = req.params.projectId;
     const project = await prisma.project.findUnique({

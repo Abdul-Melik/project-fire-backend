@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 import { ProjectType, SalesChannel, ProjectStatus } from "@prisma/client";
-import { generateDateRangeSchema, generatePositiveNumberSchemas } from "./schemaGenerators";
+import {
+  generateDateRangeSchema,
+  generatePositiveNumberSchemas,
+} from "./schemaGenerators";
 import { OrderByFieldProjectEnum } from "./schemaEnums";
 import {
   orderDirectionSchema,
@@ -28,41 +31,60 @@ const minDate = new Date("2000-01-01");
 
 const maxDate = new Date("2050-12-31");
 
-const startDateRangeSchema = generateDateRangeSchema("Start date", minDate, maxDate);
+const startDateRangeSchema = generateDateRangeSchema(
+  "Start date",
+  minDate,
+  maxDate
+);
 
-const endDateRangeSchema = generateDateRangeSchema("End date", minDate, maxDate);
+const endDateRangeSchema = generateDateRangeSchema(
+  "End date",
+  minDate,
+  maxDate
+);
 
-const actualEndDateRangeSchema = z.nullable(generateDateRangeSchema("Actual end date", minDate, maxDate));
+const actualEndDateRangeSchema = z.nullable(
+  generateDateRangeSchema("Actual end date", minDate, maxDate)
+);
 
 const projectTypeSchema = z.nativeEnum(ProjectType, {
   errorMap: () => ({ message: "Project type is not valid." }),
 });
 
-const extendedProjectTypeSchema = z.union([z.literal(""), z.nativeEnum(ProjectType)], {
-  errorMap: () => ({ message: "Project type is not valid." }),
-});
+const extendedProjectTypeSchema = z.union(
+  [z.literal(""), z.nativeEnum(ProjectType)],
+  {
+    errorMap: () => ({ message: "Project type is not valid." }),
+  }
+);
 
 const hourlyRateSchema = generatePositiveNumberSchemas("Hourly rate");
 
-const projectVelocitySchema = generatePositiveNumberSchemas("Project velocity");
-
 const projectValueBAMSchema = generatePositiveNumberSchemas("Project value");
+
+const projectVelocitySchema = generatePositiveNumberSchemas("Project velocity");
 
 const salesChannelSchema = z.nativeEnum(SalesChannel, {
   errorMap: () => ({ message: "Sales channel is not valid." }),
 });
 
-const extendedSalesChannelSchema = z.union([z.literal(""), z.nativeEnum(SalesChannel)], {
-  errorMap: () => ({ message: "Sales channel is not valid." }),
-});
+const extendedSalesChannelSchema = z.union(
+  [z.literal(""), z.nativeEnum(SalesChannel)],
+  {
+    errorMap: () => ({ message: "Sales channel is not valid." }),
+  }
+);
 
 const projectStatusSchema = z.nativeEnum(ProjectStatus, {
   errorMap: () => ({ message: "Project status is not valid." }),
 });
 
-const extendedProjectStatusSchema = z.union([z.literal(""), z.nativeEnum(ProjectStatus)], {
-  errorMap: () => ({ message: "Project status is not valid." }),
-});
+const extendedProjectStatusSchema = z.union(
+  [z.literal(""), z.nativeEnum(ProjectStatus)],
+  {
+    errorMap: () => ({ message: "Project status is not valid." }),
+  }
+);
 
 const employeeSchema = z.object(
   {
@@ -92,9 +114,12 @@ const employeesSchema = z
     }
   });
 
-const orderByFieldProjectSchema = z.union([z.literal(""), OrderByFieldProjectEnum], {
-  errorMap: () => ({ message: "Order by field is not valid." }),
-});
+const orderByFieldProjectSchema = z.union(
+  [z.literal(""), OrderByFieldProjectEnum],
+  {
+    errorMap: () => ({ message: "Order by field is not valid." }),
+  }
+);
 
 const projectSchema = z.object({
   name: nameSchema,
@@ -104,8 +129,8 @@ const projectSchema = z.object({
   actualEndDate: actualEndDateRangeSchema,
   projectType: projectTypeSchema,
   hourlyRate: hourlyRateSchema,
-  projectVelocity: projectVelocitySchema,
   projectValueBAM: projectValueBAMSchema,
+  projectVelocity: projectVelocitySchema,
   salesChannel: salesChannelSchema,
   projectStatus: projectStatusSchema,
   employees: employeesSchema,
@@ -160,12 +185,20 @@ const checkActualEndDateProjectStatusCombination = (
   projectStatus: ProjectStatus | undefined,
   ctx: z.RefinementCtx
 ) => {
-  if (projectStatus && projectStatus !== ProjectStatus.Completed && actualEndDate !== null) {
+  if (
+    projectStatus &&
+    projectStatus !== ProjectStatus.Completed &&
+    actualEndDate !== null
+  ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Actual end date must be null when project status is not completed.",
+      message:
+        "Actual end date must be null when project status is not completed.",
     });
-  } else if (projectStatus === ProjectStatus.Completed && actualEndDate === null) {
+  } else if (
+    projectStatus === ProjectStatus.Completed &&
+    actualEndDate === null
+  ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "Actual end date must be set when project status is completed.",
@@ -181,12 +214,22 @@ export const createProjectSchema = z.object({
     .partial({
       employees: true,
     })
-    .superRefine(({ startDate, endDate }, ctx) => checkProjectDatesCombination(startDate, endDate, endDate, ctx)),
+    .superRefine(({ startDate, endDate }, ctx) =>
+      checkProjectDatesCombination(startDate, endDate, endDate, ctx)
+    ),
 });
 
 export const updateProjectSchema = z.object({
-  body: projectSchema.partial().superRefine(({ startDate, endDate, actualEndDate, projectStatus }, ctx) => {
-    checkProjectDatesCombination(startDate, endDate, actualEndDate, ctx);
-    checkActualEndDateProjectStatusCombination(actualEndDate, projectStatus, ctx);
-  }),
+  body: projectSchema
+    .partial()
+    .superRefine(
+      ({ startDate, endDate, actualEndDate, projectStatus }, ctx) => {
+        checkProjectDatesCombination(startDate, endDate, actualEndDate, ctx);
+        checkActualEndDateProjectStatusCombination(
+          actualEndDate,
+          projectStatus,
+          ctx
+        );
+      }
+    ),
 });

@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-export const OrderByFieldEmployeeEnum = z.enum(["firstName", "lastName", "department", "salary", "techStack"]);
+export const OrderByFieldEmployeeEnum = z.enum([
+  "firstName",
+  "lastName",
+  "department",
+  "salary",
+  "techStack",
+]);
 
 export const OrderByFieldProjectEnum = z.enum([
   "name",
@@ -9,8 +15,8 @@ export const OrderByFieldProjectEnum = z.enum([
   "endDate",
   "projectType",
   "hourlyRate",
-  "projectVelocity",
   "projectValueBAM",
+  "projectVelocity",
   "salesChannel",
   "projectStatus",
   "employeesCount",
