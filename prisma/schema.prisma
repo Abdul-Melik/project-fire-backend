@@ -124,6 +124,7 @@ model Project {
   actualEndDate   DateTime?         @db.Date
   projectType     ProjectType
   hourlyRate      Float
+  projectVelocity Float
   projectValueBAM Float
   salesChannel    SalesChannel
   projectStatus   ProjectStatus
