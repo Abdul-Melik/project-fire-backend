@@ -19,6 +19,7 @@ router.get(
   validateResourceMiddleware(getEmployeesSchema),
   employeesController.getEmployees
 );
+router.get("/info", employeesController.getEmployeesInfo);
 router.get("/:employeeId", employeesController.getEmployeeById);
 router.post(
   "/",

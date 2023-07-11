@@ -12,6 +12,21 @@ import deleteImage from "../utils/spacesDelete";
 
 const prisma = new PrismaClient();
 
+const months = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 // @desc    Get Employees
 // @route   GET /api/employees
 // @access  Private
@@ -183,6 +198,80 @@ export const getEmployeeById: RequestHandler = async (req, res, next) => {
   }
 };
 
+// @desc    Get Employees Info
+// @route   GET /api/employees/info
+// @access  Private
+export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
+  try {
+    const { year } = req.query;
+
+    const yearStartDate = new Date(`${year}-01-01`);
+    const yearEndDate = new Date(`${year}-12-31`);
+
+    const yearFilter = {};
+
+    const employees = await prisma.employee.findMany({
+      where: yearFilter,
+      select: {
+        isEmployed: true,
+        hiringDate: true,
+        terminationDate: true,
+      },
+    });
+
+    type EmployeesInfo = {
+      month: string;
+      totalHoursAvailable: number;
+    };
+
+    const employeesInfo: EmployeesInfo[] = [];
+
+    months.forEach((month, index) => {
+      const startDateMonth = new Date(Number(year), index);
+      const endDateMonth = new Date(Number(year), index + 1);
+
+      let totalDaysEmployed = 0;
+
+      employees.forEach(({ hiringDate, terminationDate }) => {
+        const startDate =
+          hiringDate < endDateMonth &&
+          (!terminationDate || startDateMonth < terminationDate)
+            ? hiringDate < startDateMonth
+              ? startDateMonth
+              : hiringDate
+            : null;
+
+        const endDate =
+          hiringDate < endDateMonth &&
+          (!terminationDate || startDateMonth < terminationDate)
+            ? !terminationDate || endDateMonth < terminationDate
+              ? endDateMonth
+              : terminationDate
+            : null;
+
+        if (startDate && endDate) {
+          let currentDate = startDate;
+          while (currentDate < endDate) {
+            if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+              totalDaysEmployed++;
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+        }
+      });
+
+      employeesInfo.push({
+        month,
+        totalHoursAvailable: totalDaysEmployed * 8,
+      });
+    });
+
+    return res.status(200).json(employeesInfo);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Create Employee
 // @route   POST /api/employees
 // @access  Private
@@ -204,6 +293,9 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
       imageData = file.location;
     }
 
+    const hiringDate = new Date();
+    hiringDate.setHours(0, 0, 0, 0);
+
     const employee = await prisma.employee.create({
       data: {
         firstName,
@@ -213,7 +305,7 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
         salary: Number(salary),
         currency,
         techStack,
-        hiringDate: new Date(),
+        hiringDate,
       },
     });
 
@@ -264,9 +356,13 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
     }
 
     let terminationDate;
-    if (isEmployed === "false" && isEmployed !== employee.isEmployed.toString())
+    if (
+      isEmployed === "false" &&
+      isEmployed !== employee.isEmployed.toString()
+    ) {
       terminationDate = new Date();
-    else if (
+      terminationDate!.setHours(0, 0, 0, 0);
+    } else if (
       isEmployed === "true" &&
       isEmployed !== employee.isEmployed.toString()
     )
@@ -282,7 +378,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
       data: {
         firstName,
         lastName,
-        image: imageData,
+        image: imageData ? imageData : undefined,
         department,
         salary: salary ? Number(salary) : undefined,
         currency,
