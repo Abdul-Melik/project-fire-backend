@@ -212,16 +212,27 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
 
     const employees = await prisma.employee.findMany({
       where: yearFilter,
-      select: {
-        isEmployed: true,
-        hiringDate: true,
-        terminationDate: true,
+      include: {
+        projects: {
+          select: {
+            partTime: true,
+            project: {
+              select: {
+                id: true,
+                name: true,
+                startDate: true,
+                endDate: true,
+              },
+            },
+          },
+        },
       },
     });
 
     type EmployeesInfo = {
       month: string;
       totalHoursAvailable: number;
+      totalHoursBilled: number;
     };
 
     const employeesInfo: EmployeesInfo[] = [];
@@ -230,9 +241,10 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
       const startDateMonth = new Date(Number(year), index);
       const endDateMonth = new Date(Number(year), index + 1);
 
-      let totalDaysEmployed = 0;
+      let totalDaysAvailable = 0;
+      let totalDaysBilled = 0;
 
-      employees.forEach(({ hiringDate, terminationDate }) => {
+      employees.forEach(({ hiringDate, terminationDate, projects }) => {
         const startDate =
           hiringDate < endDateMonth &&
           (!terminationDate || startDateMonth < terminationDate)
@@ -251,10 +263,41 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
 
         if (startDate && endDate) {
           let currentDate = startDate;
+
           while (currentDate < endDate) {
             if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
-              totalDaysEmployed++;
+              totalDaysAvailable++;
+
+              let fullTimeProjectsFound = 0;
+              let partTimeProjectsFound = 0;
+
+              const foundProjects = projects.filter(({ project }) => {
+                const startDate = project.startDate;
+                const endDate = project.endDate;
+                return startDate <= currentDate && currentDate <= endDate;
+              });
+
+              if (foundProjects.length > 0) {
+                foundProjects.forEach(({ partTime }) => {
+                  if (!partTime) {
+                    fullTimeProjectsFound++;
+                    if (fullTimeProjectsFound === 1) {
+                      return;
+                    }
+                  } else {
+                    partTimeProjectsFound++;
+                    if (partTimeProjectsFound === 2) {
+                      return;
+                    }
+                  }
+                });
+              }
+
+              if (fullTimeProjectsFound === 1 || partTimeProjectsFound === 2)
+                totalDaysBilled++;
+              else if (partTimeProjectsFound === 1) totalDaysBilled += 0.5;
             }
+
             currentDate.setDate(currentDate.getDate() + 1);
           }
         }
@@ -262,7 +305,8 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
 
       employeesInfo.push({
         month,
-        totalHoursAvailable: totalDaysEmployed * 8,
+        totalHoursAvailable: totalDaysAvailable * 8,
+        totalHoursBilled: totalDaysBilled * 8,
       });
     });
 
