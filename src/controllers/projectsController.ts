@@ -328,7 +328,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
           const weeks = days / 7;
           return sum + weeks;
         }
-        return 0;
+        return sum;
       }, 0);
 
       const salesChannelCountData = await prisma.project.groupBy({
