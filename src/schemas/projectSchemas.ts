@@ -10,22 +10,12 @@ import {
   orderDirectionSchema,
   takeSchema,
   pageSchema,
+  yearSchema,
   nameSchema,
   descriptionSchema,
   startDateSchema,
   endDateSchema,
 } from "./commonSchemas";
-
-const yearSchema = z.string().superRefine((year, ctx) => {
-  const parsedValue = Number(year);
-  const isIntegerString = Number.isInteger(parsedValue);
-  if (!isIntegerString) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Year must have an integer value.",
-    });
-  }
-});
 
 const minDate = new Date("2000-01-01");
 

@@ -7,6 +7,7 @@ import {
   orderDirectionSchema,
   takeSchema,
   pageSchema,
+  yearSchema,
   firstNameSchema,
   lastNameSchema,
 } from "./commonSchemas";
@@ -145,6 +146,14 @@ export const getEmployeesSchema = z.object({
       orderDirection: orderDirectionSchema,
       take: takeSchema,
       page: pageSchema,
+    })
+    .partial(),
+});
+
+export const getEmployeesInfoSchema = z.object({
+  query: z
+    .object({
+      year: yearSchema,
     })
     .partial(),
 });

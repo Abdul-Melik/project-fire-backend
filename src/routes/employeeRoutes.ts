@@ -5,6 +5,7 @@ import imageUploadMiddleware from "../middleware/imageUploadMiddleware";
 import validateResourceMiddleware from "../middleware/validateResourceMiddleware";
 import {
   getEmployeesSchema,
+  getEmployeesInfoSchema,
   createEmployeeSchema,
   updateEmployeeSchema,
 } from "../schemas/employeeSchemas";
@@ -19,7 +20,11 @@ router.get(
   validateResourceMiddleware(getEmployeesSchema),
   employeesController.getEmployees
 );
-router.get("/info", employeesController.getEmployeesInfo);
+router.get(
+  "/info",
+  validateResourceMiddleware(getEmployeesInfoSchema),
+  employeesController.getEmployeesInfo
+);
 router.get("/:employeeId", employeesController.getEmployeeById);
 router.post(
   "/",

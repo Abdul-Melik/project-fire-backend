@@ -65,6 +65,17 @@ export const userSchema = z.object({
   role: roleSchema,
 });
 
+export const yearSchema = z.string().superRefine((year, ctx) => {
+  const parsedValue = Number(year);
+  const isIntegerString = Number.isInteger(parsedValue);
+  if (!isIntegerString) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Year must have an integer value.",
+    });
+  }
+});
+
 export const nameSchema = generateNameSchema("Name", 3, 15);
 
 export const descriptionSchema = generateNonEmptyStringSchema("Description");

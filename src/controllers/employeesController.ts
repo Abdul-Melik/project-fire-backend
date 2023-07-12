@@ -205,13 +205,7 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
   try {
     const { year } = req.query;
 
-    const yearStartDate = new Date(`${year}-01-01`);
-    const yearEndDate = new Date(`${year}-12-31`);
-
-    const yearFilter = {};
-
     const employees = await prisma.employee.findMany({
-      where: yearFilter,
       include: {
         projects: {
           select: {
