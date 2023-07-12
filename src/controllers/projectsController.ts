@@ -207,6 +207,10 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
     let grossProfit = 0;
     let averageValue = 0;
     let averageRate = 0;
+    let actualRevenue = 0;
+    let actualMargin = 0;
+    let actualAvgMargin = 0;
+    let plannedCost = 0;
     let averageVelocity = 0;
     let averageTeamSize = 0;
     let weeksOverDeadline = 0;
@@ -278,13 +282,21 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 
       totalCost = projects.reduce((sum, { cost }) => sum + cost, 0);
 
+      actualRevenue = projects.reduce((sum, { cost }) => sum + cost, 0);
+
+      plannedCost = projects.reduce((sum, { cost }) => sum + cost, 0);
+
+      actualMargin = ((actualRevenue - plannedCost) / plannedCost) * 100;
+
+      actualAvgMargin = (actualRevenue - plannedCost) / totalProjects;
+
       const totalHourlyRate = projects.reduce((sum, { hourlyRate }) => sum + hourlyRate, 0);
 
       const totalProjectVelocity = projects.reduce((sum, { projectVelocity }) => sum + projectVelocity, 0);
 
       const totalEmployees = projects.reduce((sum, { numberOfEmployees }) => sum + numberOfEmployees, 0);
 
-      grossProfit = totalValue - totalCost;
+      grossProfit = actualRevenue - plannedCost;
 
       averageValue = totalValue / totalProjects;
 
@@ -344,8 +356,12 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
       totalCost,
       grossProfit,
       averageValue,
+      actualRevenue,
+      actualMargin,
+      actualAvgMargin,
       averageRate,
       averageVelocity,
+      plannedCost,
       averageTeamSize,
       weeksOverDeadline,
       salesChannelPercentage,

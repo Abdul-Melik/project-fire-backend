@@ -156,6 +156,7 @@ model ExpenseCategory {
 
 model Expense {
   id                String          @id @default(auto()) @map("_id") @db.ObjectId
+  project           Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   year              Int
   month             Month
   plannedExpense    Float?
