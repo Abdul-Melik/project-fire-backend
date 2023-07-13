@@ -235,6 +235,8 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
       const startDateMonth = new Date(Number(year), index);
       const endDateMonth = new Date(Number(year), index + 1);
 
+      const formattedMonth = month + ": " + startDateMonth.toLocaleDateString();
+
       let totalDaysAvailable = 0;
       let totalDaysBilled = 0;
 
@@ -298,7 +300,7 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
       });
 
       employeesInfo.push({
-        month,
+        month: formattedMonth,
         totalHoursAvailable: totalDaysAvailable * 8,
         totalHoursBilled: totalDaysBilled * 8,
       });
