@@ -6,7 +6,7 @@ Package versions:
 
 dependencies
 
-    "@prisma/client": "^4.16.2",
+    "@prisma/client": "^5.0.0",
     "aws-sdk": "^2.1413.0",
     "bcrypt": "^5.1.0",
     "cookie-parser": "^1.4.6",
@@ -26,7 +26,7 @@ dependencies
 
 devDependencies:
 
-    "@swc/core": "^1.3.60",
+    "@swc/core": "^1.3.69",
     "@types/bcrypt": "^5.0.0",
     "@types/cookie-parser": "^1.4.3",
     "@types/cors": "^2.8.13",
@@ -39,8 +39,8 @@ devDependencies:
     "@types/nodemailer": "^6.4.7",
     "@types/swagger-jsdoc": "^6.0.1",
     "@types/swagger-ui-express": "^4.1.3",
-    "nodemon": "^2.0.22",
-    "prettier-plugin-prisma": "^4.13.0",
-    "prisma": "^4.16.2",
+    "nodemon": "^3.0.1",
+    "prettier-plugin-prisma": "^4.17.0",
+    "prisma": "^5.0.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
