@@ -56,9 +56,7 @@ export const getExpenseById: RequestHandler = async (req, res, next) => {
     });
     if (!expense) throw createHttpError(404, "Expense not found.");
 
-    return res
-      .status(200)
-      .json(excludeExpenseInfo(expense, ["expenseCategoryId"]));
+    return res.status(200).json(excludeExpenseInfo(expense, ["expenseCategoryId"]));
   } catch (error) {
     next(error);
   }
@@ -69,59 +67,175 @@ export const getExpenseById: RequestHandler = async (req, res, next) => {
 // @access  Private
 export const getExpensesInfo: RequestHandler = async (req, res, next) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, year, month, plannedExpense, actualExpense, expenseCategoryId } = req.query;
 
-    let expenses;
-
-    expenses = await prisma.expense.groupBy({
-      by: ["year", "month"],
+    const expenses = await prisma.expense.findMany({
+      include: {
+        expenseCategory: true,
+      },
       where: {
         year: {
-          gte: startDate
-            ? new Date(startDate as string).getFullYear()
-            : undefined,
+          gte: startDate ? new Date(startDate as string).getFullYear() : undefined,
           lte: endDate ? new Date(endDate as string).getFullYear() : undefined,
         },
         month: {
           in: months
             .filter((_, index) => {
-              const startMonth = startDate
-                ? new Date(startDate as string).getMonth()
-                : 0;
-              const endMonth = endDate
-                ? new Date(endDate as string).getMonth()
-                : months.length - 1;
+              const startMonth = startDate ? new Date(startDate as string).getMonth() : 0;
+              const endMonth = endDate ? new Date(endDate as string).getMonth() : months.length - 1;
               return index >= startMonth && index <= endMonth;
             })
             .map((month) => month as Month),
         },
       },
-      _sum: {
-        plannedExpense: true,
-        actualExpense: true,
-      },
     });
 
-    expenses = expenses.map((expense) => ({
-      year: expense.year,
-      month: expense.month,
-      plannedExpense: expense._sum.plannedExpense ?? 0,
-      actualExpense: expense._sum.actualExpense ?? 0,
-    }));
+    const marketingExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Marketing");
+    const hrExpenses = expenses.filter((expense) => expense.expenseCategory.name === "HR costs");
+    const officeExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Office cost");
+    const salesExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Sales costs");
+    const otherExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Other costs");
+    const indirectExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Indirect");
 
-    const totalPlannedExpense = expenses.reduce(
-      (total, expense) => total + expense.plannedExpense,
-      0
-    );
-    const totalActualExpense = expenses.reduce(
-      (total, expense) => total + expense.actualExpense,
-      0
-    );
-    const netProfit = totalPlannedExpense - totalActualExpense;
+    const currentYear = Number(year) || new Date().getFullYear();
 
-    return res
-      .status(200)
-      .json({ totalPlannedExpense, totalActualExpense, netProfit, expenses });
+    const marketingTotalActualExpense = marketingExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const hrTotalActualExpense = hrExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const officeTotalActualExpense = officeExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const salesTotalActualExpense = salesExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const otherTotalActualExpense = otherExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const indirectTotalActualExpense = indirectExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const marketingTotalPlannedExpense = marketingExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const hrTotalPlannedExpense = hrExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const officeTotalPlannedExpense = officeExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const salesTotalPlannedExpense = salesExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const otherTotalPlannedExpense = otherExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const indirectTotalPlannedExpense = indirectExpenses.reduce((total, expense) => {
+      if (expense.year === currentYear) {
+        return total + (expense.actualExpense ?? 0);
+      }
+      return total;
+    }, 0);
+
+    const totalActualExpenses =
+      marketingTotalActualExpense +
+      otherTotalActualExpense +
+      salesTotalActualExpense +
+      hrTotalActualExpense +
+      officeTotalActualExpense +
+      indirectTotalActualExpense;
+
+    const totalPlannedExpenses =
+      marketingTotalPlannedExpense +
+      otherTotalPlannedExpense +
+      salesTotalPlannedExpense +
+      hrTotalPlannedExpense +
+      officeTotalPlannedExpense +
+      indirectTotalPlannedExpense;
+
+    const totalExpensesActual = months.map((month) => {
+      const expensesForMonth = expenses.filter((expense) => expense.month === month && expense.year === currentYear);
+      const totalExpenseForMonth = expensesForMonth.reduce((total, expense) => total + (expense.actualExpense ?? 0), 0);
+      return { month, totalActualExpense: totalExpenseForMonth };
+    });
+
+    const totalExpensesPlanned = months.map((month) => {
+      const expensesForMonth = expenses.filter((expense) => expense.month === month && expense.year === currentYear);
+      const totalExpenseForMonth = expensesForMonth.reduce(
+        (total, expense) => total + (expense.plannedExpense ?? 0),
+        0
+      );
+      return { month, totalPlannedExpense: totalExpenseForMonth };
+    });
+
+    const monthsWithExpenses = totalExpensesActual.map((expense) => expense.month);
+    const monthsWithPlannedExpenses = totalExpensesPlanned.map((expense) => expense.month);
+
+    return res.status(200).json({
+      marketingTotalActualExpense,
+      hrTotalActualExpense,
+      officeTotalActualExpense,
+      year,
+      month,
+      plannedExpense,
+      actualExpense,
+      expenseCategoryId,
+      salesTotalActualExpense,
+      otherTotalActualExpense,
+      indirectTotalActualExpense,
+      monthsWithPlannedExpenses,
+      monthsWithExpenses,
+      totalExpensesActual,
+      totalExpensesPlanned,
+      totalActualExpenses,
+      totalPlannedExpenses,
+    });
   } catch (error) {
     next(error);
   }
@@ -133,14 +247,9 @@ export const getExpensesInfo: RequestHandler = async (req, res, next) => {
 export const createExpense: RequestHandler = async (req, res, next) => {
   try {
     const loggedInUser = req.user;
-    if (loggedInUser?.role !== Role.Admin)
-      throw createHttpError(
-        403,
-        "This user is not allowed to create expenses."
-      );
+    if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, "This user is not allowed to create expenses.");
 
-    const { year, month, plannedExpense, actualExpense, expenseCategory } =
-      req.body;
+    const { year, month, plannedExpense, actualExpense, expenseCategory } = req.body;
 
     const existingExpenseCategory = await prisma.expenseCategory.findFirst({
       where: {
@@ -150,8 +259,7 @@ export const createExpense: RequestHandler = async (req, res, next) => {
         },
       },
     });
-    if (!existingExpenseCategory)
-      throw createHttpError(404, "Expense category not found.");
+    if (!existingExpenseCategory) throw createHttpError(404, "Expense category not found.");
 
     const existingExpense = await prisma.expense.findUnique({
       where: {
@@ -191,19 +299,13 @@ export const createExpense: RequestHandler = async (req, res, next) => {
         const cost = employees.reduce((sum, { partTime, employee }) => {
           const salary = employee.salary ?? 0;
           const currency = employee.currency ?? "BAM";
-          return (
-            sum +
-            getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1)
-          );
+          return sum + getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1);
         }, 0);
         return total + cost;
       }, 0);
     }
 
-    const finalPlannedExpense =
-      expenseCategory.toLowerCase() === "direct"
-        ? calculatedPlannedExpense
-        : plannedExpense;
+    const finalPlannedExpense = expenseCategory.toLowerCase() === "direct" ? calculatedPlannedExpense : plannedExpense;
 
     const expense = await prisma.expense.create({
       data: {
@@ -218,9 +320,7 @@ export const createExpense: RequestHandler = async (req, res, next) => {
       },
     });
 
-    return res
-      .status(201)
-      .json(excludeExpenseInfo(expense, ["expenseCategoryId"]));
+    return res.status(201).json(excludeExpenseInfo(expense, ["expenseCategoryId"]));
   } catch (error) {
     next(error);
   }
@@ -232,11 +332,7 @@ export const createExpense: RequestHandler = async (req, res, next) => {
 export const updateExpense: RequestHandler = async (req, res, next) => {
   try {
     const loggedInUser = req.user;
-    if (loggedInUser?.role !== Role.Admin)
-      throw createHttpError(
-        403,
-        "This user is not allowed to update expenses."
-      );
+    if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, "This user is not allowed to update expenses.");
 
     const expenseId = req.params.expenseId;
     const expense = await prisma.expense.findUnique({
@@ -253,8 +349,7 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
     });
     if (!expense) throw createHttpError(404, "Expense not found.");
 
-    const { year, month, plannedExpense, actualExpense, expenseCategory } =
-      req.body;
+    const { year, month, plannedExpense, actualExpense, expenseCategory } = req.body;
 
     const searchYear = year || expense.year;
     const searchMonth = month || expense.month;
@@ -268,8 +363,7 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
         },
       },
     });
-    if (!existingExpenseCategory)
-      throw createHttpError(404, "Expense category not found.");
+    if (!existingExpenseCategory) throw createHttpError(404, "Expense category not found.");
 
     const existingExpense = await prisma.expense.findUnique({
       where: {
@@ -280,8 +374,7 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
         },
       },
     });
-    if (existingExpense && existingExpense.id !== expenseId)
-      throw createHttpError(409, "Expense already exists.");
+    if (existingExpense && existingExpense.id !== expenseId) throw createHttpError(409, "Expense already exists.");
 
     let calculatedPlannedExpense = 0;
 
@@ -314,19 +407,13 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
         const cost = employees.reduce((sum, { partTime, employee }) => {
           const salary = employee.salary ?? 0;
           const currency = employee.currency ?? "BAM";
-          return (
-            sum +
-            getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1)
-          );
+          return sum + getEmployeeSalaryInBAM(salary, currency) * (partTime ? 0.5 : 1);
         }, 0);
         return total + cost;
       }, 0);
     }
 
-    const finalPlannedExpense =
-      searchName.toLowerCase() === "direct"
-        ? calculatedPlannedExpense
-        : plannedExpense;
+    const finalPlannedExpense = searchName.toLowerCase() === "direct" ? calculatedPlannedExpense : plannedExpense;
 
     const updatedExpense = await prisma.expense.update({
       where: {
@@ -344,9 +431,7 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
       },
     });
 
-    return res
-      .status(200)
-      .json(excludeExpenseInfo(updatedExpense, ["expenseCategoryId"]));
+    return res.status(200).json(excludeExpenseInfo(updatedExpense, ["expenseCategoryId"]));
   } catch (error) {
     next(error);
   }
@@ -358,11 +443,7 @@ export const updateExpense: RequestHandler = async (req, res, next) => {
 export const deleteExpense: RequestHandler = async (req, res, next) => {
   try {
     const loggedInUser = req.user;
-    if (loggedInUser?.role !== Role.Admin)
-      throw createHttpError(
-        403,
-        "This user is not allowed to delete expenses."
-      );
+    if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, "This user is not allowed to delete expenses.");
 
     const expenseId = req.params.expenseId;
     const expense = await prisma.expense.findUnique({

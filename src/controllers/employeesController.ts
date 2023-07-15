@@ -1,11 +1,5 @@
 import { RequestHandler } from "express";
-import {
-  PrismaClient,
-  Role,
-  Currency,
-  Department,
-  TechStack,
-} from "@prisma/client";
+import { PrismaClient, Role, Currency, Department, TechStack } from "@prisma/client";
 import createHttpError from "http-errors";
 
 import deleteImage from "../utils/spacesDelete";
@@ -143,13 +137,7 @@ export const getEmployees: RequestHandler = async (req, res, next) => {
 
     const total = employees.length > 0 ? count : 0;
     const lastPage = take ? Math.ceil(total / Number(take)) : total > 0 ? 1 : 0;
-    const currentPage = page
-      ? Number(page) > lastPage
-        ? 1
-        : Number(page)
-      : total > 0
-      ? 1
-      : 0;
+    const currentPage = page ? (Number(page) > lastPage ? 1 : Number(page)) : total > 0 ? 1 : 0;
     const perPage = take ? Number(take) : total;
 
     return res.status(200).json({
@@ -227,6 +215,10 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
       month: string;
       totalHoursAvailable: number;
       totalHoursBilled: number;
+      developmentCost: number;
+      designCost: number;
+      otherCost: number;
+      totalCost: number;
     };
 
     const employeesInfo: EmployeesInfo[] = [];
@@ -239,19 +231,21 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
 
       let totalDaysAvailable = 0;
       let totalDaysBilled = 0;
+      let developmentCost = 0;
+      let designCost = 0;
+      let otherCost = 0;
+      let totalCost = 0;
 
       employees.forEach(({ hiringDate, terminationDate, projects }) => {
         const startDate =
-          hiringDate < endDateMonth &&
-          (!terminationDate || startDateMonth < terminationDate)
+          hiringDate < endDateMonth && (!terminationDate || startDateMonth < terminationDate)
             ? hiringDate < startDateMonth
               ? startDateMonth
               : hiringDate
             : null;
 
         const endDate =
-          hiringDate < endDateMonth &&
-          (!terminationDate || startDateMonth < terminationDate)
+          hiringDate < endDateMonth && (!terminationDate || startDateMonth < terminationDate)
             ? !terminationDate || endDateMonth < terminationDate
               ? endDateMonth
               : terminationDate
@@ -289,8 +283,7 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
                 });
               }
 
-              if (fullTimeProjectsFound === 1 || partTimeProjectsFound === 2)
-                totalDaysBilled++;
+              if (fullTimeProjectsFound === 1 || partTimeProjectsFound === 2) totalDaysBilled++;
               else if (partTimeProjectsFound === 1) totalDaysBilled += 0.5;
             }
 
@@ -299,10 +292,44 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
         }
       });
 
+      developmentCost = employees
+        .filter((employee) => employee.department === Department.Development && employee.projects.length > 0)
+        .reduce(
+          (sum, employee) =>
+            sum + (employee.projects.some((proj) => proj.partTime) ? employee.salary / 2 : employee.salary),
+          0
+        );
+
+      designCost = employees
+        .filter((employee) => employee.department === Department.Design && employee.projects.length > 0)
+        .reduce(
+          (sum, employee) =>
+            sum + (employee.projects.some((proj) => proj.partTime) ? employee.salary / 2 : employee.salary),
+          0
+        );
+
+      otherCost = employees
+        .filter(
+          (employee) =>
+            (employee.department === Department.Administration || employee.department === Department.Management) &&
+            employee.projects.length > 0
+        )
+        .reduce(
+          (sum, employee) =>
+            sum + (employee.projects.some((proj) => proj.partTime) ? employee.salary / 2 : employee.salary),
+          0
+        );
+
+      totalCost = otherCost + designCost + developmentCost;
+
       employeesInfo.push({
-        month: formattedMonth,
+        month,
         totalHoursAvailable: totalDaysAvailable * 8,
         totalHoursBilled: totalDaysBilled * 8,
+        developmentCost,
+        designCost,
+        otherCost,
+        totalCost,
       });
     });
 
@@ -311,21 +338,15 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
     next(error);
   }
 };
-
 // @desc    Create Employee
 // @route   POST /api/employees
 // @access  Private
 export const createEmployee: RequestHandler = async (req, res, next) => {
   try {
     const loggedInUser = req.user;
-    if (loggedInUser?.role !== Role.Admin)
-      throw createHttpError(
-        403,
-        "This user is not allowed to create employees."
-      );
+    if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, "This user is not allowed to create employees.");
 
-    const { firstName, lastName, department, salary, currency, techStack } =
-      req.body;
+    const { firstName, lastName, department, salary, currency, techStack } = req.body;
 
     let imageData: string | undefined;
     if (req.file) {
@@ -361,11 +382,7 @@ export const createEmployee: RequestHandler = async (req, res, next) => {
 export const updateEmployee: RequestHandler = async (req, res, next) => {
   try {
     const loggedInUser = req.user;
-    if (loggedInUser?.role !== Role.Admin)
-      throw createHttpError(
-        403,
-        "This user is not allowed to update employees."
-      );
+    if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, "This user is not allowed to update employees.");
 
     const employeeId = req.params.employeeId;
     const employee = await prisma.employee.findUnique({
@@ -375,15 +392,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
     });
     if (!employee) throw createHttpError(404, "Employee not found.");
 
-    const {
-      firstName,
-      lastName,
-      department,
-      salary,
-      currency,
-      techStack,
-      isEmployed,
-    } = req.body;
+    const { firstName, lastName, department, salary, currency, techStack, isEmployed } = req.body;
 
     let imageData = employee.image;
     if (req.file) {
@@ -396,20 +405,11 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
     }
 
     let terminationDate;
-    if (
-      isEmployed === "false" &&
-      isEmployed !== employee.isEmployed.toString()
-    ) {
+    if (isEmployed === "false" && isEmployed !== employee.isEmployed.toString()) {
       terminationDate = new Date();
       terminationDate!.setHours(0, 0, 0, 0);
-    } else if (
-      isEmployed === "true" &&
-      isEmployed !== employee.isEmployed.toString()
-    )
-      throw createHttpError(
-        400,
-        "We have no interest in rehiring former employees."
-      );
+    } else if (isEmployed === "true" && isEmployed !== employee.isEmployed.toString())
+      throw createHttpError(400, "We have no interest in rehiring former employees.");
 
     const updatedEmployee = await prisma.employee.update({
       where: {
@@ -440,11 +440,7 @@ export const updateEmployee: RequestHandler = async (req, res, next) => {
 export const deleteEmployee: RequestHandler = async (req, res, next) => {
   try {
     const loggedInUser = req.user;
-    if (loggedInUser?.role !== Role.Admin)
-      throw createHttpError(
-        403,
-        "This user is not allowed to delete employees."
-      );
+    if (loggedInUser?.role !== Role.Admin) throw createHttpError(403, "This user is not allowed to delete employees.");
 
     const employeeId = req.params.employeeId;
     const employee = await prisma.employee.findUnique({
