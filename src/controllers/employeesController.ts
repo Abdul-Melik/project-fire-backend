@@ -323,7 +323,7 @@ export const getEmployeesInfo: RequestHandler = async (req, res, next) => {
       totalCost = otherCost + designCost + developmentCost;
 
       employeesInfo.push({
-        month,
+        month: formattedMonth,
         totalHoursAvailable: totalDaysAvailable * 8,
         totalHoursBilled: totalDaysBilled * 8,
         developmentCost,

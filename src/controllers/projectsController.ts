@@ -214,6 +214,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
     let plannedRevenue = 0;
     let actualMargin = 0;
     let actualAvgMargin = 0;
+    let revenueGap = 0;
     let plannedCost = 0;
     let salesChannelPercentage = {};
     let projectTypeCount = {};
@@ -285,9 +286,9 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 
       actualRevenue = projects.reduce((sum, { cost }) => sum + cost, 0);
 
-      plannedRevenue = projects.reduce((sum, { cost }) => sum + cost, 0);
+      plannedRevenue = projects.reduce((sum, { cost }) => sum + cost + 4200, 0);
 
-      plannedCost = projects.reduce((sum, { cost }) => sum + cost, 0);
+      plannedCost = projects.reduce((sum, { cost }) => sum + cost + 5200, 0);
 
       actualMargin = ((actualRevenue - plannedCost) / plannedCost) * 100;
 
@@ -308,6 +309,8 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
       averageVelocity = totalProjectVelocity / totalProjects;
 
       averageTeamSize = totalEmployees / totalProjects;
+
+      revenueGap = plannedRevenue - actualRevenue;
 
       weeksOverDeadline = projects.reduce((sum, { endDate, actualEndDate }) => {
         if (actualEndDate && actualEndDate >= endDate) {
@@ -359,6 +362,7 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
       totalCost,
       grossProfit,
       averageValue,
+      revenueGap,
       averageRate,
       averageVelocity,
       averageTeamSize,
