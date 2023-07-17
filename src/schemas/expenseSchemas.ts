@@ -6,7 +6,7 @@ import {
   generatePositiveNumberSchemas,
 } from "./schemaGenerators";
 import { MonthEnum } from "./schemaEnums";
-import { startDateSchema, endDateSchema } from "./commonSchemas";
+import { startDateSchema, endDateSchema, yearSchema } from "./commonSchemas";
 
 const yearShema = generateIntegerNumberRangeSchemas("Year", 2000, 2050);
 
@@ -31,6 +31,7 @@ export const getExpensesInfoSchema = z.object({
     .object({
       startDate: startDateSchema,
       endDate: endDateSchema,
+      year: yearSchema,
     })
     .partial(),
 });

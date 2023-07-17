@@ -3,23 +3,9 @@ import { PrismaClient, Role, Month } from "@prisma/client";
 import createHttpError from "http-errors";
 
 import { excludeExpenseInfo, getEmployeeSalaryInBAM } from "../helpers";
+import { months } from "../data/intex";
 
 const prisma = new PrismaClient();
-
-const months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
 
 // @desc    Get Expenses
 // @route   GET /api/expenses
@@ -67,175 +53,233 @@ export const getExpenseById: RequestHandler = async (req, res, next) => {
 // @access  Private
 export const getExpensesInfo: RequestHandler = async (req, res, next) => {
   try {
-    const { startDate, endDate, year, month, plannedExpense, actualExpense, expenseCategoryId } = req.query;
+    const { year } = req.query;
 
     const expenses = await prisma.expense.findMany({
       include: {
         expenseCategory: true,
       },
-      where: {
-        year: {
-          gte: startDate ? new Date(startDate as string).getFullYear() : undefined,
-          lte: endDate ? new Date(endDate as string).getFullYear() : undefined,
-        },
-        month: {
-          in: months
-            .filter((_, index) => {
-              const startMonth = startDate ? new Date(startDate as string).getMonth() : 0;
-              const endMonth = endDate ? new Date(endDate as string).getMonth() : months.length - 1;
-              return index >= startMonth && index <= endMonth;
-            })
-            .map((month) => month as Month),
-        },
-      },
     });
 
-    const marketingExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Marketing");
-    const hrExpenses = expenses.filter((expense) => expense.expenseCategory.name === "HR costs");
-    const officeExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Office cost");
-    const salesExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Sales costs");
-    const otherExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Other costs");
-    const indirectExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Indirect");
+    type ExpensesPerMonth = {
+      year: number;
+      month: string;
+      marketingActualExpense: number;
+      hrActualExpense: number;
+      officeActualExpense: number;
+      salesActualExpense: number;
+      otherActualExpense: number;
+      indirectActualExpense: number;
+      plannedExpense: number;
+      actualExpense: number;
+    };
 
-    const currentYear = Number(year) || new Date().getFullYear();
+    type ExpensesInfo = {
+      monthsWithPlannedExpenses: string[];
+      monthsWithActualExpenses: string[];
+      totalMarketingActualExpense: number;
+      totalHrActualExpense: number;
+      totalOfficeActualExpense: number;
+      totalSalesActualExpense: number;
+      totalOtherActualExpense: number;
+      totalIndirectActualExpense: number;
+      totalMarketingPlannedExpense: number;
+      totalHrPlannedExpense: number;
+      totalOfficePlannedExpense: number;
+      totalSalesPlannedExpense: number;
+      totalOtherPlannedExpense: number;
+      totalIndirectPlannedExpense: number;
+      totalPlannedExpenses: number;
+      totalActualExpenses: number;
+      expensesPerMonth: ExpensesPerMonth[];
+    };
 
-    const marketingTotalActualExpense = marketingExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+    const expensesPerMonth: ExpensesPerMonth[] = [];
+    const monthsWithPlannedExpenses: string[] = [];
+    const monthsWithActualExpenses: string[] = [];
+    let totalMarketingActualExpense = 0;
+    let totalHrActualExpense = 0;
+    let totalOfficeActualExpense = 0;
+    let totalSalesActualExpense = 0;
+    let totalOtherActualExpense = 0;
+    let totalIndirectActualExpense = 0;
+    let totalMarketingPlannedExpense = 0;
+    let totalHrPlannedExpense = 0;
+    let totalOfficePlannedExpense = 0;
+    let totalSalesPlannedExpense = 0;
+    let totalOtherPlannedExpense = 0;
+    let totalIndirectPlannedExpense = 0;
 
-    const hrTotalActualExpense = hrExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+    months.forEach((month, index) => {
+      const startDateMonth = new Date(Number(year), index);
 
-    const officeTotalActualExpense = officeExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+      const marketingExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Marketing");
+      const hrExpenses = expenses.filter((expense) => expense.expenseCategory.name === "HR costs");
+      const officeExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Office cost");
+      const salesExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Sales costs");
+      const otherExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Other costs");
+      const indirectExpenses = expenses.filter((expense) => expense.expenseCategory.name === "Indirect");
 
-    const salesTotalActualExpense = salesExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+      const currentYear = Number(year) || new Date().getFullYear();
 
-    const otherTotalActualExpense = otherExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+      const marketingActualExpense = marketingExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.actualExpense ?? 0);
+        }
+        return total;
+      }, 0);
 
-    const indirectTotalActualExpense = indirectExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+      const hrActualExpense = hrExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.actualExpense ?? 0);
+        }
+        return total;
+      }, 0);
 
-    const marketingTotalPlannedExpense = marketingExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+      const officeActualExpense = officeExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.actualExpense ?? 0);
+        }
+        return total;
+      }, 0);
 
-    const hrTotalPlannedExpense = hrExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+      const salesActualExpense = salesExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.actualExpense ?? 0);
+        }
+        return total;
+      }, 0);
 
-    const officeTotalPlannedExpense = officeExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+      const otherActualExpense = otherExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.actualExpense ?? 0);
+        }
+        return total;
+      }, 0);
 
-    const salesTotalPlannedExpense = salesExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+      const indirectActualExpense = indirectExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.actualExpense ?? 0);
+        }
+        return total;
+      }, 0);
 
-    const otherTotalPlannedExpense = otherExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+      const marketingPlannedExpense = marketingExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.plannedExpense ?? 0);
+        }
+        return total;
+      }, 0);
 
-    const indirectTotalPlannedExpense = indirectExpenses.reduce((total, expense) => {
-      if (expense.year === currentYear) {
-        return total + (expense.actualExpense ?? 0);
-      }
-      return total;
-    }, 0);
+      const hrPlannedExpense = hrExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.plannedExpense ?? 0);
+        }
+        return total;
+      }, 0);
 
-    const totalActualExpenses =
-      marketingTotalActualExpense +
-      otherTotalActualExpense +
-      salesTotalActualExpense +
-      hrTotalActualExpense +
-      officeTotalActualExpense +
-      indirectTotalActualExpense;
+      const officePlannedExpense = officeExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.plannedExpense ?? 0);
+        }
+        return total;
+      }, 0);
+
+      const salesPlannedExpense = salesExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.plannedExpense ?? 0);
+        }
+        return total;
+      }, 0);
+
+      const otherPlannedExpense = otherExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.plannedExpense ?? 0);
+        }
+        return total;
+      }, 0);
+
+      const indirectPlannedExpense = indirectExpenses.reduce((total, expense) => {
+        if (expense.year === currentYear && expense.month === month) {
+          return total + (expense.plannedExpense ?? 0);
+        }
+        return total;
+      }, 0);
+
+      totalMarketingActualExpense += marketingActualExpense;
+      totalOtherActualExpense += otherActualExpense;
+      totalSalesActualExpense += salesActualExpense;
+      totalHrActualExpense += hrActualExpense;
+      totalOfficeActualExpense += officeActualExpense;
+      totalIndirectActualExpense += indirectActualExpense;
+
+      totalMarketingPlannedExpense += marketingPlannedExpense;
+      totalHrPlannedExpense += hrPlannedExpense;
+      totalOfficePlannedExpense += officePlannedExpense;
+      totalSalesPlannedExpense += salesPlannedExpense;
+      totalOtherPlannedExpense += otherPlannedExpense;
+      totalIndirectPlannedExpense += indirectPlannedExpense;
+
+      const expensesForMonth = expenses.filter((expense) => expense.month === month && expense.year === currentYear);
+
+      const actualExpense = expensesForMonth.reduce((total, expense) => total + (expense.actualExpense ?? 0), 0);
+
+      const plannedExpense = expensesForMonth.reduce((total, expense) => total + (expense.plannedExpense ?? 0), 0);
+
+      if (actualExpense > 0) monthsWithActualExpenses.push(month);
+      if (plannedExpense > 0) monthsWithPlannedExpenses.push(month);
+
+      expensesPerMonth.push({
+        year: Number(year),
+        month,
+        marketingActualExpense,
+        hrActualExpense,
+        officeActualExpense,
+        salesActualExpense,
+        otherActualExpense,
+        indirectActualExpense,
+        plannedExpense,
+        actualExpense,
+      });
+    });
 
     const totalPlannedExpenses =
-      marketingTotalPlannedExpense +
-      otherTotalPlannedExpense +
-      salesTotalPlannedExpense +
-      hrTotalPlannedExpense +
-      officeTotalPlannedExpense +
-      indirectTotalPlannedExpense;
+      totalMarketingPlannedExpense +
+      totalHrPlannedExpense +
+      totalOfficePlannedExpense +
+      totalSalesPlannedExpense +
+      totalOtherPlannedExpense +
+      totalIndirectPlannedExpense;
 
-    const totalExpensesActual = months.map((month) => {
-      const expensesForMonth = expenses.filter((expense) => expense.month === month && expense.year === currentYear);
-      const totalExpenseForMonth = expensesForMonth.reduce((total, expense) => total + (expense.actualExpense ?? 0), 0);
-      return { month, totalActualExpense: totalExpenseForMonth };
-    });
+    const totalActualExpenses =
+      totalMarketingActualExpense +
+      totalHrActualExpense +
+      totalOfficeActualExpense +
+      totalSalesActualExpense +
+      totalOtherActualExpense +
+      totalIndirectActualExpense;
 
-    const totalExpensesPlanned = months.map((month) => {
-      const expensesForMonth = expenses.filter((expense) => expense.month === month && expense.year === currentYear);
-      const totalExpenseForMonth = expensesForMonth.reduce(
-        (total, expense) => total + (expense.plannedExpense ?? 0),
-        0
-      );
-      return { month, totalPlannedExpense: totalExpenseForMonth };
-    });
-
-    const monthsWithExpenses = totalExpensesActual.map((expense) => expense.month);
-    const monthsWithPlannedExpenses = totalExpensesPlanned.map((expense) => expense.month);
-
-    return res.status(200).json({
-      marketingTotalActualExpense,
-      hrTotalActualExpense,
-      officeTotalActualExpense,
-      year,
-      month,
-      plannedExpense,
-      actualExpense,
-      expenseCategoryId,
-      salesTotalActualExpense,
-      otherTotalActualExpense,
-      indirectTotalActualExpense,
+    const expensesInfo: ExpensesInfo = {
       monthsWithPlannedExpenses,
-      monthsWithExpenses,
-      totalExpensesActual,
-      totalExpensesPlanned,
-      totalActualExpenses,
+      monthsWithActualExpenses,
+      totalMarketingActualExpense,
+      totalHrActualExpense,
+      totalOfficeActualExpense,
+      totalSalesActualExpense,
+      totalOtherActualExpense,
+      totalIndirectActualExpense,
+      totalMarketingPlannedExpense,
+      totalHrPlannedExpense,
+      totalOfficePlannedExpense,
+      totalSalesPlannedExpense,
+      totalOtherPlannedExpense,
+      totalIndirectPlannedExpense,
       totalPlannedExpenses,
-    });
+      totalActualExpenses,
+      expensesPerMonth,
+    };
+
+    return res.status(200).json(expensesInfo);
   } catch (error) {
     next(error);
   }

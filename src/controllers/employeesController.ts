@@ -3,23 +3,9 @@ import { PrismaClient, Role, Currency, Department, TechStack } from "@prisma/cli
 import createHttpError from "http-errors";
 
 import deleteImage from "../utils/spacesDelete";
+import { months } from "../data/intex";
 
 const prisma = new PrismaClient();
-
-const months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
 
 // @desc    Get Employees
 // @route   GET /api/employees

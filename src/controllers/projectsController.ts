@@ -284,11 +284,11 @@ export const getProjectsInfo: RequestHandler = async (req, res, next) => {
 
       totalCost = projects.reduce((sum, { cost }) => sum + cost, 0);
 
-      actualRevenue = projects.reduce((sum, { cost }) => sum + cost, 0);
+      actualRevenue = projects.reduce((sum, { cost }) => sum + cost + 4200, 0);
 
-      plannedRevenue = projects.reduce((sum, { cost }) => sum + cost + 4200, 0);
+      plannedRevenue = projects.reduce((sum, { cost }) => sum + cost, 0);
 
-      plannedCost = projects.reduce((sum, { cost }) => sum + cost + 5200, 0);
+      plannedCost = projects.reduce((sum, { cost }) => sum + cost, 0);
 
       actualMargin = ((actualRevenue - plannedCost) / plannedCost) * 100;
 
